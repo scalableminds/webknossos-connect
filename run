@@ -1,0 +1,5 @@
+#!/bin/bash
+
+docker build -t py-datastore .
+(sleep 3; curl http://localhost:8000/api/neuroglancer/Connectomics_Department/test -X POST -H "Content-Type: application/json" --data-binary "@neuroglancer.json") &
+docker run -it -p 8000:8000 py-datastore "$@"

@@ -1,0 +1,5 @@
+aiohttp
+numpy
+Pillow
+sanic
+sanic_cors
