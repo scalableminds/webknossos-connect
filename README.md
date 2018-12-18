@@ -8,7 +8,15 @@ A webKnossos compatible datastore written in Python
 
 ## Development Status
 
-The datastore currently has basic neuroglancer support, but still has a lot of issues: 
+The datastore currently has basic neuroglancer support.
+
+working:
+* health endpoint
+* pinging wk to report health
+* adding neuroglancer datasets
+* reporting datasets to wk
+
+not working:
 * no proper error handling / status codes (in case of error, exceptions are raised)
 * only single channel uint8 data (since wk backend / postgres schema does not support uint64 segmentation)
 * does not handle different chunk_sizes well
@@ -16,3 +24,4 @@ The datastore currently has basic neuroglancer support, but still has a lot of i
 * thumbnail parameters are hard-coded
 * datasets are not persisted
 * quite slow, since no caching
+* no authentication
