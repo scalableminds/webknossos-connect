@@ -2,7 +2,7 @@
 A webKnossos compatible datastore written in Python
 
 ## How to setup?
-1. add datastore to wK database
+1. add datastore to wK database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'py-datastore',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
 2. adjust config in `py-datastore/__main__.py`
 3. `./run`
 
