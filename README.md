@@ -25,3 +25,8 @@ not working:
 * datasets are not persisted
 * quite slow, since no caching
 * no authentication
+
+housekeeping:
+* typing everywhere
+* add tests
+* linting / code formatting
