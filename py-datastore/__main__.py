@@ -33,7 +33,7 @@ app.config.update({
   },
 
   'webknossos': {
-    'url': 'http://docker.for.mac.host.internal:9000',
+    'url': 'http://localhost:9000',
     'ping_interval_minutes': 10
   },
 
