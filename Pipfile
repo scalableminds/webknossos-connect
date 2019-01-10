@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+black = "*"
+
+[packages]
+aiohttp = "*"
+numpy = "*"
+Pillow = "*"
+sanic = "*"
+sanic_cors = "*"
+
+[requires]
+python_version = "3.7.2"
+
+[scripts]
+main = "python -m py-datastore"
+pretty = "black py-datastore"
+pretty-check = "black --check py-datastore"
+lint = "pylint --errors-only --jobs 0 py-datastore"
+lint-details = "pylint --jobs 0 py-datastore"
+
+[pipenv]
+allow_prereleases = true
