@@ -1,11 +1,17 @@
-FROM python:3
+FROM python:3.7.2
+
+RUN pip install --user --upgrade pipenv
+# We have to set PATH by hand because of this bug:
+# https://unix.stackexchange.com/questions/316765/which-distributions-have-home-local-bin-in-path#answer-392710
+ENV PATH=/root/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN mkdir /app
 WORKDIR /app
 
-COPY requirements.txt /app
-RUN pip install -r requirements.txt
+COPY Pipfile .
+COPY Pipfile.lock .
+RUN pipenv install --system
 
-COPY py-datastore/ /app/py-datastore
+COPY py-datastore py-datastore
 
-ENTRYPOINT [ "python", "-m", "py-datastore" ]
+CMD [ "python", "-m", "py-datastore" ]
