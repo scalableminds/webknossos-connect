@@ -14,7 +14,7 @@ class WebKnossosClient:
         self.headers = {"Content-Type": "application/json"}
         self.params = {"key": self.datastore_key}
 
-    async def report_status(self, ok: bool =True) -> None:
+    async def report_status(self, ok: bool = True) -> None:
         url = f"{self.webknossos_url}/api/datastores/{self.datastore_name}/status"
         status = DataStoreStatus(ok, self.datastore_url)
         await self.http_client.patch(

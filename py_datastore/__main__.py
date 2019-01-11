@@ -30,7 +30,8 @@ app.config.update(
     }
 )
 
-app.available_backends = [Neuroglancer] # type: ignore
+app.available_backends = [Neuroglancer]  # type: ignore
+
 
 ## TASKS ##
 
@@ -161,6 +162,7 @@ async def get_thumbnail(request, organization_name, dataset_name, layer_name):
 
 
 ## MAIN ##
+
 
 if __name__ == "__main__":
     app.add_task(ping_webknossos(app))
