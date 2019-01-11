@@ -12,6 +12,6 @@ COPY Pipfile .
 COPY Pipfile.lock .
 RUN pipenv install --system
 
-COPY pyDatastore pyDatastore
+COPY py_datastore py_datastore
 
-CMD [ "python", "-m", "pyDatastore" ]
+CMD [ "python", "-m", "py_datastore" ]
