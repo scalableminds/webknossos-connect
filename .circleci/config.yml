@@ -1,0 +1,30 @@
+version: 2
+jobs:
+  static_checks:
+    docker:
+      - image: python:3.7.2
+    environment:
+      PIPENV: /root/.local/bin/pipenv
+    steps:
+      - checkout
+      - run:
+          name: Install pipenv
+          command: pip install --user --upgrade pipenv
+      - run:
+          name: Install packages
+          command: PIPENV sync --dev
+      - run:
+          name: Lint
+          command: PIPENV run lint
+      - run:
+          name: Check pretty
+          command: PIPENV run pretty-check
+      - run:
+          name: Check typing
+          command: PIPENV run type-check
+
+workflows:
+  version: 2
+  default:
+    jobs:
+      - static_checks
