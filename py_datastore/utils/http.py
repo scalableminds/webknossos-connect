@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiohttp
 
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 
 class HttpClient:
@@ -10,7 +10,7 @@ class HttpClient:
         self.http_session = await aiohttp.ClientSession().__aenter__()
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
         await self.http_session.__aexit__(exc_type, exc, tb)
 
     async def __perform_request(
@@ -29,14 +29,14 @@ class HttpClient:
             else:
                 return await response_fn(response) if response_fn else None
 
-    async def patch(self, *args, **kwargs):
+    async def patch(self, *args: Any, **kwargs: Any) -> Any:
         return await self.__perform_request(self.http_session.patch, *args, **kwargs)
 
-    async def get(self, *args, **kwargs):
+    async def get(self, *args: Any, **kwargs: Any) -> Any:
         return await self.__perform_request(self.http_session.get, *args, **kwargs)
 
-    async def put(self, *args, **kwargs):
+    async def put(self, *args: Any, **kwargs: Any) -> Any:
         return await self.__perform_request(self.http_session.put, *args, **kwargs)
 
-    async def post(self, *args, **kwargs):
+    async def post(self, *args: Any, **kwargs: Any) -> Any:
         return await self.__perform_request(self.http_session.post, *args, **kwargs)

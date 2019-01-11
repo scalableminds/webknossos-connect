@@ -21,27 +21,8 @@ from .webknossos.models import DataRequest as WKDataRequest
 
 
 class Server(Sanic):
-    def __init__(
-        self,
-        name=None,
-        router=None,
-        error_handler=None,
-        load_env=True,
-        request_class=None,
-        strict_slashes=False,
-        log_config=None,
-        configure_logging=True,
-    ):
-        super().__init__(
-            name,
-            router,
-            error_handler,
-            load_env,
-            request_class,
-            strict_slashes,
-            log_config,
-            configure_logging,
-        )
+    def __init__(self) -> None:
+        super().__init__()
         self.http_client: HttpClient
         self.repository: Repository
         self.webknossos: WebKnossos
