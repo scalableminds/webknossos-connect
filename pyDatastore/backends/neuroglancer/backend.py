@@ -2,12 +2,14 @@ import asyncio
 import math
 import numpy as np
 
+from async_lru import alru_cache
 from io import BytesIO
 from PIL import Image
+from typing import cast, Tuple
 
 from ...utils.json import from_json
-from ..backend import Backend
-from .models import Dataset, Layer
+from ..backend import Backend, DatasetInfo
+from .models import Dataset, Layer, Scale
 
 
 class NeuroglancerBackend(Backend):
@@ -96,17 +98,25 @@ class NeuroglancerBackend(Backend):
         for x in range(min_x, max_x, chunk_size[0]):
             for y in range(min_y, max_y, chunk_size[1]):
                 for z in range(min_z, max_z, chunk_size[2]):
-                    chunk_offset = [x, y, z]
+                    chunk_offset = (x, y, z)
                     yield (chunk_offset, chunk_size)
 
-    async def __read_chunk(self, layer, scale, chunk_offset, chunk_size, decoder_fn):
+    @alru_cache(maxsize=1024, typed=False)
+    async def __read_chunk(
+        self,
+        layer: Layer,
+        scale_key: str,
+        chunk_offset: Tuple[int, int, int],
+        chunk_size: Tuple[int, int, int],
+        decoder_fn,
+    ):
         url_coords = "_".join(
             [
                 f"{offset}-{offset + size}"
                 for offset, size in zip(chunk_offset, chunk_size)
             ]
         )
-        data_url = f"{layer.source}/{scale.key}/{url_coords}"
+        data_url = f"{layer.source}/{scale_key}/{url_coords}"
 
         response_buffer = await self.http_client.get(
             data_url, response_fn=lambda r: r.read()
@@ -138,7 +148,15 @@ class NeuroglancerBackend(Backend):
 
         return result
 
-    async def read_data(self, dataset, layer_name, resolution, offset, shape):
+    async def read_data(
+        self,
+        dataset: DatasetInfo,
+        layer_name: str,
+        resolution: int,
+        offset: Tuple[int, int, int],
+        shape: Tuple[int, int, int],
+    ) -> None:
+        dataset = cast(Dataset, dataset)
         layer = dataset.layers[layer_name]
         # scale = next(scale for scale in layer.scales if scale.resolution == resolution)
         scale = layer.scales[0]
@@ -148,7 +166,7 @@ class NeuroglancerBackend(Backend):
         chunk_coords = self.__chunks(offset, shape, scale, chunk_size)
         chunks = await asyncio.gather(
             *(
-                self.__read_chunk(layer, scale, chunk_offset, chunk_size, decoder)
+                self.__read_chunk(layer, scale.key, chunk_offset, chunk_size, decoder)
                 for chunk_offset, chunk_sizes in chunk_coords
             )
         )
