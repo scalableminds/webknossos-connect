@@ -5,7 +5,7 @@ class DataStoreStatus:
     ok: bool
     url: str
 
-    def __init__(self, ok, url, **kwargs):
+    def __init__(self, ok: bool, url: str, **kwargs) -> None:
         self.ok = ok
         self.url = url
 

@@ -45,13 +45,14 @@ You need Python 3.7 with pipenv installed. The recommended way is to use pyenv &
 
 ### Moar
 
-We lint with `pylint` and format with `black`. Use them via
+We lint with `pylint`, format with `black`, and type-check with `mypy`. Use them via
 
 `pipenv run …`
 * `pretty`
 * `pretty-check`
 * `lint`
 * `lint-details`
+* `type-check`
 
 
 ### Development Status

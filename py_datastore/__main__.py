@@ -30,7 +30,7 @@ app.config.update(
     }
 )
 
-app.available_backends = [Neuroglancer]
+app.available_backends = [Neuroglancer] # type: ignore
 
 ## TASKS ##
 
