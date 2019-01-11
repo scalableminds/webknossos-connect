@@ -24,7 +24,7 @@ pretty = "black py_datastore"
 pretty-check = "black --check py_datastore"
 lint = "pylint --errors-only --jobs 0 py_datastore"
 lint-details = "pylint --jobs 0 py_datastore"
-type-check = 'bash -c "MYPYPATH=\"$(pipenv --venv)/lib/python3.7/site-packages/\" mypy py_datastore"'
+type-check = 'bash -c "MYPYPATH=\"$(pipenv --venv)/lib/python3.7/site-packages/\" mypy --check-untyped-defs py_datastore"'
 
 [pipenv]
 allow_prereleases = true
