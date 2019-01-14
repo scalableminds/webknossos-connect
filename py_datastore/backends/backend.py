@@ -18,7 +18,7 @@ class DatasetInfo:
 class Backend:
     @classmethod
     def name(cls) -> str:
-        return "TODO"
+        return "Subclass responsibility"
 
     def __init__(self, config: Dict, http_client: HttpClient) -> None:
         pass
