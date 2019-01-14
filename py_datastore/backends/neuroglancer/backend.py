@@ -5,23 +5,34 @@ import numpy as np
 from async_lru import alru_cache
 from io import BytesIO
 from PIL import Image
-from typing import cast, Tuple
+from typing import cast, Any, Callable, Dict, Iterable, Tuple
 
-from ...utils.json import from_json
-from ..backend import Backend, DatasetInfo
 from .models import Dataset, Layer, Scale
+from ..backend import Backend, DatasetInfo
+from ...utils.http import HttpClient
+from ...utils.json import from_json
+from ...utils.types import JSON, Vec3D
+
+
+DecoderFn = Callable[[bytes, str, Vec3D], np.ndarray]
+Chunk = Tuple[Vec3D, Vec3D, np.ndarray]
 
 
 class NeuroglancerBackend(Backend):
     @classmethod
-    def name(cls):
+    def name(cls) -> str:
         return "neuroglancer"
 
-    def __init__(self, config, http_client):
+    def __init__(self, config: Dict, http_client: HttpClient) -> None:
         self.http_client = http_client
-        self.decoders = {"raw": self.__decode_raw, "jpeg": self.__decode_jpeg}
+        self.decoders: Dict[str, DecoderFn] = {
+            "raw": self.__decode_raw,
+            "jpeg": self.__decode_jpeg,
+        }
 
-    async def __handle_layer(self, layer_name, layer):
+    async def __handle_layer(
+        self, layer_name: str, layer: Dict[str, Any]
+    ) -> Tuple[str, Layer]:
         assert layer["source"][:14] == "precomputed://"
 
         layer["source"] = layer["source"][14:].replace(
@@ -34,7 +45,9 @@ class NeuroglancerBackend(Backend):
         layer.update(response)
         return (layer_name, from_json(layer, Layer))
 
-    async def handle_new_dataset(self, organization_name, dataset_name, dataset_info):
+    async def handle_new_dataset(
+        self, organization_name: str, dataset_name: str, dataset_info: JSON
+    ) -> DatasetInfo:
         layers = dict(
             await asyncio.gather(
                 *(
@@ -46,10 +59,14 @@ class NeuroglancerBackend(Backend):
         dataset = Dataset(organization_name, dataset_name, layers)
         return dataset
 
-    def __decode_raw(self, buffer, data_type, chunk_size):
+    def __decode_raw(
+        self, buffer: bytes, data_type: str, chunk_size: Vec3D
+    ) -> np.ndarray:
         return np.asarray(buffer).astype(data_type).reshape(chunk_size)
 
-    def __decode_jpeg(self, buffer, data_type, chunk_size):
+    def __decode_jpeg(
+        self, buffer: bytes, data_type: str, chunk_size: Vec3D
+    ) -> np.ndarray:
         with BytesIO(buffer) as input:
             image_data = Image.open(input).getdata()
             return (
@@ -58,7 +75,9 @@ class NeuroglancerBackend(Backend):
                 .reshape(chunk_size, order="F")
             )
 
-    def __chunks(self, offset, shape, scale, chunk_size):
+    def __chunks(
+        self, offset: Vec3D, shape: Vec3D, scale: Scale, chunk_size: Vec3D
+    ) -> Iterable[Tuple[Vec3D, Vec3D]]:
         # clip data outside available data
         min_x = max(offset[0], scale.voxel_offset[0])
         min_y = max(offset[1], scale.voxel_offset[1])
@@ -106,10 +125,10 @@ class NeuroglancerBackend(Backend):
         self,
         layer: Layer,
         scale_key: str,
-        chunk_offset: Tuple[int, int, int],
-        chunk_size: Tuple[int, int, int],
-        decoder_fn,
-    ):
+        chunk_offset: Vec3D,
+        chunk_size: Vec3D,
+        decoder_fn: DecoderFn,
+    ) -> Chunk:
         url_coords = "_".join(
             [
                 f"{offset}-{offset + size}"
@@ -124,7 +143,9 @@ class NeuroglancerBackend(Backend):
         chunk_data = decoder_fn(response_buffer, layer.data_type, chunk_size)
         return (chunk_offset, chunk_size, chunk_data)
 
-    def __cutout(self, chunks, data_type, offset, shape):
+    def __cutout(
+        self, chunks: Iterable[Chunk], data_type: str, offset: Vec3D, shape: Vec3D
+    ) -> np.ndarray:
         result = np.zeros(shape, dtype=data_type, order="F")
 
         for chunk_offset, chunk_size, chunk_data in chunks:
@@ -152,10 +173,10 @@ class NeuroglancerBackend(Backend):
         self,
         dataset: DatasetInfo,
         layer_name: str,
-        resolution: int,
-        offset: Tuple[int, int, int],
-        shape: Tuple[int, int, int],
-    ) -> None:
+        resolution: Vec3D,
+        offset: Vec3D,
+        shape: Vec3D,
+    ) -> np.ndarray:
         dataset = cast(Dataset, dataset)
         layer = dataset.layers[layer_name]
         # scale = next(scale for scale in layer.scales if scale.resolution == resolution)

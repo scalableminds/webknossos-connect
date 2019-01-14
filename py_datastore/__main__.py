@@ -1,5 +1,3 @@
-# pylint: disable=no-member
-
 import asyncio
 import base64
 import json
@@ -7,11 +5,13 @@ import numpy as np
 
 from io import BytesIO
 from PIL import Image
-from sanic import Sanic
-from sanic import response
+from sanic import Sanic, response
+from sanic.request import Request
 from sanic_cors import cross_origin
-from typing import List
+from typing import Dict, List, Tuple, Type
+from uvloop import Loop
 
+from .backends.backend import Backend
 from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
 from .repository import Repository
 from .utils.http import HttpClient
@@ -19,7 +19,18 @@ from .utils.json import from_json, to_json
 from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataRequest as WKDataRequest
 
-app = Sanic()
+
+class Server(Sanic):
+    def __init__(self) -> None:
+        super().__init__()
+        self.http_client: HttpClient
+        self.repository: Repository
+        self.webknossos: WebKnossos
+        self.backends: Dict[str, Backend]
+        self.available_backends: List[Type[Backend]] = [Neuroglancer]
+
+
+app = Server()
 
 app.config.update(
     {
@@ -30,15 +41,13 @@ app.config.update(
     }
 )
 
-app.available_backends = [Neuroglancer]  # type: ignore
-
 
 ## TASKS ##
 
 
 @app.listener("before_server_start")
-async def setup(app, loop):
-    def instanciate_backend(backend_class):
+async def setup(app: Server, loop: Loop) -> None:
+    def instanciate_backend(backend_class: Type[Backend]) -> Tuple[str, Backend]:
         backend_name = backend_class.name()
         config = app.config["backends"][backend_name]
         return (backend_name, backend_class(config, app.http_client))
@@ -50,11 +59,11 @@ async def setup(app, loop):
 
 
 @app.listener("after_server_stop")
-async def close_http_client(app, loop):
+async def close_http_client(app: Server, loop: Loop) -> None:
     await app.http_client.__aexit__(None, None, None)
 
 
-async def ping_webknossos(app):
+async def ping_webknossos(app: Server) -> None:
     ping_interval_seconds = app.config["webknossos"]["ping_interval_minutes"] * 60
     while True:
         await app.webknossos.report_status()
@@ -65,12 +74,12 @@ async def ping_webknossos(app):
 
 
 @app.route("/data/health")
-async def health(request):
+async def health(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
 
 @app.route("/api/buildinfo")
-async def build_info(request):
+async def build_info(request: Request) -> response.HTTPResponse:
     return response.json(
         {
             "py-datastore": {
@@ -83,7 +92,9 @@ async def build_info(request):
 
 
 @app.route("/api/<backend_name>/<organization_name>/<dataset_name>", methods=["POST"])
-async def add_dataset(request, backend_name, organization_name, dataset_name):
+async def add_dataset(
+    request: Request, backend_name: str, organization_name: str, dataset_name: str
+) -> response.HTTPResponse:
     backend = app.backends[backend_name]
     dataset = await backend.handle_new_dataset(
         organization_name, dataset_name, request.json
@@ -98,7 +109,9 @@ async def add_dataset(request, backend_name, organization_name, dataset_name):
     methods=["OPTIONS"],
 )
 @cross_origin(app)
-async def get_data_options(request, organization_name, dataset_name, layer_name):
+async def get_data_options(
+    request: Request, organization_name: str, dataset_name: str, layer_name: str
+) -> response.HTTPResponse:
     return response.text("Ok")
 
 
@@ -107,7 +120,9 @@ async def get_data_options(request, organization_name, dataset_name, layer_name)
     methods=["POST"],
 )
 @cross_origin(app)
-async def get_data_post(request, organization_name, dataset_name, layer_name):
+async def get_data_post(
+    request: Request, organization_name: str, dataset_name: str, layer_name: str
+) -> response.HTTPResponse:
     (backend_name, dataset) = app.repository.get_dataset(
         organization_name, dataset_name
     )
@@ -142,7 +157,9 @@ async def get_data_post(request, organization_name, dataset_name, layer_name):
 @app.route(
     "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/thumbnail.json"
 )
-async def get_thumbnail(request, organization_name, dataset_name, layer_name):
+async def get_thumbnail(
+    request: Request, organization_name: str, dataset_name: str, layer_name: str
+) -> response.HTTPResponse:
     width = int(request.args.get("width"))
     height = int(request.args.get("height"))
 

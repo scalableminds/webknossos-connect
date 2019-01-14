@@ -1,9 +1,13 @@
+from sanic.config import Config
+from typing import Any
+
+from .models import DataSource, DataStoreStatus
+from ..utils.http import HttpClient
 from ..utils.json import from_json, to_json
-from .models import DataStoreStatus
 
 
 class WebKnossosClient:
-    def __init__(self, config, http_client):
+    def __init__(self, config: Config, http_client: HttpClient) -> None:
         self.webknossos_url = config["webknossos"]["url"]
         self.datastore_url = config["server"]["url"]
         self.datastore_name = config["datastore"]["name"]
@@ -21,14 +25,13 @@ class WebKnossosClient:
             url, headers=self.headers, params=self.params, json=to_json(status)
         )
 
-    async def report_dataset(self, dataset):
+    async def report_dataset(self, dataset: DataSource) -> None:
         url = f"{self.webknossos_url}/api/datastores/{self.datastore_name}/datasource"
-        headers = {"Content-Type": "application/json"}
         await self.http_client.put(
             url, headers=self.headers, params=self.params, json=to_json(dataset)
         )
 
-    async def request_access(self, token, access_request):
+    async def request_access(self, token: str, access_request: Any) -> None:
         pass
         # rpc(s"$webKnossosUrl/api/datastores/$dataStoreName/validateUserAccess")
         #  .addQueryString("key" -> dataStoreKey)

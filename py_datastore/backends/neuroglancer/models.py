@@ -1,7 +1,8 @@
 from functools import reduce
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from ..backend import DatasetInfo
+from ...utils.types import Vec3D
 from ...webknossos.models import (
     BoundingBox,
     DataSource as WKDataSource,
@@ -13,16 +14,23 @@ from ...webknossos.models import (
 class Scale:
     supported_encodings = ["raw", "jpeg"]
 
-    chunk_sizes: List[Tuple[int, int, int]]
+    chunk_sizes: List[Vec3D]
     encoding: str
     key: str
-    resolution: Tuple[int, int, int]
-    size: Tuple[int, int, int]
-    voxel_offset: Tuple[int, int, int]
+    resolution: Vec3D
+    size: Vec3D
+    voxel_offset: Vec3D
 
     def __init__(
-        self, chunk_sizes, encoding, key, resolution, size, voxel_offset, **kwargs
-    ):
+        self,
+        chunk_sizes: List[Vec3D],
+        encoding: str,
+        key: str,
+        resolution: Vec3D,
+        size: Vec3D,
+        voxel_offset: Vec3D,
+        **kwargs: Any
+    ) -> None:
         self.chunk_sizes = chunk_sizes
         self.encoding = encoding
         self.key = key
@@ -32,7 +40,7 @@ class Scale:
 
         assert self.encoding in self.supported_encodings
 
-    def bounding_box(self):
+    def bounding_box(self) -> BoundingBox:
         return BoundingBox(self.voxel_offset, *self.size)
 
 
@@ -46,7 +54,15 @@ class Layer:
     scales: List[Scale]
     type: str
 
-    def __init__(self, source, data_type, num_channels, scales, type, **kwargs):
+    def __init__(
+        self,
+        source: str,
+        data_type: str,
+        num_channels: int,
+        scales: List[Scale],
+        type: str,
+        **kwargs: Any
+    ) -> None:
         self.source = source
         self.data_type = data_type
         self.num_channels = num_channels
@@ -57,7 +73,7 @@ class Layer:
         assert self.num_channels == 1
         assert self.type in self.supported_types
 
-    def to_webknossos(self, layer_name):
+    def to_webknossos(self, layer_name: str) -> WKDataLayer:
         bounding_boxes = map(lambda scale: scale.bounding_box(), self.scales)
         bounding_box = reduce(lambda a, b: a.union(b), bounding_boxes)
         return WKDataLayer(
@@ -74,12 +90,14 @@ class Dataset(DatasetInfo):
     dataset_name: str
     layers: Dict[str, Layer]
 
-    def __init__(self, organization_name, dataset_name, layers):
+    def __init__(
+        self, organization_name: str, dataset_name: str, layers: Dict[str, Layer]
+    ) -> None:
         self.organization_name = organization_name
         self.dataset_name = dataset_name
         self.layers = layers
 
-    def to_webknossos(self):
+    def to_webknossos(self) -> WKDataSource:
         return WKDataSource(
             WKDataSourceId(self.organization_name, self.dataset_name),
             list(

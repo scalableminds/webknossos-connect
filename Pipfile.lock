@@ -51,9 +51,9 @@
         },
         "async-lru": {
             "hashes": [
-                "sha256:ac1f7138b54d68570391615b1ff758e189ce2b841a16653aae1255f5be5d4d0b"
+                "sha256:baa898027619f5cc31b7966f96f00e4fc0df43ba206a8940a5d1af5336a477cb"
             ],
-            "version": "==1.0.1"
+            "version": "==1.0.2"
         },
         "async-timeout": {
             "hashes": [
