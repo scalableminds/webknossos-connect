@@ -3,7 +3,7 @@ import numpy as np
 from typing import Any, Dict, Tuple
 
 from ..utils.http import HttpClient
-from ..utils.types import Vec3D
+from ..utils.types import JSON, Vec3D
 from ..webknossos.models import DataSource as WKDataSource
 
 
@@ -24,7 +24,7 @@ class Backend:
         pass
 
     async def handle_new_dataset(
-        self, organization_name: str, dataset_name: str, dataset_info: Any
+        self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
         pass
 

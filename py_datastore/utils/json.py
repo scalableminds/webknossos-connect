@@ -3,8 +3,10 @@ import json
 
 from typing import Any, Dict, List, Optional
 
+from .types import JSON
 
-def from_json(data: Any, cls: Optional[type]) -> Any:
+
+def from_json(data: JSON, cls: Optional[type]) -> Any:
     cls_annotations = getattr(cls, "__annotations__", None)
     cls_origin = getattr(cls, "__origin__", None)
     cls_args = getattr(cls, "__args__", None)
@@ -38,7 +40,7 @@ def from_json(data: Any, cls: Optional[type]) -> Any:
         return data
 
 
-def to_json(obj: Any) -> Any:
+def to_json(obj: Any) -> JSON:
     cls = type(obj)
     if hasattr(cls, "__annotations__"):
         return dict(

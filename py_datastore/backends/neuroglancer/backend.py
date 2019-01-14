@@ -11,7 +11,7 @@ from .models import Dataset, Layer, Scale
 from ..backend import Backend, DatasetInfo
 from ...utils.http import HttpClient
 from ...utils.json import from_json
-from ...utils.types import Vec3D
+from ...utils.types import JSON, Vec3D
 
 
 DecoderFn = Callable[[bytes, str, Vec3D], np.ndarray]
@@ -46,7 +46,7 @@ class NeuroglancerBackend(Backend):
         return (layer_name, from_json(layer, Layer))
 
     async def handle_new_dataset(
-        self, organization_name: str, dataset_name: str, dataset_info: Dict[str, Any]
+        self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
         layers = dict(
             await asyncio.gather(
