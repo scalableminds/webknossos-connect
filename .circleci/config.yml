@@ -19,9 +19,19 @@ jobs:
       - run:
           name: Check pretty
           command: $PIPENV run pretty-check
+      - restore_cache:
+          name: Restore mypy cache
+          keys:
+            - mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}
+            - mypy-cache-{{ checksum ".circleci/cache_version" }}-master
       - run:
           name: Check typing
           command: $PIPENV run type-check
+      - save_cache:
+          name: Save mypy cache
+          key: mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".mypy_cache"
 
 workflows:
   version: 2
