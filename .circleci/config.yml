@@ -12,16 +12,16 @@ jobs:
           command: pip install --user --upgrade pipenv
       - run:
           name: Install packages
-          command: PIPENV sync --dev
+          command: $PIPENV sync --dev
       - run:
           name: Lint
-          command: PIPENV run lint
+          command: $PIPENV run lint
       - run:
           name: Check pretty
-          command: PIPENV run pretty-check
+          command: $PIPENV run pretty-check
       - run:
           name: Check typing
-          command: PIPENV run type-check
+          command: $PIPENV run type-check
 
 workflows:
   version: 2
