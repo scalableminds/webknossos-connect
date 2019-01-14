@@ -7,7 +7,18 @@ A webKnossos compatible datastore written in Python
 2. `./run`
 
 ## Development
-### Requirements
+### In docker :whale:
+
+Start it with `docker-compose up dev`
+
+Run other commands `docker-compose run --rm dev pipenv run lint`
+
+[Check below](#moar) for moar commands.
+
+If you change the packages, rebuild the image with `docker-compose build dev`
+
+### Native
+#### Requirements
 
 You need Python 3.7 with pipenv installed. The recommended way is to use pyenv & pipenv:
 
@@ -36,7 +47,7 @@ You need Python 3.7 with pipenv installed. The recommended way is to use pyenv &
   This will be activated after the next login automatically, to use it right now, run
   `. ~/.profile`
 
-### Run it
+#### Run it
 
 *  add datastore to wK database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'py-datastore',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
 * `pipenv install --pre --dev`
@@ -55,7 +66,7 @@ We lint with `pylint`, format with `black`, and type-check with `mypy`. Use them
 * `type-check`
 
 
-### Development Status
+## Development Status
 
 The datastore currently has basic neuroglancer support.
 
