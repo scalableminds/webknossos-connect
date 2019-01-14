@@ -4,21 +4,26 @@ jobs:
     docker:
       - image: python:3.7.2
     environment:
-      PIPENV: /root/.local/bin/pipenv
+      PATH: /root/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     steps:
       - checkout
       - run:
           name: Install pipenv
           command: pip install --user --upgrade pipenv
+      - restore_cache:
+          name: Restore pipenv cache
+          keys:
+            - pipenv-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}
+            - pipenv-cache-{{ checksum ".circleci/cache_version" }}-master
       - run:
           name: Install packages
-          command: $PIPENV sync --dev
+          command: pipenv sync --dev
       - run:
           name: Lint
-          command: $PIPENV run lint
+          command: pipenv run lint
       - run:
           name: Check pretty
-          command: $PIPENV run pretty-check
+          command: pipenv run pretty-check
       - restore_cache:
           name: Restore mypy cache
           keys:
@@ -26,7 +31,12 @@ jobs:
             - mypy-cache-{{ checksum ".circleci/cache_version" }}-master
       - run:
           name: Check typing
-          command: $PIPENV run type-check
+          command: pipenv run type-check
+      - save_cache:
+          name: Save pipenv cache
+          key: pipenv-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - "~/.cache/pipenv"
       - save_cache:
           name: Save mypy cache
           key: mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}

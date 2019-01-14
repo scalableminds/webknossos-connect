@@ -1,6 +1,8 @@
 # py-datastore
 A webKnossos compatible datastore written in Python
 
+[![CircleCI](https://circleci.com/gh/scalableminds/py-datastore.svg?style=svg&circle-token=1d7b55b40a5733c7563033064cee0ed0beef36b6)](https://circleci.com/gh/scalableminds/py-datastore)
+
 ## Run it with docker
 
 1. add datastore to wK database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'py-datastore',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
