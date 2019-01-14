@@ -1,0 +1,40 @@
+version: 2
+jobs:
+  static_checks:
+    docker:
+      - image: python:3.7.2
+    environment:
+      PIPENV: /root/.local/bin/pipenv
+    steps:
+      - checkout
+      - run:
+          name: Install pipenv
+          command: pip install --user --upgrade pipenv
+      - run:
+          name: Install packages
+          command: $PIPENV sync --dev
+      - run:
+          name: Lint
+          command: $PIPENV run lint
+      - run:
+          name: Check pretty
+          command: $PIPENV run pretty-check
+      - restore_cache:
+          name: Restore mypy cache
+          keys:
+            - mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}
+            - mypy-cache-{{ checksum ".circleci/cache_version" }}-master
+      - run:
+          name: Check typing
+          command: $PIPENV run type-check
+      - save_cache:
+          name: Save mypy cache
+          key: mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".mypy_cache"
+
+workflows:
+  version: 2
+  default:
+    jobs:
+      - static_checks
