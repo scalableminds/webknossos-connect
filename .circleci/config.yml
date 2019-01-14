@@ -10,6 +10,11 @@ jobs:
       - run:
           name: Install pipenv
           command: pip install --user --upgrade pipenv
+      - restore_cache:
+          name: Restore pipenv cache
+          keys:
+            - pipenv-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}
+            - pipenv-cache-{{ checksum ".circleci/cache_version" }}-master
       - run:
           name: Install packages
           command: $PIPENV sync --dev
@@ -27,6 +32,11 @@ jobs:
       - run:
           name: Check typing
           command: $PIPENV run type-check
+      - save_cache:
+          name: Save pipenv cache
+          key: pipenv-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - "~/.cache/pipenv"
       - save_cache:
           name: Save mypy cache
           key: mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
