@@ -1,11 +1,11 @@
 version: '2.2'
 
 services:
-
-  # Production
   dev:
     build: .
     image: scalableminds/py-datastore-dev:${DOCKER_TAG:-master}
+    volumes:
+      - ./py_datastore:/app/py_datastore
     network_mode: host
     environment:
       - TZ=${TZ:-Europe/Berlin}

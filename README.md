@@ -7,9 +7,15 @@ A webKnossos compatible datastore written in Python
 2. `./run`
 
 ## Development
-### In docker
+### In docker :whale:
 
-`docker-compose up --build dev`
+Start it with `docker-compose up dev`
+
+Run other commands `docker-compose run --rm dev pipenv run lint`
+
+[Check below](#moar) for moar commands.
+
+If you change the packages, rebuild the image with `docker-compose build dev`
 
 ### Native
 #### Requirements
@@ -48,7 +54,7 @@ You need Python 3.7 with pipenv installed. The recommended way is to use pyenv &
 * `pipenv run main`
 * `curl http://localhost:8000/api/neuroglancer/Connectomics_Department/test -X POST -H "Content-Type: application/json" --data-binary "@neuroglancer.json"`
 
-#### Moar
+### Moar
 
 We lint with `pylint`, format with `black`, and type-check with `mypy`. Use them via
 

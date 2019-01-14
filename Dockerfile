@@ -19,5 +19,5 @@ CMD [ "python", "-m", "py_datastore" ]
 
 FROM production
 
-RUN pipenv install --dev
+RUN pipenv sync --dev
 CMD [ "pipenv", "run", "main" ]
