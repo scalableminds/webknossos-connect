@@ -3,10 +3,12 @@ A webKnossos compatible datastore written in Python
 
 [![CircleCI](https://circleci.com/gh/scalableminds/py-datastore.svg?style=svg&circle-token=1d7b55b40a5733c7563033064cee0ed0beef36b6)](https://circleci.com/gh/scalableminds/py-datastore)
 
-## Run it with docker
+## Usage
 
 1. add datastore to wK database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'py-datastore',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
 2. `docker-compose up --build py-datastore`
+3. By default, some public datasets are reported. To add more datasets, run e.g.
+   `curl http://localhost:8000/api/neuroglancer/Connectomics_Department/test -X POST -H "Content-Type: application/json" --data-binary "@tools/sample-datasets/neuroglancer.json"`
 
 ## Development
 ### In docker :whale:
