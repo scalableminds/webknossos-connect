@@ -1,4 +1,4 @@
-FROM python:3.7.2 as production
+FROM python:3.7.2 as prod
 
 RUN pip install --user --upgrade pipenv
 # We have to set PATH by hand because of this bug:
@@ -17,7 +17,7 @@ COPY py_datastore py_datastore
 CMD [ "python", "-m", "py_datastore" ]
 
 
-FROM production
+FROM prod as dev
 
 RUN pipenv sync --dev
 CMD [ "pipenv", "run", "main" ]

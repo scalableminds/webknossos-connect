@@ -1,11 +1,25 @@
-version: '2.2'
+version: '3.4'
 
 services:
+  py-datastore:
+    build:
+      context: .
+      target: prod
+    image: scalableminds/py-datastore:${DOCKER_TAG:-master}
+    volumes:
+      - ./data:/app/data
+    network_mode: host
+    environment:
+      - TZ=${TZ:-Europe/Berlin}
+
   dev:
-    build: .
+    build:
+      context: .
+      target: dev
     image: scalableminds/py-datastore-dev:${DOCKER_TAG:-master}
     volumes:
       - ./py_datastore:/app/py_datastore
+      - ./data:/app/data
     network_mode: host
     environment:
       - TZ=${TZ:-Europe/Berlin}
