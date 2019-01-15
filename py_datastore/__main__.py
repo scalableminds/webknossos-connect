@@ -2,7 +2,9 @@ import asyncio
 import base64
 import json
 import numpy as np
+import os
 
+from copy import deepcopy
 from io import BytesIO
 from PIL import Image
 from sanic import Sanic, response
@@ -16,6 +18,7 @@ from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
 from .repository import Repository
 from .utils.http import HttpClient
 from .utils.json import from_json, to_json
+from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataRequest as WKDataRequest
 
@@ -29,6 +32,40 @@ class Server(Sanic):
         self.backends: Dict[str, Backend]
         self.available_backends: List[Type[Backend]] = [Neuroglancer]
 
+    async def add_dataset(
+        self,
+        dataset_config: JSON,
+        backend_name: str,
+        organization_name: str,
+        dataset_name: str,
+    ) -> None:
+        backend = self.backends[backend_name]
+        dataset = await backend.handle_new_dataset(
+            organization_name, dataset_name, deepcopy(dataset_config)
+        )
+        self.repository.add_dataset(backend_name, dataset)
+        await self.webknossos.report_dataset(dataset.to_webknossos())
+
+    async def load_persisted_datasets(self) -> None:
+        try:
+            with open(self.config["datasets_path"]) as datasets_file:
+                datasets = json.load(datasets_file)
+        except FileNotFoundError:
+            datasets = {}
+        await asyncio.gather(
+            *(
+                app.add_dataset(
+                    dataset_config=dataset_details,
+                    backend_name=backend,
+                    organization_name=organization,
+                    dataset_name=dataset,
+                )
+                for backend, backend_details in datasets.items()
+                for organization, organization_details in backend_details.items()
+                for dataset, dataset_details in organization_details.items()
+            )
+        )
+
 
 app = Server()
 
@@ -38,6 +75,7 @@ app.config.update(
         "datastore": {"name": "py-datastore", "key": "k"},
         "webknossos": {"url": "http://localhost:9000", "ping_interval_minutes": 10},
         "backends": {"neuroglancer": {}},
+        "datasets_path": "data/datasets.json",
     }
 )
 
@@ -56,6 +94,7 @@ async def setup(app: Server, loop: Loop) -> None:
     app.repository = Repository()
     app.webknossos = WebKnossos(app.config, app.http_client)
     app.backends = dict(map(instanciate_backend, app.available_backends))
+    await app.load_persisted_datasets()
 
 
 @app.listener("after_server_stop")
@@ -95,31 +134,30 @@ async def build_info(request: Request) -> response.HTTPResponse:
 async def add_dataset(
     request: Request, backend_name: str, organization_name: str, dataset_name: str
 ) -> response.HTTPResponse:
-    backend = app.backends[backend_name]
-    dataset = await backend.handle_new_dataset(
-        organization_name, dataset_name, request.json
-    )
-    app.repository.add_dataset(backend_name, dataset)
-    await app.webknossos.report_dataset(dataset.to_webknossos())
+    dataset_config = request.json
+    await app.add_dataset(dataset_config, backend_name, organization_name, dataset_name)
+
+    ds_path = app.config["datasets_path"]
+    os.makedirs(os.path.dirname(ds_path), exist_ok=True)
+    if not os.path.isfile(ds_path):
+        with open(ds_path, "w") as datasets_file:
+            json.dump({}, datasets_file)
+    with open(ds_path, "r+") as datasets_file:
+        datasets = json.load(datasets_file)
+        datasets.setdefault(backend_name, {}).setdefault(organization_name, {})[
+            dataset_name
+        ] = dataset_config
+        datasets_file.seek(0)
+        json.dump(datasets, datasets_file)
+
     return response.text("Ok")
 
 
 @app.route(
     "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/data",
-    methods=["OPTIONS"],
+    methods=["POST", "OPTIONS"],
 )
-@cross_origin(app)
-async def get_data_options(
-    request: Request, organization_name: str, dataset_name: str, layer_name: str
-) -> response.HTTPResponse:
-    return response.text("Ok")
-
-
-@app.route(
-    "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/data",
-    methods=["POST"],
-)
-@cross_origin(app)
+@cross_origin(app, automatic_options=True)
 async def get_data_post(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:
