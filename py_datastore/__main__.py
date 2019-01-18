@@ -69,15 +69,8 @@ class Server(Sanic):
 
 app = Server()
 
-app.config.update(
-    {
-        "server": {"host": "0.0.0.0", "port": 8000, "url": "http://localhost:8000"},
-        "datastore": {"name": "py-datastore", "key": "k"},
-        "webknossos": {"url": "http://localhost:9000", "ping_interval_minutes": 10},
-        "backends": {"neuroglancer": {}},
-        "datasets_path": "data/datasets.json",
-    }
-)
+with open("data/config.json") as config_file:
+    app.config.update(json.load(config_file))
 
 
 ## TASKS ##
