@@ -1,15 +1,10 @@
 version: 2
 jobs:
-  static_checks:
+  static_checks_push:
     docker:
-      - image: python:3.7.2
-    environment:
-      PATH: /root/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - image: circleci/python:3.7.2
     steps:
       - checkout
-      - run:
-          name: Install pipenv
-          command: pip install --user --upgrade pipenv
       - restore_cache:
           name: Restore pipenv cache
           keys:
@@ -42,11 +37,6 @@ jobs:
           key: mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".mypy_cache"
-  build_push:
-    docker:
-      - image: docker/compose:1.23.2
-    steps:
-      - checkout
       - setup_remote_docker
       - run:
           name: Build & push docker image
@@ -61,7 +51,4 @@ workflows:
   version: 2
   default:
     jobs:
-      - static_checks
-      - build_push:
-          requires:
-            - static_checks
+      - static_checks_push
