@@ -9,7 +9,7 @@ from typing import cast, Any, Callable, Dict, Iterable, Tuple
 
 from .models import Dataset, Layer, Scale
 from ..backend import Backend, DatasetInfo
-from ...utils.http import HttpClient
+from ...utils.http import HttpClient, HttpError
 from ...utils.json import from_json
 from ...utils.types import JSON, Vec3D
 
@@ -41,7 +41,6 @@ class NeuroglancerBackend(Backend):
         info_url = layer["source"] + "/info"
 
         response = await self.http_client.get(info_url, response_fn=lambda r: r.json())
-        response["scales"] = response["scales"][:1]  # TODO remove later
         layer.update(response)
         return (layer_name, from_json(layer, Layer))
 
@@ -120,7 +119,7 @@ class NeuroglancerBackend(Backend):
                     chunk_offset = (x, y, z)
                     yield (chunk_offset, chunk_size)
 
-    @alru_cache(maxsize=1024, typed=False)
+    @alru_cache(maxsize=2 ** 17, typed=False)
     async def __read_chunk(
         self,
         layer: Layer,
@@ -137,10 +136,14 @@ class NeuroglancerBackend(Backend):
         )
         data_url = f"{layer.source}/{scale_key}/{url_coords}"
 
-        response_buffer = await self.http_client.get(
-            data_url, response_fn=lambda r: r.read()
-        )
-        chunk_data = decoder_fn(response_buffer, layer.data_type, chunk_size)
+        try:
+            response_buffer = await self.http_client.get(
+                data_url, response_fn=lambda r: r.read()
+            )
+        except HttpError:
+            chunk_data = np.zeros(chunk_size, dtype=layer.data_type)
+        else:
+            chunk_data = decoder_fn(response_buffer, layer.data_type, chunk_size)
         return (chunk_offset, chunk_size, chunk_data)
 
     def __cutout(
@@ -173,16 +176,39 @@ class NeuroglancerBackend(Backend):
         self,
         dataset: DatasetInfo,
         layer_name: str,
-        resolution: Vec3D,
-        offset: Vec3D,
-        shape: Vec3D,
+        zoomStep: int,
+        wk_offset: Vec3D,
+        wk_shape: Vec3D,
     ) -> np.ndarray:
         dataset = cast(Dataset, dataset)
         layer = dataset.layers[layer_name]
-        # scale = next(scale for scale in layer.scales if scale.resolution == resolution)
-        scale = layer.scales[0]
+        # TODO add lookup table for scale for efficiency
+        def fits_resolution(scale: Scale) -> bool:
+            wk_resolution = tuple(
+                res_dim // scale_dim
+                for res_dim, scale_dim in zip(
+                    scale.resolution, cast(Dataset, dataset).scale
+                )
+            )
+            return max(wk_resolution) == 2 ** zoomStep
+
+        scale = next(scale for scale in layer.scales if fits_resolution(scale))
         decoder = self.decoders[scale.encoding]
         chunk_size = scale.chunk_sizes[0]  # TODO
+
+        def wk_to_neuroglancer(vec: Vec3D) -> Vec3D:
+            return cast(
+                Vec3D,
+                tuple(
+                    vec_dim * scale_dim // res_dim
+                    for vec_dim, scale_dim, res_dim in zip(
+                        vec, cast(Dataset, dataset).scale, scale.resolution
+                    )
+                ),
+            )
+
+        offset = wk_to_neuroglancer(wk_offset)
+        shape = wk_to_neuroglancer(wk_shape)
 
         chunk_coords = self.__chunks(offset, shape, scale, chunk_size)
         chunks = await asyncio.gather(
@@ -192,4 +218,4 @@ class NeuroglancerBackend(Backend):
             )
         )
 
-        return self.__cutout(chunks, layer.data_type, offset, shape)
+        return self.__cutout(chunks, layer.data_type, offset, wk_shape)

@@ -50,11 +50,11 @@ class BoundingBox:
         self.bottomRight = cast(Vec3D, tuple(map(sum, zip(self.topLeft, self.shape))))
 
     def union(self, other: BoundingBox) -> BoundingBox:
-        min: Callable[[Tuple[int, int]], int]
-        max: Callable[[Tuple[int, int]], int]
-        topLeft = tuple(map(min, zip(self.topLeft, other.topLeft)))
+        tuple_min: Callable[[Tuple[int, int]], int] = lambda x: min(x)
+        tuple_max: Callable[[Tuple[int, int]], int] = lambda x: max(x)
+        topLeft = tuple(map(tuple_min, zip(self.topLeft, other.topLeft)))
         topLeft = cast(Vec3D, topLeft)
-        bottomRight = tuple(map(max, zip(self.bottomRight, other.bottomRight)))
+        bottomRight = tuple(map(tuple_max, zip(self.bottomRight, other.bottomRight)))
         bottomRight = cast(Vec3D, bottomRight)
         shape = tuple([high - low for low, high in zip(topLeft, bottomRight)])
         return BoundingBox(topLeft, *shape)

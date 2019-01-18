@@ -5,6 +5,12 @@ import aiohttp
 from typing import Any, Callable
 
 
+class HttpError(RuntimeError):
+    def __init__(self, status: int, *args: Any) -> None:
+        super().__init__((status, *args))
+        self.status = status
+
+
 class HttpClient:
     async def __aenter__(self) -> HttpClient:
         self.http_session = await aiohttp.ClientSession().__aenter__()
@@ -25,7 +31,7 @@ class HttpClient:
         async with request_fn(*args, **kwargs) as response:
             if response.status is not 200:
                 text = await response.text()
-                raise RuntimeError((response.status, text))
+                raise HttpError(response.status, (text, *args))
             else:
                 return await response_fn(response) if response_fn else None
 
