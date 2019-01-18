@@ -32,7 +32,7 @@ class Backend:
         self,
         dataset: DatasetInfo,
         layer_name: str,
-        resolution: Vec3D,
+        zoomStep: int,
         offset: Vec3D,
         shape: Vec3D,
     ) -> np.ndarray:

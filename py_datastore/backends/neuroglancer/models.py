@@ -1,5 +1,6 @@
 from functools import reduce
-from typing import Any, Dict, List, Tuple
+from operator import mul
+from typing import Any, Dict, List, Tuple, cast
 
 from ..backend import DatasetInfo
 from ...utils.types import Vec3D
@@ -73,14 +74,23 @@ class Layer:
         assert self.num_channels == 1
         assert self.type in self.supported_types
 
-    def to_webknossos(self, layer_name: str) -> WKDataLayer:
-        bounding_boxes = map(lambda scale: scale.bounding_box(), self.scales)
-        bounding_box = reduce(lambda a, b: a.union(b), bounding_boxes)
+    def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WKDataLayer:
+        def to_wk(vec: Vec3D) -> Vec3D:
+            return cast(
+                Vec3D,
+                tuple(
+                    vec_dim // scale_dim
+                    for vec_dim, scale_dim in zip(vec, global_scale)
+                ),
+            )
+
+        min_scale = min(self.scales, key=lambda scale: reduce(mul, scale.resolution))
+        normalized_resolutions = [to_wk(scale.resolution) for scale in self.scales]
         return WKDataLayer(
             layer_name,
             {"image": "color", "segmentation": "segmentation"}[self.type],
-            bounding_box,
-            list(map(lambda scale: scale.resolution, self.scales)),
+            min_scale.bounding_box(),
+            normalized_resolutions,
             self.data_type,
         )
 
@@ -89,6 +99,7 @@ class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     layers: Dict[str, Layer]
+    scale: Vec3D
 
     def __init__(
         self, organization_name: str, dataset_name: str, layers: Dict[str, Layer]
@@ -96,15 +107,21 @@ class Dataset(DatasetInfo):
         self.organization_name = organization_name
         self.dataset_name = dataset_name
         self.layers = layers
+        min_scales = set(
+            min(layer.scales, key=lambda scale: reduce(mul, scale.resolution))
+            for layer in self.layers.values()
+        )
+        assert len(min_scales) == 1
+        self.scale = next(iter(min_scales)).resolution
 
     def to_webknossos(self) -> WKDataSource:
         return WKDataSource(
             WKDataSourceId(self.organization_name, self.dataset_name),
             list(
                 [
-                    layer.to_webknossos(layer_name)
+                    layer.to_webknossos(layer_name, self.scale)
                     for layer_name, layer in self.layers.items()
                 ]
             ),
-            (1.0, 1.0, 1.0),
+            self.scale,
         )

@@ -206,7 +206,7 @@ async def get_thumbnail(
     )
     backend = app.backends[backend_name]
     data = await backend.read_data(
-        dataset, layer_name, (30, 6, 6), (6400, 6400, 640), (width, height, 1)
+        dataset, layer_name, 0, (6400, 6400, 640), (width, height, 1)
     )
     thumbnail = Image.fromarray(data[:, :, 0])
     with BytesIO() as output:
