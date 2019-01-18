@@ -119,7 +119,7 @@ class NeuroglancerBackend(Backend):
                     chunk_offset = (x, y, z)
                     yield (chunk_offset, chunk_size)
 
-    @alru_cache(maxsize=2 ** 17, typed=False)
+    @alru_cache(maxsize=2 ** 12, typed=False)
     async def __read_chunk(
         self,
         layer: Layer,
