@@ -1,15 +1,10 @@
 version: 2
 jobs:
-  static_checks:
+  static_checks_push:
     docker:
-      - image: python:3.7.2
-    environment:
-      PATH: /root/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - image: circleci/python:3.7.2
     steps:
       - checkout
-      - run:
-          name: Install pipenv
-          command: pip install --user --upgrade pipenv
       - restore_cache:
           name: Restore pipenv cache
           keys:
@@ -42,9 +37,18 @@ jobs:
           key: mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".mypy_cache"
+      - setup_remote_docker
+      - run:
+          name: Build & push docker image
+          command: |
+            export DOCKER_TAG=${CIRCLE_BRANCH}__${CIRCLE_BUILD_NUM}
+            docker-compose build py-datastore
+            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+            docker-compose push py-datastore
+            docker logout
 
 workflows:
   version: 2
   default:
     jobs:
-      - static_checks
+      - static_checks_push
