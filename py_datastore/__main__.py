@@ -10,7 +10,7 @@ from io import BytesIO
 from PIL import Image
 from sanic import Sanic, response
 from sanic.request import Request
-from sanic_cors import cross_origin
+from sanic_cors import CORS
 from typing import Dict, List, Tuple, Type
 from uvloop import Loop
 
@@ -69,6 +69,7 @@ class Server(Sanic):
 
 
 app = Server()
+CORS(app, automatic_options=True)
 
 with open("data/config.json") as config_file:
     app.config.update(json.load(config_file))
@@ -152,7 +153,6 @@ async def add_dataset(
     methods=["POST", "OPTIONS"],
 )
 @authorized(AccessRequest.readDataset)
-@cross_origin(app, automatic_options=True)
 async def get_data_post(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:
