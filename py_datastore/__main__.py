@@ -4,6 +4,7 @@ import json
 import numpy as np
 import os
 
+from aiohttp import ClientSession
 from copy import deepcopy
 from io import BytesIO
 from PIL import Image
@@ -16,9 +17,9 @@ from uvloop import Loop
 from .backends.backend import Backend
 from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
 from .repository import Repository
-from .utils.http import HttpClient
 from .utils.json import from_json, to_json
 from .utils.types import JSON
+from .webknossos.access import AccessRequest, authorized
 from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataRequest as WKDataRequest
 
@@ -26,7 +27,7 @@ from .webknossos.models import DataRequest as WKDataRequest
 class Server(Sanic):
     def __init__(self) -> None:
         super().__init__()
-        self.http_client: HttpClient
+        self.http_client: ClientSession
         self.repository: Repository
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
@@ -83,7 +84,7 @@ async def setup(app: Server, loop: Loop) -> None:
         config = app.config["backends"][backend_name]
         return (backend_name, backend_class(config, app.http_client))
 
-    app.http_client = await HttpClient().__aenter__()
+    app.http_client = await ClientSession(raise_for_status=True).__aenter__()
     app.repository = Repository()
     app.webknossos = WebKnossos(app.config, app.http_client)
     app.backends = dict(map(instanciate_backend, app.available_backends))
@@ -150,6 +151,7 @@ async def add_dataset(
     "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/data",
     methods=["POST", "OPTIONS"],
 )
+@authorized(AccessRequest.readDataset)
 @cross_origin(app, automatic_options=True)
 async def get_data_post(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
@@ -188,6 +190,7 @@ async def get_data_post(
 @app.route(
     "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/thumbnail.json"
 )
+@authorized(AccessRequest.readDataset)
 async def get_thumbnail(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:

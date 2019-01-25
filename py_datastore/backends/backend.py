@@ -1,8 +1,8 @@
 import numpy as np
 
+from aiohttp import ClientSession
 from typing import Any, Dict, Tuple
 
-from ..utils.http import HttpClient
 from ..utils.types import JSON, Vec3D
 from ..webknossos.models import DataSource as WKDataSource
 
@@ -20,7 +20,7 @@ class Backend:
     def name(cls) -> str:
         return "Subclass responsibility"
 
-    def __init__(self, config: Dict, http_client: HttpClient) -> None:
+    def __init__(self, config: Dict, http_client: ClientSession) -> None:
         pass
 
     async def handle_new_dataset(

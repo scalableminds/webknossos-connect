@@ -2,6 +2,7 @@ import asyncio
 import math
 import numpy as np
 
+from aiohttp import ClientSession, ClientResponseError
 from async_lru import alru_cache
 from io import BytesIO
 from PIL import Image
@@ -9,7 +10,6 @@ from typing import cast, Any, Callable, Dict, Iterable, Tuple
 
 from .models import Dataset, Layer, Scale
 from ..backend import Backend, DatasetInfo
-from ...utils.http import HttpClient, HttpError
 from ...utils.json import from_json
 from ...utils.types import JSON, Vec3D
 
@@ -23,7 +23,7 @@ class NeuroglancerBackend(Backend):
     def name(cls) -> str:
         return "neuroglancer"
 
-    def __init__(self, config: Dict, http_client: HttpClient) -> None:
+    def __init__(self, config: Dict, http_client: ClientSession) -> None:
         self.http_client = http_client
         self.decoders: Dict[str, DecoderFn] = {
             "raw": self.__decode_raw,
@@ -40,7 +40,8 @@ class NeuroglancerBackend(Backend):
         )
         info_url = layer["source"] + "/info"
 
-        response = await self.http_client.get(info_url, response_fn=lambda r: r.json())
+        async with await self.http_client.get(info_url) as r:
+            response = await r.json()
         layer.update(response)
         return (layer_name, from_json(layer, Layer))
 
@@ -119,7 +120,7 @@ class NeuroglancerBackend(Backend):
                     chunk_offset = (x, y, z)
                     yield (chunk_offset, chunk_size)
 
-    @alru_cache(maxsize=2 ** 12, typed=False)
+    @alru_cache(maxsize=2 ** 12)
     async def __read_chunk(
         self,
         layer: Layer,
@@ -137,10 +138,9 @@ class NeuroglancerBackend(Backend):
         data_url = f"{layer.source}/{scale_key}/{url_coords}"
 
         try:
-            response_buffer = await self.http_client.get(
-                data_url, response_fn=lambda r: r.read()
-            )
-        except HttpError:
+            async with await self.http_client.get(data_url) as r:
+                response_buffer = await r.read()
+        except ClientResponseError:
             chunk_data = np.zeros(chunk_size, dtype=layer.data_type)
         else:
             chunk_data = decoder_fn(response_buffer, layer.data_type, chunk_size)
