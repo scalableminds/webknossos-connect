@@ -111,12 +111,6 @@ async def health(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
 
-@app.route("/data/triggers/checkInbox")
-async def check_inbox(request: Request) -> response.HTTPResponse:
-    asyncio.create_task(app.load_persisted_datasets())
-    return response.text("Ok")
-
-
 @app.route("/data/triggers/checkInboxBlocking")
 async def check_inbox_blocking(request: Request) -> response.HTTPResponse:
     await app.load_persisted_datasets()
