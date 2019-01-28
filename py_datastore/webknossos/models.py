@@ -68,6 +68,9 @@ class DataSourceId:
         self.team = team
         self.name = name
 
+    def __hash__(self) -> int:
+        return hash((self.team, self.name))
+
 
 class DataLayer:
     suppoeted_categories = ["color", "segmentation"]

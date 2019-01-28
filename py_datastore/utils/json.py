@@ -16,7 +16,7 @@ def from_json(data: JSON, cls: Optional[type]) -> Any:
             field_type = cls_annotations.get(name)
             data[name] = from_json(value, field_type)
         return cls(**data)
-    elif cls_origin is not None and cls_args is not None:
+    elif isinstance(cls_origin, type) and cls_args is not None:
         if issubclass(cls_origin, list):
             list_type = cls_args[0]
             return [from_json(value, list_type) for value in data]
