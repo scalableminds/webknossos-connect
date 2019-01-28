@@ -111,6 +111,12 @@ async def health(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
 
+@app.route("/data/triggers/checkInboxBlocking")
+async def check_inbox_blocking(request: Request) -> response.HTTPResponse:
+    await app.load_persisted_datasets()
+    return response.text("Ok")
+
+
 @app.route("/api/buildinfo")
 async def build_info(request: Request) -> response.HTTPResponse:
     return response.json(
