@@ -1,4 +1,5 @@
 import asyncio
+import jpeg4py as jpeg
 import math
 import numpy as np
 
@@ -66,13 +67,12 @@ class NeuroglancerBackend(Backend):
     def __decode_jpeg(
         self, buffer: bytes, data_type: str, chunk_size: Vec3D
     ) -> np.ndarray:
-        with BytesIO(buffer) as input:
-            image_data = Image.open(input).getdata()
-            return (
-                np.asarray(list(image_data))
-                .astype(data_type)
-                .reshape(chunk_size, order="F")
-            )
+        np_bytes = np.fromstring(buffer, dtype=np.uint8)
+        return (jpeg.JPEG(np_bytes)
+            .decode()[:,:,0]
+            .astype(data_type)
+            .T.reshape(chunk_size, order="F")
+        )
 
     def __chunks(
         self, offset: Vec3D, shape: Vec3D, scale: Scale, chunk_size: Vec3D
