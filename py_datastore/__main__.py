@@ -219,20 +219,26 @@ async def get_thumbnail(
         )
 
 
-app.static('/trace', 'data/trace.html', name='trace_get')
-app.static('/trace/flame.svg', 'data/flame.svg', name='trace_get')
+app.static("/trace", "data/trace.html", name="trace_get")
+app.static("/trace/flame.svg", "data/flame.svg", name="trace_get")
+
 
 @app.route("/trace", methods=["POST"])
-async def trace_post(request):
+async def trace_post(request: Request) -> response.HTTPResponse:
     # py-spy is only in dev-packages
     p = await asyncio.create_subprocess_exec(
         "py-spy",
-        "--flame", "data/flame.svg",
-        "--duration", "20",
-        "--pid", str(os.getpid())
+        "--flame",
+        "data/flame.svg",
+        "--duration",
+        "20",
+        "--pid",
+        str(os.getpid()),
     )
     await p.wait()
-    return response.text("Ok") if p.returncode == 0 else response.text("Error", status=500)
+    return (
+        response.text("Ok") if p.returncode == 0 else response.text("Error", status=500)
+    )
 
 
 ## MAIN ##

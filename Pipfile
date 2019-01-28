@@ -21,10 +21,10 @@ python_version = "3.7.2"
 
 [scripts]
 main = "python -m py_datastore"
-pretty = "black py_datastore"
-pretty-check = "black --check py_datastore"
-lint = "pylint --errors-only --jobs 0 py_datastore"
-lint-details = "pylint --jobs 0 py_datastore"
+pretty = "black py_datastore benchmarks"
+pretty-check = "black --check py_datastore benchmarks"
+lint = "pylint --errors-only --jobs 0 py_datastore benchmarks"
+lint-details = "pylint --jobs 0 py_datastore benchmarks"
 type-check = '''
     bash -c " \
         MYPYPATH=\"$(pipenv --venv)/lib/python3.7/site-packages/\" \

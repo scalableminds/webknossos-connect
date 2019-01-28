@@ -3,6 +3,7 @@ import asyncio
 from aiohttp import ClientSession
 from py_datastore.backends.neuroglancer.backend import NeuroglancerBackend
 
+
 async def setup():
     global neuroglancer
     global data
@@ -14,7 +15,9 @@ async def setup():
     async with await http_client.get(data_url) as r:
         data = await r.read()
 
+
 asyncio.run(setup())
+
 
 def timeit():
     neuroglancer.decoders["jpeg"](data, "uint8", (64, 64, 64))
