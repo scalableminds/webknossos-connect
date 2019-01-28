@@ -23,3 +23,5 @@ services:
     network_mode: host
     environment:
       - TZ=${TZ:-Europe/Berlin}
+    cap_add:
+      - SYS_PTRACE

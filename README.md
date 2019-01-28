@@ -74,3 +74,5 @@ Use them via
 * `lint-details`
 * `type-check`
 * `benchmarks/run_all.sh`
+
+Trace the server on http://localhost:8000/trace with `py-spy`.
