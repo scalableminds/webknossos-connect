@@ -1,13 +1,15 @@
+from aiohttp import ClientSession, ClientResponseError
 from sanic.config import Config
 from typing import Any
 
+from .access import AccessRequest, AccessAnswer
 from .models import DataSource, DataStoreStatus
-from ..utils.http import HttpClient
+from ..utils.caching import atlru_cache
 from ..utils.json import from_json, to_json
 
 
 class WebKnossosClient:
-    def __init__(self, config: Config, http_client: HttpClient) -> None:
+    def __init__(self, config: Config, http_client: ClientSession) -> None:
         self.webknossos_url = config["webknossos"]["url"]
         self.datastore_url = config["server"]["url"]
         self.datastore_name = config["datastore"]["name"]
@@ -31,9 +33,17 @@ class WebKnossosClient:
             url, headers=self.headers, params=self.params, json=to_json(dataset)
         )
 
-    async def request_access(self, token: str, access_request: Any) -> None:
-        pass
-        # rpc(s"$webKnossosUrl/api/datastores/$dataStoreName/validateUserAccess")
-        #  .addQueryString("key" -> dataStoreKey)
-        #  .addQueryString("token" -> token)
-        #  .postWithJsonResponse[UserAccessRequest, UserAccessAnswer](accessRequest)
+    @atlru_cache(seconds_to_use=2 * 60)
+    async def request_access(
+        self, token: str, access_request: AccessRequest
+    ) -> AccessAnswer:
+        url = f"{self.webknossos_url}/api/datastores/{self.datastore_name}/validateUserAccess"
+        params = {"token": token, **self.params}
+        async with await self.http_client.post(
+            url,
+            headers=self.headers,
+            params=params,
+            json=to_json(access_request),
+            raise_for_status=False,
+        ) as r:
+            return from_json(await r.json(), AccessAnswer)
