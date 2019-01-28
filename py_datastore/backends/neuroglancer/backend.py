@@ -69,8 +69,9 @@ class NeuroglancerBackend(Backend):
         self, buffer: bytes, data_type: str, chunk_size: Vec3D
     ) -> np.ndarray:
         np_bytes = np.fromstring(buffer, dtype=np.uint8)
-        return (jpeg.JPEG(np_bytes)
-            .decode()[:,:,0]
+        return (
+            jpeg.JPEG(np_bytes)
+            .decode()[:, :, 0]
             .astype(data_type)
             .T.reshape(chunk_size, order="F")
         )
