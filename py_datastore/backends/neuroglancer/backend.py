@@ -6,7 +6,6 @@ import numpy as np
 from aiohttp import ClientSession, ClientResponseError
 from async_lru import alru_cache
 from io import BytesIO
-from PIL import Image
 from typing import cast, Any, Callable, Dict, Iterable, Tuple
 
 from .models import Dataset, Layer, Scale
