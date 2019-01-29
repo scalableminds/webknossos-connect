@@ -8,6 +8,10 @@ ENV PATH=/root/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbi
 RUN mkdir /app
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get install -y libturbojpeg0 && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY Pipfile .
 COPY Pipfile.lock .
 RUN pipenv install --system

@@ -10,11 +10,12 @@ py-spy = "*"
 
 [packages]
 aiohttp = "*"
+async-lru = "*"
+jpeg4py = "*"
 numpy = "*"
 Pillow = "*"
 sanic = "*"
 sanic_cors = "*"
-async-lru = "*"
 
 [requires]
 python_version = "3.7.2"
