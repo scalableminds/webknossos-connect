@@ -2,6 +2,7 @@ import asyncio
 import jpeg4py as jpeg
 import math
 import numpy as np
+import opentracing
 
 from aiohttp import ClientSession, ClientResponseError
 from async_lru import alru_cache
@@ -128,6 +129,7 @@ class NeuroglancerBackend(Backend):
         chunk_offset: Vec3D,
         chunk_size: Vec3D,
         decoder_fn: DecoderFn,
+        parentspan = None
     ) -> Chunk:
         url_coords = "_".join(
             [
@@ -138,12 +140,13 @@ class NeuroglancerBackend(Backend):
         data_url = f"{layer.source}/{scale_key}/{url_coords}"
 
         try:
-            async with await self.http_client.get(data_url) as r:
+            async with await self.http_client.get(data_url, trace_request_ctx=parentspan) as r:
                 response_buffer = await r.read()
         except ClientResponseError:
             chunk_data = np.zeros(chunk_size, dtype=layer.data_type)
         else:
-            chunk_data = decoder_fn(response_buffer, layer.data_type, chunk_size)
+            with opentracing.tracer.start_span(decoder_fn.__name__, child_of=parentspan):
+                chunk_data = decoder_fn(response_buffer, layer.data_type, chunk_size)
         return (chunk_offset, chunk_size, chunk_data)
 
     def __cutout(
@@ -179,43 +182,45 @@ class NeuroglancerBackend(Backend):
         zoomStep: int,
         wk_offset: Vec3D,
         wk_shape: Vec3D,
+        parentspan = None
     ) -> np.ndarray:
-        dataset = cast(Dataset, dataset)
-        layer = dataset.layers[layer_name]
-        # TODO add lookup table for scale for efficiency
-        def fits_resolution(scale: Scale) -> bool:
-            wk_resolution = tuple(
-                res_dim // scale_dim
-                for res_dim, scale_dim in zip(
-                    scale.resolution, cast(Dataset, dataset).scale
+        with opentracing.tracer.start_span('read_data', child_of=parentspan) as span:
+            dataset = cast(Dataset, dataset)
+            layer = dataset.layers[layer_name]
+            # TODO add lookup table for scale for efficiency
+            def fits_resolution(scale: Scale) -> bool:
+                wk_resolution = tuple(
+                    res_dim // scale_dim
+                    for res_dim, scale_dim in zip(
+                        scale.resolution, cast(Dataset, dataset).scale
+                    )
+                )
+                return max(wk_resolution) == 2 ** zoomStep
+
+            scale = next(scale for scale in layer.scales if fits_resolution(scale))
+            decoder = self.decoders[scale.encoding]
+            chunk_size = scale.chunk_sizes[0]  # TODO
+
+            def wk_to_neuroglancer(vec: Vec3D) -> Vec3D:
+                return cast(
+                    Vec3D,
+                    tuple(
+                        vec_dim * scale_dim // res_dim
+                        for vec_dim, scale_dim, res_dim in zip(
+                            vec, cast(Dataset, dataset).scale, scale.resolution
+                        )
+                    ),
+                )
+
+            offset = wk_to_neuroglancer(wk_offset)
+            shape = wk_to_neuroglancer(wk_shape)
+
+            chunk_coords = self.__chunks(offset, shape, scale, chunk_size)
+            chunks = await asyncio.gather(
+                *(
+                    self.__read_chunk(layer, scale.key, chunk_offset, chunk_size, decoder, span)
+                    for chunk_offset, chunk_sizes in chunk_coords
                 )
             )
-            return max(wk_resolution) == 2 ** zoomStep
-
-        scale = next(scale for scale in layer.scales if fits_resolution(scale))
-        decoder = self.decoders[scale.encoding]
-        chunk_size = scale.chunk_sizes[0]  # TODO
-
-        def wk_to_neuroglancer(vec: Vec3D) -> Vec3D:
-            return cast(
-                Vec3D,
-                tuple(
-                    vec_dim * scale_dim // res_dim
-                    for vec_dim, scale_dim, res_dim in zip(
-                        vec, cast(Dataset, dataset).scale, scale.resolution
-                    )
-                ),
-            )
-
-        offset = wk_to_neuroglancer(wk_offset)
-        shape = wk_to_neuroglancer(wk_shape)
-
-        chunk_coords = self.__chunks(offset, shape, scale, chunk_size)
-        chunks = await asyncio.gather(
-            *(
-                self.__read_chunk(layer, scale.key, chunk_offset, chunk_size, decoder)
-                for chunk_offset, chunk_sizes in chunk_coords
-            )
-        )
-
-        return self.__cutout(chunks, layer.data_type, offset, wk_shape)
+            with opentracing.tracer.start_span('cutout', child_of=span):
+                return self.__cutout(chunks, layer.data_type, offset, wk_shape)

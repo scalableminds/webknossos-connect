@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ef7cf8ab18998a32a7ced6e306be11ae2bc87b29837802be1673ef0585d1e1ad"
+            "sha256": "20fbf74d5a88a852f1e200d4fd8ab4bf1ca8dcdc397142d1363839ad3127efa6"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -126,6 +126,12 @@
             ],
             "version": "==2.8"
         },
+        "jaeger-client": {
+            "hashes": [
+                "sha256:12e44bafa4a9a3fad1187183be8013e1ed92c06d5641492fc63e9619d6ec39ce"
+            ],
+            "version": "==3.13.0"
+        },
         "jpeg4py": {
             "hashes": [
                 "sha256:cec3adcb110bd1391659670f2fe64d2a70a0218e84fdb7b08506107946d3bdb0"
@@ -166,6 +172,12 @@
             ],
             "version": "==4.5.2"
         },
+        "namedlist": {
+            "hashes": [
+                "sha256:190b39ceaf1d6b59999811259e61beb1b26aaa482fb8c95538294d551461c986"
+            ],
+            "version": "==1.7"
+        },
         "numpy": {
             "hashes": [
                 "sha256:00a458d6821b1e87be873f2126d5646b901047a7480e8ae9773ecf214f0e19f3",
@@ -193,6 +205,12 @@
                 "sha256:fea682f6ddc09517df0e6d5caad9613c6d91a42232aeb082df67e4d205de19cc"
             ],
             "version": "==1.16.0"
+        },
+        "opentracing": {
+            "hashes": [
+                "sha256:9b3f7c7a20c34170b9253c97121256264daf6b5f090035c732c6e2548cc5c0a7"
+            ],
+            "version": "==1.3.0"
         },
         "pillow": {
             "hashes": [
@@ -255,6 +273,36 @@
                 "sha256:281578ec93eac798368abba17d3e88b5046e0bfe8fb02d4c1adf89979f9d143b"
             ],
             "version": "==0.6.5"
+        },
+        "six": {
+            "hashes": [
+                "sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c",
+                "sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"
+            ],
+            "version": "==1.12.0"
+        },
+        "threadloop": {
+            "hashes": [
+                "sha256:5c90dbefab6ffbdba26afb4829d2a9df8275d13ac7dc58dccb0e279992679599",
+                "sha256:8b180aac31013de13c2ad5c834819771992d350267bddb854613ae77ef571944"
+            ],
+            "version": "==1.0.2"
+        },
+        "thrift": {
+            "hashes": [
+                "sha256:7d59ac4fdcb2c58037ebd4a9da5f9a49e3e034bf75b3f26d9fe48ba3d8806e6b"
+            ],
+            "version": "==0.11.0"
+        },
+        "tornado": {
+            "hashes": [
+                "sha256:5ef073ac6180038ccf99411fe05ae9aafb675952a2c8db60592d5daf8401f803",
+                "sha256:6d14e47eab0e15799cf3cdcc86b0b98279da68522caace2bd7ce644287685f0a",
+                "sha256:92b7ca81e18ba9ec3031a7ee73d4577ac21d41a0c9b775a9182f43301c3b5f8e",
+                "sha256:ab587996fe6fb9ce65abfda440f9b61e4f9f2cf921967723540679176915e4c3",
+                "sha256:b36298e9f63f18cad97378db2222c0e0ca6a55f6304e605515e05a25483ed51a"
+            ],
+            "version": "==4.5.3"
         },
         "ujson": {
             "hashes": [

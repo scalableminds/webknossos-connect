@@ -75,4 +75,8 @@ Use them via
 * `type-check`
 * `benchmarks/run_all.sh`
 
-Trace the server on http://localhost:8000/trace with `py-spy`.
+Profile the server on http://localhost:8000/trace with `py-spy`.
+Trace route requests with `jaeger`:
+* `docker-compose up -d jaeger`
+* open http://localhost:16686
+* to clear all data, just restart jaeger: `docker-compose restart jaeger`

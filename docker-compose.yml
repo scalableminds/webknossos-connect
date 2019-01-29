@@ -12,6 +12,10 @@ services:
     environment:
       - TZ=${TZ:-Europe/Berlin}
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.8
+    network_mode: host
+
   dev:
     build:
       context: .

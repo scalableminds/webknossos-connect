@@ -23,6 +23,7 @@ from .utils.types import JSON
 from .webknossos.access import AccessRequest, authorized
 from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataRequest as WKDataRequest
+from .tracing import AiohttpTracer, init_tracer, instrument_sanic
 
 
 class Server(Sanic):
@@ -33,6 +34,9 @@ class Server(Sanic):
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
         self.available_backends: List[Type[Backend]] = [Neuroglancer]
+        self.tracer = init_tracer("py-datastore")
+        instrument_sanic(self, self.tracer)
+
 
     async def add_dataset(
         self,
@@ -86,7 +90,10 @@ async def setup(app: Server, loop: Loop) -> None:
         config = app.config["backends"][backend_name]
         return (backend_name, backend_class(config, app.http_client))
 
-    app.http_client = await ClientSession(raise_for_status=True).__aenter__()
+    app.http_client = await ClientSession(
+        trace_configs=[AiohttpTracer(app.tracer)],
+        raise_for_status=True
+    ).__aenter__()
     app.repository = Repository()
     app.webknossos = WebKnossos(app.config, app.http_client)
     app.backends = dict(map(instanciate_backend, app.available_backends))
@@ -179,6 +186,7 @@ async def get_data_post(
                 r.zoomStep,
                 r.position,
                 (r.cubeSize, r.cubeSize, r.cubeSize),
+                request.get("span", None)
             )
             for r in bucket_requests
         )
@@ -230,8 +238,11 @@ async def trace_post(request: Request) -> response.HTTPResponse:
         "py-spy",
         "--flame",
         "data/flame.svg",
+        "--nonblocking",
         "--duration",
         "20",
+        "--rate",
+        "1000",
         "--pid",
         str(os.getpid()),
     )
