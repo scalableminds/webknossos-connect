@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <p><button type="button" onclick="trace()">Trace</button></p>
+    <img id="flame" src="/trace/flame.svg" style="display: block; margin-left: auto; margin-right: auto;"/>
+    <script>
+      function trace() {
+        var xhttp = new XMLHttpRequest();
+        var flameImg = document.getElementById("flame");
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            flameImg.src = "/trace/flame.svg?" + new Date().getTime();
+          }
+        };
+        xhttp.open("POST", "/trace", true);
+        xhttp.send();
+        flameImg.src = "https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif"
+      }
+    </script>
+  </body>
+</html>
