@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import mul
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from ..backend import DatasetInfo
 from ...utils.types import Vec3D
@@ -13,7 +13,7 @@ from ...webknossos.models import (
 
 
 class Scale:
-    supported_encodings = ["raw", "jpeg"]
+    supported_encodings = ["raw", "jpeg", "compressed_segmentation"]
 
     chunk_sizes: List[Vec3D]
     encoding: str
@@ -21,6 +21,7 @@ class Scale:
     resolution: Vec3D
     size: Vec3D
     voxel_offset: Vec3D
+    compressed_segmentation_block_size: Optional[Vec3D]
 
     def __init__(
         self,
@@ -30,6 +31,7 @@ class Scale:
         resolution: Vec3D,
         size: Vec3D,
         voxel_offset: Vec3D,
+        compressed_segmentation_block_size: Optional[Vec3D] = None,
         **kwargs: Any
     ) -> None:
         self.chunk_sizes = chunk_sizes
@@ -38,6 +40,7 @@ class Scale:
         self.resolution = resolution
         self.size = size
         self.voxel_offset = voxel_offset
+        self.compressed_segmentation_block_size = compressed_segmentation_block_size
 
         assert self.encoding in self.supported_encodings
 
@@ -46,8 +49,10 @@ class Scale:
 
 
 class Layer:
-    supported_data_types = ["uint8", "uint16", "uint32", "uint64"]
-    supported_types = ["image", "segmentation"]
+    supported_data_types = {
+        "image": ["uint8", "uint16", "uint32", "uint64"],
+        "segmentation": ["uint32", "uint64"],
+    }
 
     source: str
     data_type: str
@@ -70,9 +75,14 @@ class Layer:
         self.scales = scales
         self.type = type
 
-        assert self.data_type in self.supported_data_types
+        assert self.type in self.supported_data_types
+        assert self.data_type in self.supported_data_types[self.type]
         assert self.num_channels == 1
-        assert self.type in self.supported_types
+
+    def wk_data_type(self) -> str:
+        if self.type == "segmentation":
+            return "uint16"
+        return self.data_type
 
     def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WKDataLayer:
         def to_wk(vec: Vec3D) -> Vec3D:
@@ -91,7 +101,7 @@ class Layer:
             {"image": "color", "segmentation": "segmentation"}[self.type],
             min_scale.bounding_box(),
             normalized_resolutions,
-            self.data_type,
+            self.wk_data_type(),
         )
 
 
@@ -107,12 +117,14 @@ class Dataset(DatasetInfo):
         self.organization_name = organization_name
         self.dataset_name = dataset_name
         self.layers = layers
-        min_scales = set(
-            min(layer.scales, key=lambda scale: reduce(mul, scale.resolution))
+        min_resolution = set(
+            min(
+                layer.scales, key=lambda scale: reduce(mul, scale.resolution)
+            ).resolution
             for layer in self.layers.values()
         )
-        assert len(min_scales) == 1
-        self.scale = next(iter(min_scales)).resolution
+        assert len(min_resolution) == 1
+        self.scale = next(iter(min_resolution))
 
     def to_webknossos(self) -> WKDataSource:
         return WKDataSource(

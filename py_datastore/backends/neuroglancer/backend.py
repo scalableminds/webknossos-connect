@@ -28,6 +28,7 @@ class NeuroglancerBackend(Backend):
         self.decoders: Dict[str, DecoderFn] = {
             "raw": self.__decode_raw,
             "jpeg": self.__decode_jpeg,
+            "compressed_segmentation": self.__decode_compressed_segmentation,
         }
 
     async def __handle_layer(
@@ -74,6 +75,14 @@ class NeuroglancerBackend(Backend):
             .astype(data_type)
             .T.reshape(chunk_size, order="F")
         )
+
+    def __decode_compressed_segmentation(
+        self, buffer: bytes, data_type: str, chunk_size: Vec3D
+    ) -> np.ndarray:
+        array = np.zeros(chunk_size, dtype=data_type)
+        array.fill(2)
+        array[:, :, : chunk_size[2] // 2] = 3
+        return array
 
     def __chunks(
         self, offset: Vec3D, shape: Vec3D, scale: Scale, chunk_size: Vec3D
@@ -141,9 +150,11 @@ class NeuroglancerBackend(Backend):
             async with await self.http_client.get(data_url) as r:
                 response_buffer = await r.read()
         except ClientResponseError:
-            chunk_data = np.zeros(chunk_size, dtype=layer.data_type)
+            chunk_data = np.zeros(chunk_size, dtype=layer.wk_data_type())
         else:
-            chunk_data = decoder_fn(response_buffer, layer.data_type, chunk_size)
+            chunk_data = decoder_fn(
+                response_buffer, layer.data_type, chunk_size
+            ).astype(layer.wk_data_type())
         return (chunk_offset, chunk_size, chunk_data)
 
     def __cutout(
@@ -218,4 +229,4 @@ class NeuroglancerBackend(Backend):
             )
         )
 
-        return self.__cutout(chunks, layer.data_type, offset, wk_shape)
+        return self.__cutout(chunks, layer.wk_data_type(), offset, wk_shape)
