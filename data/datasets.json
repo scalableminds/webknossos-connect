@@ -1,6 +1,14 @@
 {
     "neuroglancer": {
         "Connectomics_Department": {
+            "drosophila": {
+                "layers": {
+                    "image": {
+                        "source": "precomputed://gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_clahe",
+                        "type": "image"
+                    }
+                }
+            },
             "test": {
                 "layers": {
                     "corrected_image": {
