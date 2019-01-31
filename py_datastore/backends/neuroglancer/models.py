@@ -40,7 +40,11 @@ class Scale:
         self.resolution = resolution
         self.size = size
         self.voxel_offset = voxel_offset
-        self.compressed_segmentation_block_size = compressed_segmentation_block_size
+        if encoding == "compressed_segmentation":
+            assert compressed_segmentation_block_size is not None
+            self.compressed_segmentation_block_size = tuple(compressed_segmentation_block_size)
+        else:
+            self.compressed_segmentation_block_size = None
 
         assert self.encoding in self.supported_encodings
 

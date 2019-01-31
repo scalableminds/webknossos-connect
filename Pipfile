@@ -11,6 +11,7 @@ py-spy = "*"
 [packages]
 aiohttp = "*"
 async-lru = "*"
+compressed-segmentation = ">=1.0.0"
 jpeg4py = "*"
 numpy = "*"
 Pillow = "*"
