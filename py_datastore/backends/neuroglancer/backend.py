@@ -78,9 +78,16 @@ class NeuroglancerBackend(Backend):
         )
 
     def __decode_compressed_segmentation(
-        self, buffer: bytes, data_type: str, chunk_size: Vec3D, block_size: Optional[Vec3D]
+        self,
+        buffer: bytes,
+        data_type: str,
+        chunk_size: Vec3D,
+        block_size: Optional[Vec3D],
     ) -> np.ndarray:
-        array = compressed_segmentation.decompress(buffer, chunk_size, data_type, block_size, order='F')
+        assert block_size is not None
+        array = compressed_segmentation.decompress(
+            buffer, chunk_size, data_type, block_size, order="F"
+        )
         return array
 
     def __chunks(
@@ -136,7 +143,7 @@ class NeuroglancerBackend(Backend):
         chunk_offset: Vec3D,
         chunk_size: Vec3D,
         decoder_fn: DecoderFn,
-        compressed_segmentation_block_size: Optional[Vec3D]
+        compressed_segmentation_block_size: Optional[Vec3D],
     ) -> Chunk:
         url_coords = "_".join(
             [
@@ -153,7 +160,10 @@ class NeuroglancerBackend(Backend):
             chunk_data = np.zeros(chunk_size, dtype=layer.wk_data_type())
         else:
             chunk_data = decoder_fn(
-                response_buffer, layer.data_type, chunk_size, compressed_segmentation_block_size
+                response_buffer,
+                layer.data_type,
+                chunk_size,
+                compressed_segmentation_block_size,
             ).astype(layer.wk_data_type())
         return (chunk_offset, chunk_size, chunk_data)
 
@@ -224,7 +234,14 @@ class NeuroglancerBackend(Backend):
         chunk_coords = self.__chunks(offset, shape, scale, chunk_size)
         chunks = await asyncio.gather(
             *(
-                self.__read_chunk(layer, scale.key, chunk_offset, chunk_size, decoder, scale.compressed_segmentation_block_size)
+                self.__read_chunk(
+                    layer,
+                    scale.key,
+                    chunk_offset,
+                    chunk_size,
+                    decoder,
+                    scale.compressed_segmentation_block_size,
+                )
                 for chunk_offset, chunk_sizes in chunk_coords
             )
         )

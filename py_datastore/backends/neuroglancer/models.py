@@ -42,7 +42,9 @@ class Scale:
         self.voxel_offset = voxel_offset
         if encoding == "compressed_segmentation":
             assert compressed_segmentation_block_size is not None
-            self.compressed_segmentation_block_size = tuple(compressed_segmentation_block_size)
+            self.compressed_segmentation_block_size = cast(
+                Vec3D, tuple(compressed_segmentation_block_size)
+            )
         else:
             self.compressed_segmentation_block_size = None
 
