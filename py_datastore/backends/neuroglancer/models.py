@@ -81,7 +81,7 @@ class Layer:
 
     def wk_data_type(self) -> str:
         if self.type == "segmentation":
-            return "uint16"
+            return "uint32"
         return self.data_type
 
     def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WKDataLayer:

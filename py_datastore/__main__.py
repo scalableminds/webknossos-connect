@@ -191,7 +191,7 @@ async def get_data_post(
         "Access-Control-Expose-Headers": "MISSING-BUCKETS",
         "MISSING-BUCKETS": json.dumps(missing_buckets),
     }
-    return response.raw(data, headers=headers)
+    return response.raw(data.tobytes(), headers=headers)
 
 
 @app.route(
