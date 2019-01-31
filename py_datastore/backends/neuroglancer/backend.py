@@ -85,10 +85,9 @@ class NeuroglancerBackend(Backend):
         block_size: Optional[Vec3D],
     ) -> np.ndarray:
         assert block_size is not None
-        array = compressed_segmentation.decompress(
+        return compressed_segmentation.decompress(
             buffer, chunk_size, data_type, block_size, order="F"
         )
-        return array
 
     def __chunks(
         self, offset: Vec3D, shape: Vec3D, scale: Scale, chunk_size: Vec3D
