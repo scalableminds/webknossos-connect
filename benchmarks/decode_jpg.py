@@ -20,4 +20,4 @@ asyncio.run(setup())
 
 
 def timeit():
-    neuroglancer.decoders["jpeg"](data, "uint8", (64, 64, 64))
+    neuroglancer.decoders["jpeg"](data, "uint8", (64, 64, 64), None)

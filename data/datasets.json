@@ -3,37 +3,15 @@
         "Connectomics_Department": {
             "test": {
                 "layers": {
-                    "original-image": {
-                        "source": "precomputed://gs://neuroglancer-public-data/kasthuri2011/image",
-                        "type": "image",
-                        "visible": false
-                    }
-                },
-                "navigation": {
-                    "pose": {
-                        "position": {
-                            "voxelSize": [
-                                6,
-                                6,
-                                30
-                            ],
-                            "voxelCoordinates": [
-                                5500.08154296875,
-                                8523.40234375,
-                                1221.6480712890625
-                            ]
-                        }
+                    "corrected_image": {
+                        "source": "precomputed://gs://neuroglancer-public-data/kasthuri2011/image_color_corrected",
+                        "type": "image"
                     },
-                    "zoomFactor": 22.573112129999547
-                },
-                "perspectiveOrientation": [
-                    0.008698428981006001,
-                    -0.8821718692779541,
-                    -0.42048105597496005,
-                    -0.21187938749790103
-                ],
-                "perspectiveZoom": 133.82852215692367,
-                "layout": "4panel"
+                    "ground_truth": {
+                        "source": "precomputed://gs://neuroglancer-public-data/kasthuri2011/ground_truth",
+                        "type": "segmentation"
+                      }
+                }
             }
         }
     }

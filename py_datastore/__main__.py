@@ -185,7 +185,9 @@ async def get_data_post(
     )
     missing_buckets = [index for index, data in enumerate(buckets) if data is None]
     existing_buckets = [data.flatten(order="F") for data in buckets if data is not None]
-    data = np.concatenate(existing_buckets) if len(existing_buckets) > 0 else b""
+    data = (
+        np.concatenate(existing_buckets).tobytes() if len(existing_buckets) > 0 else b""
+    )
 
     headers = {
         "Access-Control-Expose-Headers": "MISSING-BUCKETS",
