@@ -2,11 +2,11 @@ from operator import add, sub, mul, truediv, floordiv
 from typing import Any, Callable, NamedTuple
 
 
-BaseVec3D = NamedTuple('Point', [('x', int), ('y', int), ('z', int)])
+BaseVec3D = NamedTuple("Point", [("x", int), ("y", int), ("z", int)])
 
 
 class Vec3D(BaseVec3D):
-    def _element_wise(self, other: Any, fn: Callable[[int, Any], int]):
+    def _element_wise(self, other: Any, fn: Callable[[int, Any], int]) -> "Vec3D":
         if isinstance(other, tuple):
             return Vec3D(*(fn(a, b) for a, b in zip(self, other)))
         return Vec3D(*(fn(a, other) for a in self))

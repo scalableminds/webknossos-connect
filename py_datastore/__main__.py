@@ -215,14 +215,14 @@ async def get_thumbnail(
     scale = 0
     center = layer.boundingBox.center()
     size = Vec3D(width, height, 1)
-    data = (await backend.read_data(
-        dataset, layer_name, scale, center - size//2, size
-    ))[:,:,0]
+    data = (
+        await backend.read_data(dataset, layer_name, scale, center - size // 2, size)
+    )[:, :, 0]
     if layer.category == "segmentation":
         data = data.astype("uint8")
         thumbnail = Image.fromarray(data, mode="P")
-        color_list = list(color_bytes.values())[:2**8]
-        thumbnail.putpalette(b''.join(color_list))
+        color_list = list(color_bytes.values())[: 2 ** 8]
+        thumbnail.putpalette(b"".join(color_list))
         with BytesIO() as output:
             thumbnail.save(output, "PNG", transparency=0)
             return response.json(
