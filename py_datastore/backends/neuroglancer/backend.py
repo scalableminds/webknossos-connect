@@ -131,7 +131,7 @@ class NeuroglancerBackend(Backend):
         for x in range(min_x, max_x, chunk_size[0]):
             for y in range(min_y, max_y, chunk_size[1]):
                 for z in range(min_z, max_z, chunk_size[2]):
-                    chunk_offset = (x, y, z)
+                    chunk_offset = Vec3D(x, y, z)
                     yield (chunk_offset, chunk_size)
 
     @alru_cache(maxsize=2 ** 12)

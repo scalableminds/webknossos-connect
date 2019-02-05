@@ -46,7 +46,7 @@ class BoundingBox:
         self.height = height
         self.depth = depth
 
-        self.shape = self.size = (self.width, self.height, self.depth)
+        self.shape = self.size = Vec3D(self.width, self.height, self.depth)
         self.bottomRight = cast(Vec3D, tuple(map(sum, zip(self.topLeft, self.shape))))
 
     def union(self, other: BoundingBox) -> BoundingBox:
@@ -58,6 +58,9 @@ class BoundingBox:
         bottomRight = cast(Vec3D, bottomRight)
         shape = tuple([high - low for low, high in zip(topLeft, bottomRight)])
         return BoundingBox(topLeft, *shape)
+
+    def center(self) -> Vec3D:
+        return self.topLeft + self.size // 2
 
 
 class DataSourceId:
