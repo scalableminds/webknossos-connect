@@ -3,7 +3,7 @@ import json
 
 from typing import Any, Dict, List, Optional
 
-from .types import JSON, Vec3D
+from .types import JSON
 
 
 def from_json(data: JSON, cls: Optional[type]) -> Any:
