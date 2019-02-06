@@ -108,6 +108,7 @@ class NeuroglancerBackend(Backend):
             for y in range(min_aligned.y, max_aligned.y, chunk_size.y):
                 for z in range(min_aligned.z, max_aligned.z, chunk_size.z):
                     chunk_offset = Vec3D(x, y, z)
+                    # The size is at most chunk_size but capped to fit the dataset:
                     capped_chunk_size = chunk_size.pairmin(scale.size - chunk_offset)
                     yield (chunk_offset, capped_chunk_size)
 
