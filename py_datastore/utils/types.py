@@ -2,10 +2,10 @@ from operator import add, sub, mul, truediv, floordiv
 from typing import Any, Callable, NamedTuple
 
 
-BaseVec3D = NamedTuple("Point", [("x", int), ("y", int), ("z", int)])
+_BaseVec3D = NamedTuple("_BaseVec3D", [("x", int), ("y", int), ("z", int)])
 
 
-class Vec3D(BaseVec3D):
+class Vec3D(_BaseVec3D):
     def _element_wise(self, other: Any, fn: Callable[[int, Any], int]) -> "Vec3D":
         if isinstance(other, tuple):
             return Vec3D(*(fn(a, b) for a, b in zip(self, other)))
@@ -22,6 +22,15 @@ class Vec3D(BaseVec3D):
 
     def __floordiv__(self, other: Any) -> "Vec3D":
         return self._element_wise(other, floordiv)
+
+    def ceildiv(self, other: Any) -> "Vec3D":
+        return (self + other - 1) // other
+
+    def pairmax(self, other: Any) -> "Vec3D":
+        return self._element_wise(other, max)
+
+    def pairmin(self, other: Any) -> "Vec3D":
+        return self._element_wise(other, min)
 
 
 # TODO refine this when recursive types are possible:

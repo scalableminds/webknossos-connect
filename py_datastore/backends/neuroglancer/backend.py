@@ -93,46 +93,23 @@ class NeuroglancerBackend(Backend):
         self, offset: Vec3D, shape: Vec3D, scale: Scale, chunk_size: Vec3D
     ) -> Iterable[Tuple[Vec3D, Vec3D]]:
         # clip data outside available data
-        min_x = max(offset[0], scale.voxel_offset[0])
-        min_y = max(offset[1], scale.voxel_offset[1])
-        min_z = max(offset[2], scale.voxel_offset[2])
-
-        max_x = min(offset[0] + shape[0], scale.voxel_offset[0] + scale.size[0])
-        max_y = min(offset[1] + shape[1], scale.voxel_offset[1] + scale.size[1])
-        max_z = min(offset[2] + shape[2], scale.voxel_offset[2] + scale.size[2])
+        min_inside = offset.pairmax(scale.voxel_offset)
+        max_inside = (offset + shape).pairmin(scale.voxel_offset + scale.size)
 
         # align request to chunks
-        min_x = (
-            math.floor((min_x - scale.voxel_offset[0]) / chunk_size[0]) * chunk_size[0]
-            + scale.voxel_offset[0]
-        )
-        min_y = (
-            math.floor((min_y - scale.voxel_offset[1]) / chunk_size[1]) * chunk_size[1]
-            + scale.voxel_offset[1]
-        )
-        min_z = (
-            math.floor((min_z - scale.voxel_offset[2]) / chunk_size[2]) * chunk_size[2]
-            + scale.voxel_offset[2]
-        )
+        min_aligned = (
+            min_inside - scale.voxel_offset
+        ) // chunk_size * chunk_size + scale.voxel_offset
+        max_aligned = (max_inside - scale.voxel_offset).ceildiv(
+            chunk_size
+        ) * chunk_size + scale.voxel_offset
 
-        max_x = (
-            math.ceil((max_x - scale.voxel_offset[0]) / chunk_size[0]) * chunk_size[0]
-            + scale.voxel_offset[0]
-        )
-        max_y = (
-            math.ceil((max_y - scale.voxel_offset[1]) / chunk_size[1]) * chunk_size[1]
-            + scale.voxel_offset[1]
-        )
-        max_z = (
-            math.ceil((max_z - scale.voxel_offset[2]) / chunk_size[2]) * chunk_size[2]
-            + scale.voxel_offset[2]
-        )
-
-        for x in range(min_x, max_x, chunk_size[0]):
-            for y in range(min_y, max_y, chunk_size[1]):
-                for z in range(min_z, max_z, chunk_size[2]):
+        for x in range(min_aligned.x, max_aligned.x, chunk_size.x):
+            for y in range(min_aligned.y, max_aligned.y, chunk_size.y):
+                for z in range(min_aligned.z, max_aligned.z, chunk_size.z):
                     chunk_offset = Vec3D(x, y, z)
-                    yield (chunk_offset, chunk_size)
+                    capped_chunk_size = chunk_size.pairmin(scale.size - chunk_offset)
+                    yield (chunk_offset, capped_chunk_size)
 
     @alru_cache(maxsize=2 ** 12)
     async def __read_chunk(
@@ -172,22 +149,20 @@ class NeuroglancerBackend(Backend):
         result = np.zeros(shape, dtype=data_type, order="F")
 
         for chunk_offset, chunk_size, chunk_data in chunks:
-            min_x = max(offset[0], chunk_offset[0])
-            min_y = max(offset[1], chunk_offset[1])
-            min_z = max(offset[2], chunk_offset[2])
+            inner_min = offset.pairmax(chunk_offset)
+            inner_max = (offset + shape).pairmin(chunk_offset + chunk_size)
 
-            max_x = min(offset[0] + shape[0], chunk_offset[0] + chunk_size[0])
-            max_y = min(offset[1] + shape[1], chunk_offset[1] + chunk_size[1])
-            max_z = min(offset[2] + shape[2], chunk_offset[2] + chunk_size[2])
+            rel_min = inner_min - offset
+            rel_max = inner_max - offset
+            chunk_min = inner_min - chunk_offset
+            chunk_max = inner_max - chunk_offset
 
             result[
-                min_x - offset[0] : max_x - offset[0],
-                min_y - offset[1] : max_y - offset[1],
-                min_z - offset[2] : max_z - offset[2],
+                rel_min.x : rel_max.x, rel_min.y : rel_max.y, rel_min.z : rel_max.z
             ] = chunk_data[
-                min_x - chunk_offset[0] : max_x - chunk_offset[0],
-                min_y - chunk_offset[1] : max_y - chunk_offset[1],
-                min_z - chunk_offset[2] : max_z - chunk_offset[2],
+                chunk_min.x : chunk_max.x,
+                chunk_min.y : chunk_max.y,
+                chunk_min.z : chunk_max.z,
             ]
 
         return result
@@ -198,37 +173,20 @@ class NeuroglancerBackend(Backend):
         layer_name: str,
         zoomStep: int,
         wk_offset: Vec3D,
-        wk_shape: Vec3D,
+        shape: Vec3D,
     ) -> np.ndarray:
-        dataset = cast(Dataset, dataset)
-        layer = dataset.layers[layer_name]
+        ng_dataset = cast(Dataset, dataset)
+        layer = ng_dataset.layers[layer_name]
         # TODO add lookup table for scale for efficiency
         def fits_resolution(scale: Scale) -> bool:
-            wk_resolution = tuple(
-                res_dim // scale_dim
-                for res_dim, scale_dim in zip(
-                    scale.resolution, cast(Dataset, dataset).scale
-                )
-            )
+            wk_resolution = scale.resolution // ng_dataset.scale
             return max(wk_resolution) == 2 ** zoomStep
 
         scale = next(scale for scale in layer.scales if fits_resolution(scale))
         decoder = self.decoders[scale.encoding]
         chunk_size = scale.chunk_sizes[0]  # TODO
 
-        def wk_to_neuroglancer(vec: Vec3D) -> Vec3D:
-            return cast(
-                Vec3D,
-                tuple(
-                    vec_dim * scale_dim // res_dim
-                    for vec_dim, scale_dim, res_dim in zip(
-                        vec, cast(Dataset, dataset).scale, scale.resolution
-                    )
-                ),
-            )
-
-        offset = wk_to_neuroglancer(wk_offset)
-        shape = wk_to_neuroglancer(wk_shape)
+        offset = wk_offset * ng_dataset.scale // scale.resolution
 
         chunk_coords = self.__chunks(offset, shape, scale, chunk_size)
         chunks = await asyncio.gather(
@@ -241,8 +199,8 @@ class NeuroglancerBackend(Backend):
                     decoder,
                     scale.compressed_segmentation_block_size,
                 )
-                for chunk_offset, chunk_sizes in chunk_coords
+                for chunk_offset, chunk_size in chunk_coords
             )
         )
 
-        return self.__cutout(chunks, layer.wk_data_type(), offset, wk_shape)
+        return self.__cutout(chunks, layer.wk_data_type(), offset, shape)

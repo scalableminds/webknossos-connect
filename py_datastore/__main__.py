@@ -178,7 +178,7 @@ async def get_data_post(
                 dataset,
                 layer_name,
                 r.zoomStep,
-                r.position,
+                Vec3D(*r.position),
                 Vec3D(r.cubeSize, r.cubeSize, r.cubeSize),
             )
             for r in bucket_requests
@@ -212,7 +212,7 @@ async def get_thumbnail(
     )
     backend = app.backends[backend_name]
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
-    scale = 0
+    scale = 3
     center = layer.boundingBox.center()
     size = Vec3D(width, height, 1)
     data = (
