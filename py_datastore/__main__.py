@@ -18,8 +18,9 @@ from uvloop import Loop
 from .backends.backend import Backend
 from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
 from .repository import Repository
+from .utils.colors import color_bytes
 from .utils.json import from_json, to_json
-from .utils.types import JSON
+from .utils.types import JSON, Vec3D
 from .webknossos.access import AccessRequest, authorized
 from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataRequest as WKDataRequest
@@ -177,8 +178,8 @@ async def get_data_post(
                 dataset,
                 layer_name,
                 r.zoomStep,
-                r.position,
-                (r.cubeSize, r.cubeSize, r.cubeSize),
+                Vec3D(*r.position),
+                Vec3D(r.cubeSize, r.cubeSize, r.cubeSize),
             )
             for r in bucket_requests
         )
@@ -210,15 +211,30 @@ async def get_thumbnail(
         organization_name, dataset_name
     )
     backend = app.backends[backend_name]
-    data = await backend.read_data(
-        dataset, layer_name, 0, (6400, 6400, 640), (width, height, 1)
-    )
-    thumbnail = Image.fromarray(data[:, :, 0])
-    with BytesIO() as output:
-        thumbnail.save(output, "JPEG")
-        return response.json(
-            {"mimeType": "image/jpeg", "value": base64.b64encode(output.getvalue())}
-        )
+    layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
+    scale = 3
+    center = layer.boundingBox.center()
+    size = Vec3D(width, height, 1)
+    data = (
+        await backend.read_data(dataset, layer_name, scale, center - size // 2, size)
+    )[:, :, 0]
+    if layer.category == "segmentation":
+        data = data.astype("uint8")
+        thumbnail = Image.fromarray(data, mode="P")
+        color_list = list(color_bytes.values())[: 2 ** 8]
+        thumbnail.putpalette(b"".join(color_list))
+        with BytesIO() as output:
+            thumbnail.save(output, "PNG", transparency=0)
+            return response.json(
+                {"mimeType": "image/png", "value": base64.b64encode(output.getvalue())}
+            )
+    else:
+        thumbnail = Image.fromarray(data)
+        with BytesIO() as output:
+            thumbnail.save(output, "JPEG")
+            return response.json(
+                {"mimeType": "image/jpeg", "value": base64.b64encode(output.getvalue())}
+            )
 
 
 app.static("/trace", "data/trace.html", name="trace_get")

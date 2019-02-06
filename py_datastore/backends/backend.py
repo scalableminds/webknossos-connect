@@ -36,4 +36,14 @@ class Backend:
         offset: Vec3D,
         shape: Vec3D,
     ) -> np.ndarray:
+        """
+        Read voxels from the backend.
+
+        :param dataset:
+        :param layer_name:
+        :param zoomStep: 2^zoomStep is the smallest dimension of the scale
+        :param offset: in wk voxels
+        :param shape: in scale voxels
+        :returns: numpy array of shape shape
+        """
         pass
