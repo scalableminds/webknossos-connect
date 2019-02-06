@@ -176,18 +176,18 @@ class NeuroglancerBackend(Backend):
         wk_offset: Vec3D,
         shape: Vec3D,
     ) -> np.ndarray:
-        ng_dataset = cast(Dataset, dataset)
-        layer = ng_dataset.layers[layer_name]
+        neuroglancer_dataset = cast(Dataset, dataset)
+        layer = neuroglancer_dataset.layers[layer_name]
         # TODO add lookup table for scale for efficiency
         def fits_resolution(scale: Scale) -> bool:
-            wk_resolution = scale.resolution // ng_dataset.scale
+            wk_resolution = scale.resolution // neuroglancer_dataset.scale
             return max(wk_resolution) == 2 ** zoomStep
 
         scale = next(scale for scale in layer.scales if fits_resolution(scale))
         decoder = self.decoders[scale.encoding]
         chunk_size = scale.chunk_sizes[0]  # TODO
 
-        offset = wk_offset * ng_dataset.scale // scale.resolution
+        offset = wk_offset * neuroglancer_dataset.scale // scale.resolution
 
         chunk_coords = self.__chunks(offset, shape, scale, chunk_size)
         chunks = await asyncio.gather(
