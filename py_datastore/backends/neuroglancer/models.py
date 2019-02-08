@@ -1,5 +1,3 @@
-from functools import reduce
-from operator import mul
 from typing import Any, Dict, List, Optional
 
 from ...utils.types import Box3D, Vec3D
@@ -88,15 +86,17 @@ class Layer:
             return "uint32"
         return self.data_type
 
+    def min_scale(self) -> Scale:
+        return min(self.scales, key=lambda scale: sum(scale.resolution))
+
     def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WKDataLayer:
-        min_scale = min(self.scales, key=lambda scale: reduce(mul, scale.resolution))
         normalized_resolutions = [
             scale.resolution // global_scale for scale in self.scales
         ]
         return WKDataLayer(
             layer_name,
             {"image": "color", "segmentation": "segmentation"}[self.type],
-            min_scale.bounding_box(),
+            self.min_scale().bounding_box(),
             normalized_resolutions,
             self.wk_data_type(),
         )
@@ -115,10 +115,7 @@ class Dataset(DatasetInfo):
         self.dataset_name = dataset_name
         self.layers = layers
         min_resolution = set(
-            min(
-                layer.scales, key=lambda scale: reduce(mul, scale.resolution)
-            ).resolution
-            for layer in self.layers.values()
+            layer.min_scale().resolution for layer in self.layers.values()
         )
         assert len(min_resolution) == 1
         self.scale = next(iter(min_resolution))
