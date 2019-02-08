@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox
@@ -8,40 +8,19 @@ from ...webknossos.models import DataSourceId as WKDataSourceId
 from ..backend import DatasetInfo
 
 
-class Scale:
-    supported_encodings = ["raw", "jpeg", "compressed_segmentation"]
-
+class Scale(NamedTuple):
     chunk_sizes: List[Vec3D]
     encoding: str
     key: str
     resolution: Vec3D
     size: Vec3D
     voxel_offset: Vec3D
-    compressed_segmentation_block_size: Optional[Vec3D]
+    compressed_segmentation_block_size: Optional[Vec3D] = None
 
-    def __init__(
-        self,
-        chunk_sizes: List[Vec3D],
-        encoding: str,
-        key: str,
-        resolution: Vec3D,
-        size: Vec3D,
-        voxel_offset: Vec3D,
-        compressed_segmentation_block_size: Optional[Vec3D] = None,
-        **kwargs: Any
-    ) -> None:
-        self.chunk_sizes = chunk_sizes
-        self.encoding = encoding
-        self.key = key
-        self.resolution = resolution
-        self.size = size
-        self.voxel_offset = voxel_offset
-        self.compressed_segmentation_block_size = compressed_segmentation_block_size
-
-        assert len(chunk_sizes) > 0
-        assert self.encoding in self.supported_encodings
-        if encoding == "compressed_segmentation":
-            assert compressed_segmentation_block_size is not None
+    # assert len(chunk_sizes) > 0
+    # assert self.encoding in ["raw", "jpeg", "compressed_segmentation"]
+    # if encoding == "compressed_segmentation":
+    #     assert compressed_segmentation_block_size is not None
 
     def box(self) -> Box3D:
         return Box3D.from_size(self.voxel_offset, self.size)

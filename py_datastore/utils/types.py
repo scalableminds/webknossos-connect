@@ -5,14 +5,16 @@ from typing import Any, Callable, Iterator, NamedTuple, Union
 
 import numpy as np
 
-_BaseVec3D = NamedTuple("_BaseVec3D", [("x", int), ("y", int), ("z", int)])
 
+class Vec3D(NamedTuple):
+    x: int
+    y: int
+    z: int
 
-class Vec3D(_BaseVec3D):
     def _element_wise(self, other: Any, fn: Callable[[int, Any], int]) -> Vec3D:
         if isinstance(other, tuple):
             return Vec3D(*(fn(a, b) for a, b in zip(self, other)))
-        return Vec3D(*(fn(a, other) for a in self))
+        return Vec3D(*(fn(a, other) for a in self))  # pylint: disable=not-an-iterable
 
     def __add__(self, other: Any) -> Vec3D:
         return self._element_wise(other, add)
@@ -36,13 +38,13 @@ class Vec3D(_BaseVec3D):
         return self._element_wise(other, min)
 
 
-_BaseBox3D = NamedTuple("_BaseBox3D", [("left", Vec3D), ("right", Vec3D)])
-
-
-class Box3D(_BaseBox3D):
+class Box3D(NamedTuple):
     """
     3-dimensional Box [left, right)
     """
+
+    left: Vec3D
+    right: Vec3D
 
     @classmethod
     def from_size(cls, left: Vec3D, size: Vec3D) -> Box3D:
@@ -57,7 +59,7 @@ class Box3D(_BaseBox3D):
     def _element_wise(
         self, other: Union[Vec3D, int], fn: Callable[[Vec3D, Union[Vec3D, int]], Vec3D]
     ) -> Box3D:
-        return Box3D(*(fn(a, other) for a in self))
+        return Box3D(*(fn(a, other) for a in self))  # pylint: disable=not-an-iterable
 
     def __add__(self, other: Any) -> Box3D:
         return self._element_wise(other, add)
