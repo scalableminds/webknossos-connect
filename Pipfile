@@ -7,6 +7,8 @@ pylint = "*"
 black = "*"
 mypy = "*"
 py-spy = "*"
+flake8 = "*"
+pep8-naming = "*"
 
 [packages]
 aiohttp = "*"
@@ -25,14 +27,13 @@ python_version = "3.7.2"
 main = "python -m py_datastore"
 pretty = "black py_datastore benchmarks stubs"
 pretty-check = "black --check py_datastore benchmarks stubs"
-lint = "pylint --errors-only --jobs 0 py_datastore benchmarks stubs"
-lint-details = "pylint --jobs 0 py_datastore benchmarks stubs"
+lint = "bash -c 'pylint --errors-only --jobs 0 py_datastore benchmarks stubs && flake8 py_datastore benchmarks stubs'"
 type-check = '''
     bash -c " \
         MYPYPATH=\"$(pipenv --venv)/lib/python3.7/site-packages/:stubs\" \
         mypy \
             --disallow-untyped-defs \
-            py_datastore"
+            py_datastore benchmarks stubs"
 '''
 
 [pipenv]

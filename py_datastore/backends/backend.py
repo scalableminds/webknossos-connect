@@ -1,7 +1,7 @@
 import numpy as np
 
 from aiohttp import ClientSession
-from typing import Any, Dict, Tuple
+from typing import Dict
 
 from ..utils.types import JSON, Vec3D
 from ..webknossos.models import DataSource as WKDataSource
@@ -32,7 +32,7 @@ class Backend:
         self,
         dataset: DatasetInfo,
         layer_name: str,
-        zoomStep: int,
+        zoom_step: int,
         offset: Vec3D,
         shape: Vec3D,
     ) -> np.ndarray:

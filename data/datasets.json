@@ -4,7 +4,7 @@
             "drosophila": {
                 "layers": {
                     "image": {
-                        "source": "precomputed://gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_clahe",
+                        "source": "gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_clahe",
                         "type": "image"
                     }
                 }
@@ -12,13 +12,13 @@
             "test": {
                 "layers": {
                     "corrected_image": {
-                        "source": "precomputed://gs://neuroglancer-public-data/kasthuri2011/image_color_corrected",
+                        "source": "gs://neuroglancer-public-data/kasthuri2011/image_color_corrected",
                         "type": "image"
                     },
                     "ground_truth": {
-                        "source": "precomputed://gs://neuroglancer-public-data/kasthuri2011/ground_truth",
+                        "source": "gs://neuroglancer-public-data/kasthuri2011/ground_truth",
                         "type": "segmentation"
-                      }
+                    }
                 }
             }
         }

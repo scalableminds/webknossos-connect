@@ -1,6 +1,5 @@
-from aiohttp import ClientSession, ClientResponseError
+from aiohttp import ClientSession
 from sanic.config import Config
-from typing import Any
 
 from .access import AccessRequest, AccessAnswer
 from .models import DataSource, DataStoreStatus

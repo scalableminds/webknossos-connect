@@ -1,13 +1,10 @@
 from asyncio import gather
 from functools import wraps
 from sanic.request import Request
-from sanic.response import HTTPResponse
-from sanic.response import text
-from sanic.router import Router
+from sanic.response import HTTPResponse, text
 from typing import Any, Awaitable, Callable, Optional, TypeVar, cast
 
 from .models import DataSourceId
-from ..backends.backend import DatasetInfo
 
 
 class AccessRequest:
@@ -15,7 +12,9 @@ class AccessRequest:
     resourceType: str
     mode: str
 
-    def __init__(self, resourceId: DataSourceId, resourceType: str, mode: str) -> None:
+    def __init__(
+        self, resourceId: DataSourceId, resourceType: str, mode: str  # noqa: N803
+    ) -> None:
         self.resourceId = resourceId
         self.resourceType = resourceType
         self.mode = mode
@@ -27,7 +26,7 @@ class AccessRequest:
         return hash(self) == hash(other)
 
     @classmethod
-    def readDataset(
+    def read_dataset(
         cls, organization_name: str, dataset_name: str, **_: Any
     ) -> "AccessRequest":
         return cls(
@@ -69,8 +68,7 @@ def authorized(fn_access_request: Callable[..., AccessRequest]) -> Callable[[T],
             )
 
             if any(i.granted for i in access_answers):
-                response = await f(request, *args, **kwargs)
-                return response
+                return await f(request, *args, **kwargs)
             else:
                 messages = [i.msg for i in access_answers if i.msg is not None]
                 return text(

@@ -3,7 +3,6 @@ import base64
 import json
 import numpy as np
 import os
-import subprocess
 
 from aiohttp import ClientSession
 from copy import deepcopy
@@ -19,7 +18,7 @@ from .backends.backend import Backend
 from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
 from .repository import Repository
 from .utils.colors import color_bytes
-from .utils.json import from_json, to_json
+from .utils.json import from_json
 from .utils.types import JSON, Vec3D
 from .webknossos.access import AccessRequest, authorized
 from .webknossos.client import WebKnossosClient as WebKnossos
@@ -160,7 +159,7 @@ async def add_dataset(
     "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/data",
     methods=["POST", "OPTIONS"],
 )
-@authorized(AccessRequest.readDataset)
+@authorized(AccessRequest.read_dataset)
 async def get_data_post(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:
@@ -200,7 +199,7 @@ async def get_data_post(
 @app.route(
     "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/thumbnail.json"
 )
-@authorized(AccessRequest.readDataset)
+@authorized(AccessRequest.read_dataset)
 async def get_thumbnail(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:

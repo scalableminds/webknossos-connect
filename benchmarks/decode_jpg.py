@@ -1,10 +1,15 @@
 import asyncio
+import numpy as np
 
 from aiohttp import ClientSession
 from py_datastore.backends.neuroglancer.backend import NeuroglancerBackend
+from py_datastore.utils.types import Vec3D
+
+neuroglancer: NeuroglancerBackend
+data: np.ndarray
 
 
-async def setup():
+async def setup() -> None:
     global neuroglancer
     global data
     http_client = await ClientSession().__aenter__()
@@ -19,5 +24,5 @@ async def setup():
 asyncio.run(setup())
 
 
-def timeit():
-    neuroglancer.decoders["jpeg"](data, "uint8", (64, 64, 64), None)
+def timeit() -> None:
+    neuroglancer.decoders["jpeg"](data, "uint8", Vec3D(64, 64, 64), None)
