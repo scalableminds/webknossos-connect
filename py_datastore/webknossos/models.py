@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import cast, Any, Callable, List, Tuple
+from typing import Any, Callable, List, Tuple, cast
 
 from ..utils.types import Vec3D
 

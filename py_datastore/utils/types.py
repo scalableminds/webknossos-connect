@@ -1,8 +1,7 @@
-import numpy as np
-
-from operator import add, sub, mul, floordiv
+from operator import add, floordiv, mul, sub
 from typing import Any, Callable, NamedTuple, Union
 
+import numpy as np
 
 _BaseVec3D = NamedTuple("_BaseVec3D", [("x", int), ("y", int), ("z", int)])
 

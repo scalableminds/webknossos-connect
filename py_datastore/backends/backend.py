@@ -1,7 +1,7 @@
-import numpy as np
-
-from aiohttp import ClientSession
 from typing import Dict
+
+import numpy as np
+from aiohttp import ClientSession
 
 from ..utils.types import JSON, Vec3D
 from ..webknossos.models import DataSource as WKDataSource

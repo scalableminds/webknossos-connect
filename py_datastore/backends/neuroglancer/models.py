@@ -2,14 +2,12 @@ from functools import reduce
 from operator import mul
 from typing import Any, Dict, List, Optional
 
-from ..backend import DatasetInfo
 from ...utils.types import Vec3D
-from ...webknossos.models import (
-    BoundingBox,
-    DataSource as WKDataSource,
-    DataSourceId as WKDataSourceId,
-    DataLayer as WKDataLayer,
-)
+from ...webknossos.models import BoundingBox
+from ...webknossos.models import DataLayer as WKDataLayer
+from ...webknossos.models import DataSource as WKDataSource
+from ...webknossos.models import DataSourceId as WKDataSourceId
+from ..backend import DatasetInfo
 
 
 class Scale:

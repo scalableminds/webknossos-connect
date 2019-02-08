@@ -1,8 +1,9 @@
 from asyncio import gather
 from functools import wraps
+from typing import Any, Awaitable, Callable, Optional, TypeVar, cast
+
 from sanic.request import Request
 from sanic.response import HTTPResponse, text
-from typing import Any, Awaitable, Callable, Optional, TypeVar, cast
 
 from .models import DataSourceId
 

@@ -9,6 +9,7 @@ mypy = "*"
 py-spy = "*"
 flake8 = "*"
 pep8-naming = "*"
+isort = "*"
 
 [packages]
 aiohttp = "*"
@@ -25,8 +26,8 @@ python_version = "3.7.2"
 
 [scripts]
 main = "python -m py_datastore"
-pretty = "black py_datastore benchmarks stubs"
-pretty-check = "black --check py_datastore benchmarks stubs"
+pretty = "bash -c 'black py_datastore benchmarks stubs && isort --recursive py_datastore benchmarks stubs'"
+pretty-check = "bash -c 'black --check py_datastore benchmarks stubs && isort --check-only --recursive py_datastore benchmarks stubs'"
 lint = "bash -c 'pylint --errors-only --jobs 0 py_datastore benchmarks stubs && flake8 py_datastore benchmarks stubs'"
 type-check = '''
     bash -c " \

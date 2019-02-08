@@ -1,17 +1,17 @@
 import asyncio
 import base64
 import json
-import numpy as np
 import os
-
-from aiohttp import ClientSession
 from copy import deepcopy
 from io import BytesIO
+from typing import Dict, List, Tuple, Type
+
+import numpy as np
+from aiohttp import ClientSession
 from PIL import Image
 from sanic import Sanic, response
 from sanic.request import Request
 from sanic_cors import CORS
-from typing import Dict, List, Tuple, Type
 from uvloop import Loop
 
 from .backends.backend import Backend

@@ -1,9 +1,8 @@
 import time
-
-from async_lru import alru_cache
 from functools import wraps
 from typing import Any, Awaitable, Callable, TypeVar, cast
 
+from async_lru import alru_cache
 
 T = TypeVar("T", bound=Callable[..., Awaitable[Any]])
 
