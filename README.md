@@ -61,10 +61,11 @@ You need Python 3.7 with pipenv installed. The recommended way is to use pyenv &
 ### Moar
 
 We
-* lint with `pylint`,
-* format with `black`,
-* type-check with `mypy`, and
-* benchark with `timeit`.
+* lint with `pylint` & `flake8`,
+* format with `black` & `isort`,
+* type-check with `mypy`,
+* benchark with `timeit`, and
+* trace with `py-spy`.
 
 Use them via
 `pipenv run …`
@@ -74,5 +75,4 @@ Use them via
 * `lint-details`
 * `type-check`
 * `benchmarks/run_all.sh`
-
-Trace the server on http://localhost:8000/trace with `py-spy`.
+and trace the server on http://localhost:8000/trace.
