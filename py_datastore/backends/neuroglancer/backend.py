@@ -85,28 +85,19 @@ class NeuroglancerBackend(Backend):
             buffer, chunk_size, data_type, block_size, order="F"
         )
 
-    def __chunks(
-        self, offset: Vec3D, shape: Vec3D, scale: Scale, chunk_size: Vec3D
-    ) -> Iterable[Box3D]:
+    def __chunks(self, box: Box3D, scale: Scale, chunk_size: Vec3D) -> Iterable[Box3D]:
         # clip data outside available data
-        min_inside = offset.pairmax(scale.voxel_offset)
-        max_inside = (offset + shape).pairmin(scale.voxel_offset + scale.size)
+        inside = box.intersect(scale.box())
 
         # align request to chunks
-        min_aligned = (
-            min_inside - scale.voxel_offset
-        ) // chunk_size * chunk_size + scale.voxel_offset
-        max_aligned = (max_inside - scale.voxel_offset).ceildiv(
+        aligned = (inside - scale.voxel_offset).div(
             chunk_size
         ) * chunk_size + scale.voxel_offset
 
-        for x in range(min_aligned.x, max_aligned.x, chunk_size.x):
-            for y in range(min_aligned.y, max_aligned.y, chunk_size.y):
-                for z in range(min_aligned.z, max_aligned.z, chunk_size.z):
-                    chunk_offset = Vec3D(x, y, z)
-                    # The size is at most chunk_size but capped to fit the dataset:
-                    capped_chunk_size = chunk_size.pairmin(scale.size - chunk_offset)
-                    yield Box3D(chunk_offset, chunk_offset + capped_chunk_size)
+        for chunk_offset in aligned.range(offset=chunk_size):
+            # The size is at most chunk_size but capped to fit the dataset:
+            capped_chunk_size = chunk_size.pairmin(scale.size - chunk_offset)
+            yield Box3D.from_size(chunk_offset, capped_chunk_size)
 
     @alru_cache(maxsize=2 ** 12)
     async def __read_chunk(
@@ -140,7 +131,7 @@ class NeuroglancerBackend(Backend):
         self, chunks: Iterable[Chunk], data_type: str, offset: Vec3D, shape: Vec3D
     ) -> np.ndarray:
         result = np.zeros(shape, dtype=data_type, order="F")
-        box = Box3D(offset, offset + shape)
+        box = Box3D.from_size(offset, shape)
         for chunk_box, chunk_data in chunks:
             inner = chunk_box.intersect(box)
             result[(inner - offset).np_slice()] = chunk_data[
@@ -167,13 +158,13 @@ class NeuroglancerBackend(Backend):
 
         scale = next(scale for scale in layer.scales if fits_resolution(scale))
         decoder = self.decoders[scale.encoding]
-        chunk_size = scale.chunk_sizes[0]  # TODO
 
+        # convert to coordinate system of current scale
         offset = wk_offset * neuroglancer_dataset.scale // scale.resolution
 
-        chunk_boxes = list(self.__chunks(offset, shape, scale, chunk_size))
-        for chunk_box in chunk_boxes:
-            hash((scale.compressed_segmentation_block_size,))
+        chunk_boxes = self.__chunks(
+            Box3D.from_size(offset, shape), scale, scale.chunk_sizes[0]
+        )
         chunks = await asyncio.gather(
             *(
                 self.__read_chunk(

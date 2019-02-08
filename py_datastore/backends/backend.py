@@ -33,7 +33,7 @@ class Backend:
         dataset: DatasetInfo,
         layer_name: str,
         zoom_step: int,
-        offset: Vec3D,
+        wk_offset: Vec3D,
         shape: Vec3D,
     ) -> np.ndarray:
         """
@@ -42,7 +42,7 @@ class Backend:
         :param dataset:
         :param layer_name:
         :param zoomStep: 2^zoomStep is the smallest dimension of the scale
-        :param offset: in wk voxels
+        :param wk_offset: in wk voxels
         :param shape: in scale voxels
         :returns: numpy array of shape shape
         """

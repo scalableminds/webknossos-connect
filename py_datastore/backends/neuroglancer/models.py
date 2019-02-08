@@ -2,7 +2,7 @@ from functools import reduce
 from operator import mul
 from typing import Any, Dict, List, Optional
 
-from ...utils.types import Vec3D
+from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox
 from ...webknossos.models import DataLayer as WKDataLayer
 from ...webknossos.models import DataSource as WKDataSource
@@ -40,9 +40,13 @@ class Scale:
         self.voxel_offset = voxel_offset
         self.compressed_segmentation_block_size = compressed_segmentation_block_size
 
+        assert len(chunk_sizes) > 0
         assert self.encoding in self.supported_encodings
         if encoding == "compressed_segmentation":
             assert compressed_segmentation_block_size is not None
+
+    def box(self) -> Box3D:
+        return Box3D.from_size(self.voxel_offset, self.size)
 
     def bounding_box(self) -> BoundingBox:
         return BoundingBox(self.voxel_offset, *self.size)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from asyncio import gather
 from functools import wraps
 from typing import Any, Awaitable, Callable, Optional, TypeVar, cast
@@ -29,7 +31,7 @@ class AccessRequest:
     @classmethod
     def read_dataset(
         cls, organization_name: str, dataset_name: str, **_: Any
-    ) -> "AccessRequest":
+    ) -> AccessRequest:
         return cls(
             resourceId=DataSourceId(organization_name, dataset_name),
             resourceType="datasource",
