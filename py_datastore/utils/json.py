@@ -1,7 +1,4 @@
-import inspect
-import json
-
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional, Union
 
 from .types import JSON
 
@@ -10,6 +7,13 @@ def from_json(data: JSON, cls: Optional[type]) -> Any:
     cls_annotations = getattr(cls, "__annotations__", None)
     cls_origin = getattr(cls, "__origin__", None)
     cls_args = getattr(cls, "__args__", None)
+    if cls_origin == Union:
+        for unioned_cls in cls_args:
+            try:
+                return from_json(data, unioned_cls)
+            except Exception:
+                pass
+        return data
     if cls_annotations is not None:
         assert cls is not None
         if isinstance(data, dict):

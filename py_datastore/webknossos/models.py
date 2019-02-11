@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import cast, Any, Callable, List, Tuple
+from typing import Any, List, Tuple
 
-from ..utils.types import Vec3D
+from ..utils.types import Box3D, Vec3D
 
 
 class DataStoreStatus:
@@ -46,21 +46,8 @@ class BoundingBox:
         self.height = height
         self.depth = depth
 
-        self.shape = self.size = Vec3D(self.width, self.height, self.depth)
-        self.bottomRight = cast(Vec3D, tuple(map(sum, zip(self.topLeft, self.shape))))
-
-    def union(self, other: BoundingBox) -> BoundingBox:
-        tuple_min: Callable[[Tuple[int, int]], int] = lambda x: min(x)
-        tuple_max: Callable[[Tuple[int, int]], int] = lambda x: max(x)
-        topLeft = tuple(map(tuple_min, zip(self.topLeft, other.topLeft)))
-        topLeft = cast(Vec3D, topLeft)
-        bottomRight = tuple(map(tuple_max, zip(self.bottomRight, other.bottomRight)))
-        bottomRight = cast(Vec3D, bottomRight)
-        shape = tuple([high - low for low, high in zip(topLeft, bottomRight)])
-        return BoundingBox(topLeft, *shape)
-
-    def center(self) -> Vec3D:
-        return self.topLeft + self.size // 2
+    def box(self) -> Box3D:
+        return Box3D.from_size(self.topLeft, Vec3D(self.width, self.height, self.depth))
 
 
 class DataSourceId:

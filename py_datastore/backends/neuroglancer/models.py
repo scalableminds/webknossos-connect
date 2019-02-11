@@ -1,15 +1,11 @@
-from functools import reduce
-from operator import mul
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional
 
+from ...utils.types import Box3D, Vec3D
+from ...webknossos.models import BoundingBox
+from ...webknossos.models import DataLayer as WKDataLayer
+from ...webknossos.models import DataSource as WKDataSource
+from ...webknossos.models import DataSourceId as WKDataSourceId
 from ..backend import DatasetInfo
-from ...utils.types import Vec3D
-from ...webknossos.models import (
-    BoundingBox,
-    DataSource as WKDataSource,
-    DataSourceId as WKDataSourceId,
-    DataLayer as WKDataLayer,
-)
 
 
 class Scale:
@@ -40,15 +36,15 @@ class Scale:
         self.resolution = resolution
         self.size = size
         self.voxel_offset = voxel_offset
+        self.compressed_segmentation_block_size = compressed_segmentation_block_size
+
+        assert len(chunk_sizes) > 0
+        assert self.encoding in self.supported_encodings
         if encoding == "compressed_segmentation":
             assert compressed_segmentation_block_size is not None
-            self.compressed_segmentation_block_size = cast(
-                Vec3D, tuple(compressed_segmentation_block_size)
-            )
-        else:
-            self.compressed_segmentation_block_size = None
 
-        assert self.encoding in self.supported_encodings
+    def box(self) -> Box3D:
+        return Box3D.from_size(self.voxel_offset, self.size)
 
     def bounding_box(self) -> BoundingBox:
         return BoundingBox(self.voxel_offset, *self.size)
@@ -90,22 +86,17 @@ class Layer:
             return "uint32"
         return self.data_type
 
-    def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WKDataLayer:
-        def to_wk(vec: Vec3D) -> Vec3D:
-            return cast(
-                Vec3D,
-                tuple(
-                    vec_dim // scale_dim
-                    for vec_dim, scale_dim in zip(vec, global_scale)
-                ),
-            )
+    def min_scale(self) -> Scale:
+        return min(self.scales, key=lambda scale: sum(scale.resolution))
 
-        min_scale = min(self.scales, key=lambda scale: reduce(mul, scale.resolution))
-        normalized_resolutions = [to_wk(scale.resolution) for scale in self.scales]
+    def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WKDataLayer:
+        normalized_resolutions = [
+            scale.resolution // global_scale for scale in self.scales
+        ]
         return WKDataLayer(
             layer_name,
             {"image": "color", "segmentation": "segmentation"}[self.type],
-            min_scale.bounding_box(),
+            self.min_scale().bounding_box(),
             normalized_resolutions,
             self.wk_data_type(),
         )
@@ -124,10 +115,7 @@ class Dataset(DatasetInfo):
         self.dataset_name = dataset_name
         self.layers = layers
         min_resolution = set(
-            min(
-                layer.scales, key=lambda scale: reduce(mul, scale.resolution)
-            ).resolution
-            for layer in self.layers.values()
+            layer.min_scale().resolution for layer in self.layers.values()
         )
         assert len(min_resolution) == 1
         self.scale = next(iter(min_resolution))

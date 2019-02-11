@@ -1,25 +1,24 @@
 import asyncio
 import base64
 import json
-import numpy as np
 import os
-import subprocess
-
-from aiohttp import ClientSession
 from copy import deepcopy
 from io import BytesIO
+from typing import Dict, List, Tuple, Type
+
+import numpy as np
+from aiohttp import ClientSession
 from PIL import Image
 from sanic import Sanic, response
 from sanic.request import Request
 from sanic_cors import CORS
-from typing import Dict, List, Tuple, Type
 from uvloop import Loop
 
 from .backends.backend import Backend
 from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
 from .repository import Repository
 from .utils.colors import color_bytes
-from .utils.json import from_json, to_json
+from .utils.json import from_json
 from .utils.types import JSON, Vec3D
 from .webknossos.access import AccessRequest, authorized
 from .webknossos.client import WebKnossosClient as WebKnossos
@@ -160,7 +159,7 @@ async def add_dataset(
     "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/data",
     methods=["POST", "OPTIONS"],
 )
-@authorized(AccessRequest.readDataset)
+@authorized(AccessRequest.read_dataset)
 async def get_data_post(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:
@@ -200,7 +199,7 @@ async def get_data_post(
 @app.route(
     "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/thumbnail.json"
 )
-@authorized(AccessRequest.readDataset)
+@authorized(AccessRequest.read_dataset)
 async def get_thumbnail(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:
@@ -213,7 +212,7 @@ async def get_thumbnail(
     backend = app.backends[backend_name]
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
     scale = 3
-    center = layer.boundingBox.center()
+    center = layer.boundingBox.box().center()
     size = Vec3D(width, height, 1)
     data = (
         await backend.read_data(dataset, layer_name, scale, center - size // 2, size)

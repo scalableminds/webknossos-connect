@@ -1,7 +1,7 @@
-import numpy as np
+from typing import Dict
 
+import numpy as np
 from aiohttp import ClientSession
-from typing import Any, Dict, Tuple
 
 from ..utils.types import JSON, Vec3D
 from ..webknossos.models import DataSource as WKDataSource
@@ -32,8 +32,8 @@ class Backend:
         self,
         dataset: DatasetInfo,
         layer_name: str,
-        zoomStep: int,
-        offset: Vec3D,
+        zoom_step: int,
+        wk_offset: Vec3D,
         shape: Vec3D,
     ) -> np.ndarray:
         """
@@ -42,7 +42,7 @@ class Backend:
         :param dataset:
         :param layer_name:
         :param zoomStep: 2^zoomStep is the smallest dimension of the scale
-        :param offset: in wk voxels
+        :param wk_offset: in wk voxels
         :param shape: in scale voxels
         :returns: numpy array of shape shape
         """
