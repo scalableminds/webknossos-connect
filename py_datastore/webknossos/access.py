@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from asyncio import gather
 from functools import wraps
-from typing import (Any, Awaitable, Callable, NamedTuple, Optional, TypeVar,
-                    cast)
+from typing import Any, Awaitable, Callable, NamedTuple, Optional, TypeVar, cast
 
 from sanic.request import Request
 from sanic.response import HTTPResponse, text
