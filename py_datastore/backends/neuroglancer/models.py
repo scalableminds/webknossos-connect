@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox
@@ -9,7 +9,7 @@ from ..backend import DatasetInfo
 
 
 class Scale(NamedTuple):
-    chunk_sizes: List[Vec3D]
+    chunk_sizes: Tuple[Vec3D]
     encoding: str
     key: str
     resolution: Vec3D
@@ -29,36 +29,21 @@ class Scale(NamedTuple):
         return BoundingBox(self.voxel_offset, *self.size)
 
 
-class Layer:
-    supported_data_types = {
-        "image": ["uint8", "uint16", "uint32", "uint64"],
-        "segmentation": ["uint32", "uint64"],
-    }
-
+class Layer(NamedTuple):
     source: str
     data_type: str
     num_channels: int
-    scales: List[Scale]
+    scales: Tuple[Scale]
     type: str
+    mesh: Any = None
 
-    def __init__(
-        self,
-        source: str,
-        data_type: str,
-        num_channels: int,
-        scales: List[Scale],
-        type: str,
-        **kwargs: Any
-    ) -> None:
-        self.source = source
-        self.data_type = data_type
-        self.num_channels = num_channels
-        self.scales = scales
-        self.type = type
-
-        assert self.type in self.supported_data_types
-        assert self.data_type in self.supported_data_types[self.type]
-        assert self.num_channels == 1
+    # supported_data_types = {
+    #     "image": ["uint8", "uint16", "uint32", "uint64"],
+    #     "segmentation": ["uint32", "uint64"],
+    # }
+    # assert self.type in supported_data_types
+    # assert self.data_type in supported_data_types[self.type]
+    # assert self.num_channels == 1
 
     def wk_data_type(self) -> str:
         if self.type == "segmentation":
