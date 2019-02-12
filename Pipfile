@@ -3,10 +3,11 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 
 [dev-packages]
+autoflake = "*"
 black = "==18.9b0"
 flake8 = "*"
 isort = "*"
-mypy = "*"
+mypy = "==0.660"
 pep8-naming = "*"
 py-spy = "*"
 pylint = "*"
@@ -26,13 +27,33 @@ python_version = "3.7.2"
 
 [scripts]
 main = "python -m py_datastore"
-lint = "bash -c 'pylint --errors-only --jobs 0 py_datastore benchmarks stubs && flake8 py_datastore benchmarks stubs'"
-pretty = "bash -c 'black py_datastore benchmarks stubs && isort --recursive py_datastore benchmarks stubs'"
-pretty-check = "bash -c 'black --check py_datastore benchmarks stubs && isort --check-only --recursive py_datastore benchmarks stubs'"
+lint = '''
+    bash -c " \
+        pylint --errors-only --jobs 0 py_datastore benchmarks stubs && \
+        flake8 py_datastore benchmarks stubs \
+    "
+'''
+pretty = '''
+    bash -c " \
+        autoflake \
+            --in-place --recursive \
+            --remove-all-unused-imports --remove-unused-variables \
+            py_datastore benchmarks stubs && \
+        black py_datastore benchmarks stubs && \
+        isort --recursive py_datastore benchmarks stubs \
+    "
+'''
+pretty-check = '''
+    bash -c " \
+        black --check py_datastore benchmarks stubs && \
+        isort --check-only --recursive py_datastore benchmarks stubs \
+    "
+'''
 type-check = '''
     bash -c " \
         MYPYPATH=\"$(pipenv --venv)/lib/python3.7/site-packages/:stubs\" \
         mypy \
             --disallow-untyped-defs \
-            py_datastore benchmarks stubs"
+            py_datastore benchmarks stubs \
+    "
 '''
