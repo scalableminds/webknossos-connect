@@ -1,6 +1,6 @@
 from typing import Any, Optional, Union
 
-from .types import JSON
+from .types import JSON, Vec3D
 
 
 def from_json(data: JSON, cls: Optional[type]) -> Any:
@@ -50,15 +50,17 @@ def from_json(data: JSON, cls: Optional[type]) -> Any:
 
 def to_json(obj: Any) -> JSON:
     cls = type(obj)
-    if issubclass(cls, list):
+    if issubclass(cls, Vec3D):
+        return tuple(obj)
+    elif hasattr(cls, "__annotations__"):
+        return dict(
+            map(lambda name: (name, to_json(getattr(obj, name))), cls.__annotations__)
+        )
+    elif issubclass(cls, list):
         return list(map(to_json, obj))
     elif issubclass(cls, tuple):
         return tuple(map(to_json, obj))
     elif issubclass(cls, dict):
         return dict([(name, to_json(value)) for name, value in obj.items()])
-    elif hasattr(cls, "__annotations__"):
-        return dict(
-            map(lambda name: (name, to_json(obj.__dict__[name])), cls.__annotations__)
-        )
     else:
         return obj

@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 import numpy as np
@@ -7,27 +8,32 @@ from ..utils.types import JSON, Vec3D
 from ..webknossos.models import DataSource as WKDataSource
 
 
-class DatasetInfo:
+class DatasetInfo(metaclass=ABCMeta):
     organization_name: str
     dataset_name: str
 
+    @abstractmethod
     def to_webknossos(self) -> WKDataSource:
         pass
 
 
-class Backend:
+class Backend(metaclass=ABCMeta):
     @classmethod
+    @abstractmethod
     def name(cls) -> str:
-        return "Subclass responsibility"
+        pass
 
+    @abstractmethod
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
         pass
 
+    @abstractmethod
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
         pass
 
+    @abstractmethod
     async def read_data(
         self,
         dataset: DatasetInfo,

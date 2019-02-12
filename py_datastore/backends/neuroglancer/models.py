@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, Tuple
+
+from dataclasses import InitVar, dataclass, field
 
 from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox
@@ -8,40 +10,21 @@ from ...webknossos.models import DataSourceId as WKDataSourceId
 from ..backend import DatasetInfo
 
 
+@dataclass(frozen=True)
 class Scale:
-    supported_encodings = ["raw", "jpeg", "compressed_segmentation"]
-
-    chunk_sizes: List[Vec3D]
+    chunk_sizes: Tuple[Vec3D]
     encoding: str
     key: str
     resolution: Vec3D
     size: Vec3D
     voxel_offset: Vec3D
-    compressed_segmentation_block_size: Optional[Vec3D]
+    compressed_segmentation_block_size: Optional[Vec3D] = None
 
-    def __init__(
-        self,
-        chunk_sizes: List[Vec3D],
-        encoding: str,
-        key: str,
-        resolution: Vec3D,
-        size: Vec3D,
-        voxel_offset: Vec3D,
-        compressed_segmentation_block_size: Optional[Vec3D] = None,
-        **kwargs: Any
-    ) -> None:
-        self.chunk_sizes = chunk_sizes
-        self.encoding = encoding
-        self.key = key
-        self.resolution = resolution
-        self.size = size
-        self.voxel_offset = voxel_offset
-        self.compressed_segmentation_block_size = compressed_segmentation_block_size
-
-        assert len(chunk_sizes) > 0
-        assert self.encoding in self.supported_encodings
-        if encoding == "compressed_segmentation":
-            assert compressed_segmentation_block_size is not None
+    def __post_init__(self) -> None:
+        assert len(self.chunk_sizes) > 0
+        assert self.encoding in ["raw", "jpeg", "compressed_segmentation"]
+        if self.encoding == "compressed_segmentation":
+            assert self.compressed_segmentation_block_size is not None
 
     def box(self) -> Box3D:
         return Box3D.from_size(self.voxel_offset, self.size)
@@ -50,35 +33,23 @@ class Scale:
         return BoundingBox(self.voxel_offset, *self.size)
 
 
+@dataclass(frozen=True)
 class Layer:
-    supported_data_types = {
-        "image": ["uint8", "uint16", "uint32", "uint64"],
-        "segmentation": ["uint32", "uint64"],
-    }
-
     source: str
     data_type: str
     num_channels: int
-    scales: List[Scale]
+    scales: Tuple[Scale]
     type: str
+    # InitVar allows to consume mesh argument in init without storing it
+    mesh: InitVar[Any] = None
 
-    def __init__(
-        self,
-        source: str,
-        data_type: str,
-        num_channels: int,
-        scales: List[Scale],
-        type: str,
-        **kwargs: Any
-    ) -> None:
-        self.source = source
-        self.data_type = data_type
-        self.num_channels = num_channels
-        self.scales = scales
-        self.type = type
-
-        assert self.type in self.supported_data_types
-        assert self.data_type in self.supported_data_types[self.type]
+    def __post_init__(self, mesh: Any) -> None:
+        supported_data_types = {
+            "image": ["uint8", "uint16", "uint32", "uint64"],
+            "segmentation": ["uint32", "uint64"],
+        }
+        assert self.type in supported_data_types
+        assert self.data_type in supported_data_types[self.type]
         assert self.num_channels == 1
 
     def wk_data_type(self) -> str:
@@ -102,18 +73,14 @@ class Layer:
         )
 
 
+@dataclass
 class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     layers: Dict[str, Layer]
-    scale: Vec3D
+    scale: Vec3D = field(init=False)
 
-    def __init__(
-        self, organization_name: str, dataset_name: str, layers: Dict[str, Layer]
-    ) -> None:
-        self.organization_name = organization_name
-        self.dataset_name = dataset_name
-        self.layers = layers
+    def __post_init__(self) -> None:
         min_resolution = set(
             layer.min_scale().resolution for layer in self.layers.values()
         )

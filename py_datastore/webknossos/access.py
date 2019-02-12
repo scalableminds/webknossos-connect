@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import gather
 from functools import wraps
-from typing import Any, Awaitable, Callable, Optional, TypeVar, cast
+from typing import Any, Awaitable, Callable, NamedTuple, Optional, TypeVar, cast
 
 from sanic.request import Request
 from sanic.response import HTTPResponse, text
@@ -10,23 +10,10 @@ from sanic.response import HTTPResponse, text
 from .models import DataSourceId
 
 
-class AccessRequest:
+class AccessRequest(NamedTuple):
     resourceId: DataSourceId
     resourceType: str
     mode: str
-
-    def __init__(
-        self, resourceId: DataSourceId, resourceType: str, mode: str  # noqa: N803
-    ) -> None:
-        self.resourceId = resourceId
-        self.resourceType = resourceType
-        self.mode = mode
-
-    def __hash__(self) -> int:
-        return hash((self.resourceId, self.resourceType, self.mode))
-
-    def __eq__(self, other: object) -> bool:
-        return hash(self) == hash(other)
 
     @classmethod
     def read_dataset(
@@ -39,13 +26,9 @@ class AccessRequest:
         )
 
 
-class AccessAnswer:
+class AccessAnswer(NamedTuple):
     granted: bool
-    msg: Optional[str]
-
-    def __init__(self, granted: bool, msg: Optional[str] = None) -> None:
-        self.granted = granted
-        self.msg = msg
+    msg: Optional[str] = None
 
 
 T = TypeVar("T", bound=Callable[..., Awaitable[HTTPResponse]])
