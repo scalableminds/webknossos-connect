@@ -1,4 +1,6 @@
-from typing import Any, Dict, NamedTuple, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
+
+from dataclasses import InitVar, dataclass, field
 
 from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox
@@ -8,7 +10,8 @@ from ...webknossos.models import DataSourceId as WKDataSourceId
 from ..backend import DatasetInfo
 
 
-class Scale(NamedTuple):
+@dataclass(frozen=True)
+class Scale:
     chunk_sizes: Tuple[Vec3D]
     encoding: str
     key: str
@@ -17,10 +20,11 @@ class Scale(NamedTuple):
     voxel_offset: Vec3D
     compressed_segmentation_block_size: Optional[Vec3D] = None
 
-    # assert len(chunk_sizes) > 0
-    # assert self.encoding in ["raw", "jpeg", "compressed_segmentation"]
-    # if encoding == "compressed_segmentation":
-    #     assert compressed_segmentation_block_size is not None
+    def __post_init__(self) -> None:
+        assert len(self.chunk_sizes) > 0
+        assert self.encoding in ["raw", "jpeg", "compressed_segmentation"]
+        if self.encoding == "compressed_segmentation":
+            assert self.compressed_segmentation_block_size is not None
 
     def box(self) -> Box3D:
         return Box3D.from_size(self.voxel_offset, self.size)
@@ -29,21 +33,24 @@ class Scale(NamedTuple):
         return BoundingBox(self.voxel_offset, *self.size)
 
 
-class Layer(NamedTuple):
+@dataclass(frozen=True)
+class Layer:
     source: str
     data_type: str
     num_channels: int
     scales: Tuple[Scale]
     type: str
-    mesh: Any = None
+    # InitVar allows to consume mesh argument in init without storing it
+    mesh: InitVar[Any] = None
 
-    # supported_data_types = {
-    #     "image": ["uint8", "uint16", "uint32", "uint64"],
-    #     "segmentation": ["uint32", "uint64"],
-    # }
-    # assert self.type in supported_data_types
-    # assert self.data_type in supported_data_types[self.type]
-    # assert self.num_channels == 1
+    def __post_init__(self, mesh: Any) -> None:
+        supported_data_types = {
+            "image": ["uint8", "uint16", "uint32", "uint64"],
+            "segmentation": ["uint32", "uint64"],
+        }
+        assert self.type in supported_data_types
+        assert self.data_type in supported_data_types[self.type]
+        assert self.num_channels == 1
 
     def wk_data_type(self) -> str:
         if self.type == "segmentation":
@@ -66,18 +73,14 @@ class Layer(NamedTuple):
         )
 
 
+@dataclass
 class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     layers: Dict[str, Layer]
-    scale: Vec3D
+    scale: Vec3D = field(init=False)
 
-    def __init__(
-        self, organization_name: str, dataset_name: str, layers: Dict[str, Layer]
-    ) -> None:
-        self.organization_name = organization_name
-        self.dataset_name = dataset_name
-        self.layers = layers
+    def __post_init__(self) -> None:
         min_resolution = set(
             layer.min_scale().resolution for layer in self.layers.values()
         )

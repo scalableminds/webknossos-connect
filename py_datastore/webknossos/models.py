@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import List, NamedTuple, Tuple
 
+from dataclasses import dataclass
+
 from ..utils.types import Box3D, Vec3D
 
 
@@ -32,15 +34,17 @@ class DataSourceId(NamedTuple):
     name: str
 
 
-class DataLayer(NamedTuple):
+@dataclass(frozen=True)
+class DataLayer:
     name: str
     category: str
     boundingBox: BoundingBox
     resolutions: List[Vec3D]
     elementClass: str
 
-    # assert self.category in ["color", "segmentation"]
-    # assert self.elementClass in ["uint8", "uint16", "uint32", "uint64"]
+    def __post_init__(self) -> None:
+        assert self.category in ["color", "segmentation"]
+        assert self.elementClass in ["uint8", "uint16", "uint32", "uint64"]
 
 
 class DataSource(NamedTuple):
