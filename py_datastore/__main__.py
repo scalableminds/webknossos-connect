@@ -1,14 +1,9 @@
 import asyncio
-import base64
 import json
-import os
 from copy import deepcopy
-from io import BytesIO
 from typing import Dict, List, Tuple, Type
 
-import numpy as np
 from aiohttp import ClientSession
-from PIL import Image
 from sanic import Sanic, response
 from sanic.request import Request
 from sanic_cors import CORS
@@ -17,12 +12,9 @@ from uvloop import Loop
 from .backends.backend import Backend
 from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
 from .repository import Repository
-from .utils.colors import color_bytes
-from .utils.json import from_json
-from .utils.types import JSON, Vec3D
-from .webknossos.access import AccessRequest, authorized
+from .routes import routes
+from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
-from .webknossos.models import DataRequest as WKDataRequest
 
 
 class Server(Sanic):
@@ -108,14 +100,11 @@ async def ping_webknossos(app: Server) -> None:
 ## ROUTES ##
 
 
+app.blueprint(routes)
+
+
 @app.route("/data/health")
 async def health(request: Request) -> response.HTTPResponse:
-    return response.text("Ok")
-
-
-@app.route("/data/triggers/checkInboxBlocking")
-async def check_inbox_blocking(request: Request) -> response.HTTPResponse:
-    await app.load_persisted_datasets()
     return response.text("Ok")
 
 
@@ -129,132 +118,6 @@ async def build_info(request: Request) -> response.HTTPResponse:
                 "datastoreApiVersion": "1.0",
             }
         }
-    )
-
-
-@app.route("/api/<backend_name>/<organization_name>/<dataset_name>", methods=["POST"])
-async def add_dataset(
-    request: Request, backend_name: str, organization_name: str, dataset_name: str
-) -> response.HTTPResponse:
-    dataset_config = request.json
-    await app.add_dataset(dataset_config, backend_name, organization_name, dataset_name)
-
-    ds_path = app.config["datasets_path"]
-    os.makedirs(os.path.dirname(ds_path), exist_ok=True)
-    if not os.path.isfile(ds_path):
-        with open(ds_path, "w") as datasets_file:
-            json.dump({}, datasets_file)
-    with open(ds_path, "r+") as datasets_file:
-        datasets = json.load(datasets_file)
-        datasets.setdefault(backend_name, {}).setdefault(organization_name, {})[
-            dataset_name
-        ] = dataset_config
-        datasets_file.seek(0)
-        json.dump(datasets, datasets_file)
-
-    return response.text("Ok")
-
-
-@app.route(
-    "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/data",
-    methods=["POST", "OPTIONS"],
-)
-@authorized(AccessRequest.read_dataset)
-async def get_data_post(
-    request: Request, organization_name: str, dataset_name: str, layer_name: str
-) -> response.HTTPResponse:
-    (backend_name, dataset) = app.repository.get_dataset(
-        organization_name, dataset_name
-    )
-    backend = app.backends[backend_name]
-
-    bucket_requests = from_json(request.json, List[WKDataRequest])
-    assert all(not request.fourBit for request in bucket_requests)
-
-    buckets = await asyncio.gather(
-        *(
-            backend.read_data(
-                dataset,
-                layer_name,
-                r.zoomStep,
-                Vec3D(*r.position),
-                Vec3D(r.cubeSize, r.cubeSize, r.cubeSize),
-            )
-            for r in bucket_requests
-        )
-    )
-    missing_buckets = [index for index, data in enumerate(buckets) if data is None]
-    existing_buckets = [data.flatten(order="F") for data in buckets if data is not None]
-    data = (
-        np.concatenate(existing_buckets).tobytes() if len(existing_buckets) > 0 else b""
-    )
-
-    headers = {
-        "Access-Control-Expose-Headers": "MISSING-BUCKETS",
-        "MISSING-BUCKETS": json.dumps(missing_buckets),
-    }
-    return response.raw(data, headers=headers)
-
-
-@app.route(
-    "/data/datasets/<organization_name>/<dataset_name>/layers/<layer_name>/thumbnail.json"
-)
-@authorized(AccessRequest.read_dataset)
-async def get_thumbnail(
-    request: Request, organization_name: str, dataset_name: str, layer_name: str
-) -> response.HTTPResponse:
-    width = int(request.args.get("width"))
-    height = int(request.args.get("height"))
-
-    (backend_name, dataset) = app.repository.get_dataset(
-        organization_name, dataset_name
-    )
-    backend = app.backends[backend_name]
-    layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
-    scale = 3
-    center = layer.boundingBox.box().center()
-    size = Vec3D(width, height, 1)
-    data = (
-        await backend.read_data(dataset, layer_name, scale, center - size // 2, size)
-    )[:, :, 0]
-    if layer.category == "segmentation":
-        data = data.astype("uint8")
-        thumbnail = Image.fromarray(data, mode="P")
-        color_list = list(color_bytes.values())[: 2 ** 8]
-        thumbnail.putpalette(b"".join(color_list))
-        with BytesIO() as output:
-            thumbnail.save(output, "PNG", transparency=0)
-            return response.json(
-                {"mimeType": "image/png", "value": base64.b64encode(output.getvalue())}
-            )
-    else:
-        thumbnail = Image.fromarray(data)
-        with BytesIO() as output:
-            thumbnail.save(output, "JPEG")
-            return response.json(
-                {"mimeType": "image/jpeg", "value": base64.b64encode(output.getvalue())}
-            )
-
-
-app.static("/trace", "data/trace.html", name="trace_get")
-app.static("/trace/flame.svg", "data/flame.svg", name="trace_get")
-
-
-@app.route("/trace", methods=["POST"])
-async def trace_post(request: Request) -> response.HTTPResponse:
-    # py-spy is only in dev-packages
-    p = await asyncio.create_subprocess_exec(
-        "py-spy",
-        "--flame",
-        "data/flame.svg",
-        "--duration",
-        "20",
-        "--pid",
-        str(os.getpid()),
-    )
-    await p.wait()
-    return (
-        response.text("Ok") if p.returncode == 0 else response.text("Error", status=500)
     )
 
 

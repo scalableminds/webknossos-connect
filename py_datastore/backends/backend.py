@@ -52,4 +52,3 @@ class Backend(metaclass=ABCMeta):
         :param shape: in scale voxels
         :returns: numpy array of shape shape
         """
-        pass
