@@ -40,26 +40,20 @@ def authorized(fn_access_request: Callable[..., AccessRequest]) -> Callable[[T],
         async def decorated_function(
             request: Request, *args: Any, **kwargs: Any
         ) -> HTTPResponse:
-            tokens = request.args.getlist("token", default=[""])
+            token = request.args.get("token", default="")
             parameters = request.app.router.get(request)[2]
             access_request = fn_access_request(**parameters)
 
-            access_answers = await gather(
-                *(
-                    request.app.webknossos.request_access(
-                        token=token, access_request=access_request
-                    )
-                    for token in tokens
-                )
+            access_answer = await request.app.webknossos.request_access(
+                token=token, access_request=access_request
             )
 
-            if any(i.granted for i in access_answers):
+            if access_answer.granted:
                 return await f(request, *args, **kwargs)
             else:
-                messages = [i.msg for i in access_answers if i.msg is not None]
                 return text(
-                    f"Forbidden: {'. '.join(messages)}"
-                    if len(messages) > 0
+                    f"Forbidden: {access_answer.msg}"
+                    if access_answer.msg is not None
                     else "Token authentication failed",
                     status=403,
                 )
