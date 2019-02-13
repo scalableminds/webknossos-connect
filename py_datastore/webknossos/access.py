@@ -40,7 +40,7 @@ def authorized(fn_access_request: Callable[..., AccessRequest]) -> Callable[[T],
         async def decorated_function(
             request: Request, *args: Any, **kwargs: Any
         ) -> HTTPResponse:
-            tokens = request.args.getlist("token", default=[])
+            tokens = request.args.getlist("token", default=[""])
             parameters = request.app.router.get(request)[2]
             access_request = fn_access_request(**parameters)
 
