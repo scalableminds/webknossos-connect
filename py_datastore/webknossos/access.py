@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import gather
 from functools import wraps
 from typing import Any, Awaitable, Callable, NamedTuple, Optional, TypeVar, cast
 
