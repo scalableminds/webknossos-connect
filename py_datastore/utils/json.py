@@ -33,6 +33,9 @@ def from_json(data: JSON, cls: Optional[type]) -> Any:
             list_type = cls_args[0]
             return [from_json(value, list_type) for value in data]
         elif issubclass(cls_origin, tuple):
+            if cls_args[-1] == Ellipsis:
+                tuple_type = cls_args[0]
+                return tuple(from_json(value, tuple_type) for value in data)
             return tuple(
                 from_json(value, element_type)
                 for value, element_type in zip(data, cls_args)

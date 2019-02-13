@@ -12,7 +12,7 @@ from ..backend import DatasetInfo
 
 @dataclass(frozen=True)
 class Scale:
-    chunk_sizes: Tuple[Vec3D]
+    chunk_sizes: Tuple[Vec3D, ...]
     encoding: str
     key: str
     resolution: Vec3D
@@ -38,7 +38,7 @@ class Layer:
     source: str
     data_type: str
     num_channels: int
-    scales: Tuple[Scale]
+    scales: Tuple[Scale, ...]
     type: str
     # InitVar allows to consume mesh argument in init without storing it
     mesh: InitVar[Any] = None
