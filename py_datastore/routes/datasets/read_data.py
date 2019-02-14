@@ -15,8 +15,7 @@ read_data = Blueprint(__name__)
 
 
 @read_data.route(
-    "/<organization_name>/<dataset_name>/layers/<layer_name>/data",
-    methods=["POST", "OPTIONS"],
+    "/<organization_name>/<dataset_name>/layers/<layer_name>/data", methods=["POST"]
 )
 @authorized(AccessRequest.read_dataset)
 async def get_data_post(
