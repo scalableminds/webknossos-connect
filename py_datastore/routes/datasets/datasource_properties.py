@@ -23,6 +23,6 @@ async def datasource_properties_post(
     request: Request, organization_name: str, dataset_name: str
 ) -> response.HTTPResponse:
     return response.text(
-        "Not Implemented: py-datastore does not support editin the datasource-properties, try refreshing the dataset instead",
+        "Not Implemented: py-datastore does not support editing the datasource-properties. Try refreshing the dataset instead.",
         status=501,
     )
