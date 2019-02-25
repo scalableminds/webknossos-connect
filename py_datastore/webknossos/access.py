@@ -24,6 +24,14 @@ class AccessRequest(NamedTuple):
             mode="read",
         )
 
+    @classmethod
+    def administrate_datasets(cls, **_: Any) -> AccessRequest:
+        return cls(
+            resourceId=DataSourceId("", ""),
+            resourceType="datasource",
+            mode="administrate",
+        )
+
 
 class AccessAnswer(NamedTuple):
     granted: bool
