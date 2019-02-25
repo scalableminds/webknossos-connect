@@ -17,11 +17,12 @@ async def new_organization_folder(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
 
-@triggers.route("/clearCache/<organization_name>/<dataset_name>")
-@authorized(AccessRequest.read_dataset)
-async def clear_dataset_cache(
+@triggers.route("/reload/<organization_name>/<dataset_name>")
+@authorized(AccessRequest.administrate_datasets)
+async def reload_dataset(
     request: Request, organization_name: str, dataset_name: str
 ) -> response.HTTPResponse:
+    await request.app.load_persisted_datasets()
     (backend_name, dataset) = request.app.repository.get_dataset(
         organization_name, dataset_name
     )
