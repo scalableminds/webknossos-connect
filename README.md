@@ -5,7 +5,7 @@ A webKnossos compatible data connector written in Python
 
 ## Usage
 
-1. add datastore to wK database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'webknossos-connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
+1. add datastore to wK database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
 2. `docker-compose up --build webknossos-connect`
 3. By default, some public datasets are reported. To add more datasets, run e.g.
    `curl http://localhost:8000/api/neuroglancer/Connectomics_Department/test -X POST -H "Content-Type: application/json" --data-binary "@tools/sample-datasets/neuroglancer.json"`
