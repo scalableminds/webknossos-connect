@@ -42,9 +42,9 @@ jobs:
           name: Build & push docker image
           command: |
             export DOCKER_TAG=${CIRCLE_BRANCH}__${CIRCLE_BUILD_NUM}
-            docker-compose build py-datastore
+            docker-compose build webknossos-connect
             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-            docker-compose push py-datastore
+            docker-compose push webknossos-connect
             docker logout
 
 workflows:

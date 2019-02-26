@@ -3,8 +3,8 @@ import asyncio
 import numpy as np
 from aiohttp import ClientSession
 
-from py_datastore.backends.neuroglancer.backend import NeuroglancerBackend
-from py_datastore.utils.types import Vec3D
+from wkconnect.backends.neuroglancer.backend import NeuroglancerBackend
+from wkconnect.utils.types import Vec3D
 
 neuroglancer: NeuroglancerBackend
 data: np.ndarray
