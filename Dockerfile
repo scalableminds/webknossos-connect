@@ -16,9 +16,9 @@ COPY Pipfile .
 COPY Pipfile.lock .
 RUN pipenv install --system
 
-COPY py_datastore py_datastore
+COPY wkconnect wkconnect
 
-CMD [ "python", "-m", "py_datastore" ]
+CMD [ "python", "-m", "wkconnect" ]
 
 
 FROM prod as dev
