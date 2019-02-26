@@ -179,3 +179,6 @@ class NeuroglancerBackend(Backend):
         )
 
         return self.__cutout(chunks, layer.wk_data_type(), offset, shape)
+
+    def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
+        self.__read_chunk.cache_clear()  # pylint: disable=no-member
