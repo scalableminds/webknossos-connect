@@ -1,5 +1,5 @@
 # webknossos-connect
-A webKnossos compatible datastore written in Python
+A webKnossos compatible data connector written in Python
 
 [![CircleCI](https://circleci.com/gh/scalableminds/webknossos-connect.svg?style=svg&circle-token=1d7b55b40a5733c7563033064cee0ed0beef36b6)](https://circleci.com/gh/scalableminds/webknossos-connect)
 

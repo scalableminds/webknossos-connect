@@ -18,7 +18,7 @@ services:
       target: dev
     image: scalableminds/webknossos-connect-dev:${DOCKER_TAG:-master}
     volumes:
-      - ./py_datastore:/app/py_datastore
+      - ./wkconnect:/app/wkconnect
       - ./data:/app/data
     network_mode: host
     environment:
