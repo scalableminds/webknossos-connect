@@ -26,11 +26,11 @@ sanic_cors = "*"
 python_version = "3.7.2"
 
 [scripts]
-main = "python -m py_datastore"
+main = "python -m wkconnect"
 lint = '''
     bash -c " \
-        pylint --errors-only --jobs 0 py_datastore benchmarks stubs && \
-        flake8 py_datastore benchmarks stubs \
+        pylint --errors-only --jobs 0 wkconnect benchmarks stubs && \
+        flake8 wkconnect benchmarks stubs \
     "
 '''
 pretty = '''
@@ -38,15 +38,15 @@ pretty = '''
         autoflake \
             --in-place --recursive \
             --remove-all-unused-imports --remove-unused-variables \
-            py_datastore benchmarks stubs && \
-        black py_datastore benchmarks stubs && \
-        isort --recursive py_datastore benchmarks stubs \
+            wkconnect benchmarks stubs && \
+        black wkconnect benchmarks stubs && \
+        isort --recursive wkconnect benchmarks stubs \
     "
 '''
 pretty-check = '''
     bash -c " \
-        black --check py_datastore benchmarks stubs && \
-        isort --check-only --recursive py_datastore benchmarks stubs \
+        black --check wkconnect benchmarks stubs && \
+        isort --check-only --recursive wkconnect benchmarks stubs \
     "
 '''
 type-check = '''
@@ -54,6 +54,6 @@ type-check = '''
         MYPYPATH=\"$(pipenv --venv)/lib/python3.7/site-packages/:stubs\" \
         mypy \
             --disallow-untyped-defs \
-            py_datastore benchmarks stubs \
+            wkconnect benchmarks stubs \
     "
 '''
