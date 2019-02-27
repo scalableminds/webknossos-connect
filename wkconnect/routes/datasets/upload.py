@@ -45,4 +45,4 @@ async def add_dataset(request: Request) -> response.HTTPResponse:
         # remove rest of file, as it might be shorter
         datasets_file.truncate()
 
-    return response.text("Ok")
+    return response.text("")
