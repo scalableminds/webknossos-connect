@@ -1,9 +1,11 @@
 import asyncio
 import json
+import logging
 from copy import deepcopy
 from typing import Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
+from aiohttp.client_exceptions import ClientConnectorError
 from sanic import Sanic, response
 from sanic.request import Request
 from sanic_cors import CORS
@@ -13,8 +15,11 @@ from .backends.backend import Backend
 from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
 from .repository import Repository
 from .routes import routes
+from .utils.scheduler import repeat_every_seconds
 from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
+
+logger = logging.getLogger()
 
 
 class Server(Sanic):
@@ -82,19 +87,19 @@ async def setup(app: Server, loop: Loop) -> None:
     app.repository = Repository()
     app.webknossos = WebKnossos(app.config, app.http_client)
     app.backends = dict(map(instanciate_backend, app.available_backends))
-    await app.load_persisted_datasets()
+    # await app.load_persisted_datasets()
+
+
+@app.listener("before_server_stop")
+async def stop_tasks(app: Server, loop: Loop) -> None:
+    for task in asyncio.Task.all_tasks():
+        if not task == asyncio.Task.current_task():
+            task.cancel()
 
 
 @app.listener("after_server_stop")
 async def close_http_client(app: Server, loop: Loop) -> None:
     await app.http_client.__aexit__(None, None, None)
-
-
-async def ping_webknossos(app: Server) -> None:
-    ping_interval_seconds = app.config["webknossos"]["ping_interval_minutes"] * 60
-    while True:
-        await app.webknossos.report_status()
-        await asyncio.sleep(ping_interval_seconds)
 
 
 ## ROUTES ##
@@ -125,7 +130,27 @@ async def build_info(request: Request) -> response.HTTPResponse:
 
 
 if __name__ == "__main__":
-    app.add_task(ping_webknossos(app))
+
+    @repeat_every_seconds(10 * 60)
+    async def ping_webknossos(app: Server) -> None:
+        try:
+            await app.webknossos.report_status()
+        except ClientConnectorError:
+            logger.warning("Could not ping webknossos, retrying in 10 min.")
+
+    app.add_task(ping_webknossos)
+
+    @repeat_every_seconds(10 * 60)  # , initial_call = False)
+    async def scan_inbox(app: Server) -> None:
+        try:
+            await app.load_persisted_datasets()
+        except ClientConnectorError:
+            logger.warning(
+                "Could not report datasets to webknossos, retrying in 10 min."
+            )
+
+    app.add_task(scan_inbox)
+
     app.run(
         host=app.config["server"]["host"],
         port=app.config["server"]["port"],
