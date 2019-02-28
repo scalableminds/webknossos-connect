@@ -12,7 +12,8 @@ from sanic_cors import CORS
 from uvloop import Loop
 
 from .backends.backend import Backend
-from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
+from .backends.boss.backend import Boss
+from .backends.neuroglancer.backend import Neuroglancer
 from .repository import Repository
 from .routes import routes
 from .utils.scheduler import repeat_every_seconds
@@ -29,7 +30,7 @@ class Server(Sanic):
         self.repository: Repository
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
-        self.available_backends: List[Type[Backend]] = [Neuroglancer]
+        self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer]
 
     async def add_dataset(
         self,
@@ -80,14 +81,13 @@ with open("data/config.json") as config_file:
 async def setup(app: Server, loop: Loop) -> None:
     def instanciate_backend(backend_class: Type[Backend]) -> Tuple[str, Backend]:
         backend_name = backend_class.name()
-        config = app.config["backends"][backend_name]
+        config = app.config["backends"].get(backend_name, {})
         return (backend_name, backend_class(config, app.http_client))
 
     app.http_client = await ClientSession(raise_for_status=True).__aenter__()
     app.repository = Repository()
     app.webknossos = WebKnossos(app.config, app.http_client)
     app.backends = dict(map(instanciate_backend, app.available_backends))
-    # await app.load_persisted_datasets()
 
 
 @app.listener("before_server_stop")

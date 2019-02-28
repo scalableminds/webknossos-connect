@@ -90,11 +90,9 @@ class Dataset(DatasetInfo):
     def to_webknossos(self) -> WKDataSource:
         return WKDataSource(
             WKDataSourceId(self.organization_name, self.dataset_name),
-            list(
-                [
-                    layer.to_webknossos(layer_name, self.scale)
-                    for layer_name, layer in self.layers.items()
-                ]
-            ),
+            [
+                layer.to_webknossos(layer_name, self.scale)
+                for layer_name, layer in self.layers.items()
+            ],
             self.scale,
         )

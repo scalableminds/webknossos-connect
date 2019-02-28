@@ -17,11 +17,7 @@ DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
 
 
-class NeuroglancerBackend(Backend):
-    @classmethod
-    def name(cls) -> str:
-        return "neuroglancer"
-
+class Neuroglancer(Backend):
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
         self.http_client = http_client
         self.decoders: Dict[str, DecoderFn] = {

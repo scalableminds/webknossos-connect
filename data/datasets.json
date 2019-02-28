@@ -1,4 +1,9 @@
 {
+    "boss": {
+        "Connectomics_Department": {
+            "bosstest": {}
+        }
+    },
     "neuroglancer": {
         "Connectomics_Department": {
             "drosophila": {

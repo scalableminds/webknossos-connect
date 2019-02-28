@@ -19,9 +19,8 @@ class DatasetInfo(metaclass=ABCMeta):
 
 class Backend(metaclass=ABCMeta):
     @classmethod
-    @abstractmethod
     def name(cls) -> str:
-        pass
+        return cls.__name__.lower()
 
     @abstractmethod
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
