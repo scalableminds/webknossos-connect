@@ -5,28 +5,25 @@ A [webKnossos](https://github.com/scalableminds/webknossos) compatible data conn
 
 ## Usage
 
-1. add datastore to wK database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
+1. Add webknossos-connect to the webKnossos database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
 2. `docker-compose up --build webknossos-connect`
-3. By default, some public datasets are reported. To add more datasets, run e.g.
-   `curl http://localhost:8000/api/neuroglancer/Connectomics_Department/test -X POST -H "Content-Type: application/json" --data-binary "@tools/sample-datasets/neuroglancer.json"`
+3. By default, some public datasets are reported. Add more datasets from the webKnossos user interface.
 
 ## Development
-### In docker :whale:
+### In Docker :whale:
 
-Start it with `docker-compose up dev`
-
-Run other commands `docker-compose run --rm dev pipenv run lint`
-
-[Check below](#moar) for moar commands.
-
-If you change the packages, rebuild the image with `docker-compose build dev`
+* Start it with `docker-compose up dev`
+* Run other commands `docker-compose run --rm dev pipenv run lint`
+* [Check below](#moar) for moar commands.
+* If you change the packages, rebuild the image with `docker-compose build dev`
 
 ### Native
-#### Requirements
+#### Installation
 
-You need Python 3.7 with pipenv installed. The recommended way is to use pyenv & pipenv:
+You need Python 3.7 with `pipenv` installed.
+The recommended way is to use `pyenv` and `pipenv`:
 
-* Install pyenv via
+* Install `pyenv` via
   `curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash`
 * Install your system requirements to build Python, see
   https://github.com/pyenv/pyenv/wiki/common-build-problems
@@ -36,7 +33,7 @@ You need Python 3.7 with pipenv installed. The recommended way is to use pyenv &
   `bash`
 * Install Pipenv:
   `pip install --user --upgrade pipenv`
-* On current Debian & Ubuntu setups, you have to fix a bug manually:
+* On current Debian and Ubuntu setups, you have to fix a bug manually:
   Add `~/.local/bin` to your PATH like this:
   ```
   echo '
@@ -51,31 +48,33 @@ You need Python 3.7 with pipenv installed. The recommended way is to use pyenv &
   This will be activated after the next login automatically, to use it right now, run
   `. ~/.profile`
 
-#### Run it
+#### Run
 
-*  add datastore to wK database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'webknossos-connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
+* Add webknossos-connect to the webKnossos database `INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") VALUES (E'webknossos-connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);`
 * `pipenv install --pre --dev`
 * `pipenv run main`
-* `curl http://localhost:8000/api/neuroglancer/Connectomics_Department/test -X POST -H "Content-Type: application/json" --data-binary "@neuroglancer.json"`
+* `curl http://localhost:8000/api/neuroglancer/Demo_Lab/test -X POST -H "Content-Type: application/json" --data-binary "@datasets.json"`
 
 ### Moar
 
-We
-* lint with `pylint` & `flake8`,
-* format with `black` & `isort`,
-* type-check with `mypy`,
-* benchark with `timeit`, and
-* trace with `py-spy`.
+Useful commands:
 
-Use them via
-`pipenv run …`
+* Lint with `pylint` & `flake8`
+* Format with `black` & `isort`
+* Type-check with `mypy`
+* Benchark with `timeit`
+* Trace with `py-spy`
+
+Use the commands with `pipenv run …`:
+
 * `pretty`
 * `pretty-check`
 * `lint`
 * `lint-details`
 * `type-check`
 * `benchmarks/run_all.sh`
-and trace the server on http://localhost:8000/trace.
+
+Trace the server on http://localhost:8000/trace.
 
 ## License
 AGPLv3  
