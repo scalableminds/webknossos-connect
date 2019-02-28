@@ -1,5 +1,5 @@
 # webknossos-connect
-A webKnossos compatible data connector written in Python
+A [webKnossos](https://github.com/scalableminds/webknossos) compatible data connector written in Python
 
 [![CircleCI](https://circleci.com/gh/scalableminds/webknossos-connect.svg?style=svg&circle-token=1d7b55b40a5733c7563033064cee0ed0beef36b6)](https://circleci.com/gh/scalableminds/webknossos-connect)
 
@@ -76,3 +76,7 @@ Use them via
 * `type-check`
 * `benchmarks/run_all.sh`
 and trace the server on http://localhost:8000/trace.
+
+## License
+AGPLv3  
+Copyright [scalable minds](https://scalableminds.com)
