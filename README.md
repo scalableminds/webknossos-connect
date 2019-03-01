@@ -59,7 +59,7 @@ The recommended way is to use `pyenv` and `pipenv`:
   INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") 
   VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
   ```
-* `pipenv install --pre --dev`
+* `pipenv install --dev`
 * `pipenv run main`
 * ```
   curl http://localhost:8000/api/neuroglancer/Demo_Lab/test \
@@ -72,7 +72,7 @@ The recommended way is to use `pyenv` and `pipenv`:
 Useful commands:
 
 * Lint with `pylint` & `flake8`
-* Format with `black` & `isort`
+* Format with `black`, `isort` & `autoflake`
 * Type-check with `mypy`
 * Benchark with `timeit`
 * Trace with `py-spy`
@@ -89,5 +89,5 @@ Use the commands with `pipenv run …`:
 Trace the server on http://localhost:8000/trace.
 
 ## License
-AGPLv3  
+AGPLv3
 Copyright [scalable minds](https://scalableminds.com)
