@@ -5,8 +5,8 @@
         }
     },
     "neuroglancer": {
-        "Connectomics_Department": {
-            "drosophila": {
+        "Demo_Lab": {
+            "fafb_v14": {
                 "layers": {
                     "image": {
                         "source": "gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_clahe",
@@ -14,7 +14,7 @@
                     }
                 }
             },
-            "test": {
+            "kasthuri2011": {
                 "layers": {
                     "corrected_image": {
                         "source": "gs://neuroglancer-public-data/kasthuri2011/image_color_corrected",
