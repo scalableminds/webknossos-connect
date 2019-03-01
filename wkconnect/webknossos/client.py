@@ -1,10 +1,10 @@
 from aiohttp import ClientSession
 from sanic.config import Config
 
-from ..utils.caching import atlru_cache
-from ..utils.json import from_json, to_json
 from .access import AccessAnswer, AccessRequest
 from .models import DataSource, DataStoreStatus
+from ..utils.caching import atlru_cache
+from ..utils.json import from_json, to_json
 
 
 class WebKnossosClient:

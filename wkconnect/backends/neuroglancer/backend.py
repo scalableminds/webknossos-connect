@@ -1,17 +1,16 @@
 import asyncio
 from typing import Any, Callable, Dict, Iterable, Optional, Tuple, cast
 
+import compressed_segmentation
 import jpeg4py as jpeg
 import numpy as np
 from aiohttp import ClientResponseError, ClientSession
 from async_lru import alru_cache
 
-import compressed_segmentation
-
+from .models import Dataset, Layer, Scale
+from ..backend import Backend, DatasetInfo
 from ...utils.json import from_json
 from ...utils.types import JSON, Box3D, Vec3D
-from ..backend import Backend, DatasetInfo
-from .models import Dataset, Layer, Scale
 
 DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
