@@ -1,11 +1,24 @@
 {
     "boss": {
         "Connectomics_Department": {
-            "bosstest": {}
+            "ara": {
+                "domain": "https://api.boss.neurodata.io",
+                "collection": "ara_2016",
+                "experiment": "sagittal_50um",
+                "username": "jstriebel",
+                "password": "{,vEzT7J?-5_"
+            },
+            "kasthuri2011-neurodata-io": {
+                "domain": "https://api.boss.neurodata.io",
+                "collection": "kasthuri",
+                "experiment": "kasthuri11",
+                "username": "jstriebel",
+                "password": "{,vEzT7J?-5_"
+            }
         }
     },
     "neuroglancer": {
-        "Demo_Lab": {
+        "Connectomics_Department": {
             "fafb_v14": {
                 "layers": {
                     "image": {

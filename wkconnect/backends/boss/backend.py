@@ -30,7 +30,7 @@ class Channel:
 
     def to_webknossos(self, wk_bounding_box: WKBoundingBox) -> WKDataLayer:
         return WKDataLayer(
-            self.channel_name, "color", wk_bounding_box, self.resolutions, self.datatype
+            self.channel_name, "color", wk_bounding_box, self.resolutions, "uint8"
         )
 
 
@@ -130,6 +130,9 @@ class TokenRepository:
     async def get_header(self, dataset: DatasetDescriptor) -> Dict[str, str]:
         return {"Authorization": await self.get(dataset)}
 
+    # TODO logout tokens on server stop?
+    # https://github.com/jhuapl-boss/boss-tools/blob/master/bossutils/keycloak.py#L113-L127
+
 
 class Boss(Backend):
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
@@ -146,20 +149,17 @@ class Boss(Backend):
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
-        # TODO get them from dataset_info
-        domain = "https://api.boss.neurodata.io"
+        domain = dataset_info["domain"]
         assert domain.startswith("https://api") or domain.startswith("http://api")
 
-        username = "jstriebel"
-        password = "{,vEzT7J?-5_"
+        username = dataset_info["username"]
+        password = dataset_info["password"]
 
-        # coll_name = "ara_2016"
-        # exp_name = "sagittal_50um"
-        coll_name = "kasthuri"
-        exp_name = "kasthuri11"
+        collection = dataset_info["collection"]
+        experiment = dataset_info["experiment"]
 
         experiment_url = "/".join(
-            [domain, "v1", "collection", coll_name, "experiment", exp_name]
+            [domain, "v1", "collection", collection, "experiment", experiment]
         )
         token_key = (domain, username, password)
         async with await self.auth_get(experiment_url, token_key) as r:
@@ -227,9 +227,9 @@ class Boss(Backend):
                     domain,
                     "v1",
                     "collection",
-                    coll_name,
+                    collection,
                     "experiment",
-                    exp_name,
+                    experiment,
                     "channel",
                     channel_name,
                 ]
@@ -261,7 +261,7 @@ class Boss(Backend):
             assert datatype in ["uint8", "uint16"]
 
             downsample_url = "/".join(
-                [domain, "v1", "downsample", coll_name, exp_name, channel_name]
+                [domain, "v1", "downsample", collection, experiment, channel_name]
             )
             async with await self.auth_get(downsample_url, token_key) as r:
                 downsample_info = await r.json()
@@ -279,13 +279,12 @@ class Boss(Backend):
                 Vec3D(*map(int, i))
                 for i in sorted(downsample_info["voxel_size"].values())
             ]
-            assert resolutions[0] == global_scale
             resolutions = [i // resolutions[0] for i in resolutions]
             assert all(max(res) == 2 ** i for i, res in enumerate(resolutions))
 
             channels.append(Channel(channel_name, datatype, resolutions))
 
-        experiment = Experiment(coll_name, exp_name, channels)
+        experiment = Experiment(collection, experiment, channels)
 
         return Dataset(
             organization_name,
