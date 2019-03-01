@@ -7,7 +7,7 @@ autoflake = "*"
 black = "==18.9b0"
 flake8 = "*"
 isort = "*"
-mypy = "*"
+mypy = "==0.660"
 pep8-naming = "*"
 py-spy = "*"
 pylint = "*"
@@ -15,13 +15,13 @@ pylint = "*"
 [packages]
 aiohttp = "*"
 async-lru = "*"
+blosc = "*"
 compressed-segmentation = ">=1.0.0"
 jpeg4py = "*"
 numpy = "*"
 Pillow = "*"
 sanic = "*"
 sanic_cors = "*"
-blosc = "*"
 
 [requires]
 python_version = "3.7.2"
@@ -55,6 +55,6 @@ type-check = '''
         MYPYPATH=\"$(pipenv --venv)/lib/python3.7/site-packages/:stubs\" \
         mypy \
             --disallow-untyped-defs \
-            wkconnect benchmarks stubs \
+            wkconnect benchmarks \
     "
 '''

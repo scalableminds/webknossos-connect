@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import List, NamedTuple, Tuple
+
+from dataclasses import dataclass
 
 from ..utils.types import Box3D, Vec3D
 

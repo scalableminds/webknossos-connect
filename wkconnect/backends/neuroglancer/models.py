@@ -1,12 +1,13 @@
-from dataclasses import InitVar, dataclass, field
 from typing import Any, Dict, Optional, Tuple
 
-from ..backend import DatasetInfo
+from dataclasses import InitVar, dataclass, field
+
 from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox
 from ...webknossos.models import DataLayer as WKDataLayer
 from ...webknossos.models import DataSource as WKDataSource
 from ...webknossos.models import DataSourceId as WKDataSourceId
+from ..backend import DatasetInfo
 
 
 @dataclass(frozen=True)

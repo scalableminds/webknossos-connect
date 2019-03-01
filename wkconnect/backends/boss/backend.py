@@ -1,21 +1,22 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Tuple, cast
+from typing import Callable, Dict, List, Optional, Tuple, Union, cast
 
 import blosc
 import numpy as np
-from aiohttp import ClientSession
+from aiohttp import ClientResponse, ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 
-from ..backend import Backend, DatasetInfo
+from dataclasses import dataclass
+
 from ...utils.si import convert_si_units
 from ...utils.types import JSON, Box3D, Vec3D
 from ...webknossos.models import BoundingBox as WKBoundingBox
 from ...webknossos.models import DataLayer as WKDataLayer
 from ...webknossos.models import DataSource as WKDataSource
 from ...webknossos.models import DataSourceId as WKDataSourceId
+from ..backend import Backend, DatasetInfo
 
 DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
@@ -27,7 +28,7 @@ class Channel:
     datatype: str
     resolutions: List[Vec3D]
 
-    def to_webknossos(self, wk_bounding_box) -> WKDataLayer:
+    def to_webknossos(self, wk_bounding_box: WKBoundingBox) -> WKDataLayer:
         return WKDataLayer(
             self.channel_name, "color", wk_bounding_box, self.resolutions, self.datatype
         )
@@ -64,11 +65,13 @@ class Dataset(DatasetInfo):
 
 
 class TokenRepository:
-    def __init__(self, http_client):
+    def __init__(self, http_client: ClientSession):
         self.http_client = http_client
-        self.token_infos = {}
+        self.token_infos: Dict = {}
 
-    async def get(self, dataset):
+    DatasetDescriptor = Union[Dataset, Tuple[str, str, str]]
+
+    async def get(self, dataset: DatasetDescriptor) -> str:
         if isinstance(dataset, Dataset):
             domain, username, password = (
                 dataset.domain,
@@ -124,7 +127,7 @@ class TokenRepository:
 
         return "Bearer " + token_info["access_token"]
 
-    async def get_header(self, dataset):
+    async def get_header(self, dataset: DatasetDescriptor) -> Dict[str, str]:
         return {"Authorization": await self.get(dataset)}
 
 
@@ -133,7 +136,9 @@ class Boss(Backend):
         self.tokens = TokenRepository(http_client)
         self.http_client = http_client
 
-    async def auth_get(self, url, dataset):
+    async def auth_get(
+        self, url: str, dataset: TokenRepository.DatasetDescriptor
+    ) -> ClientResponse:
         return await self.http_client.get(
             url, headers=await self.tokens.get_header(dataset)
         )

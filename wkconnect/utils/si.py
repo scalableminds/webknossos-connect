@@ -1,4 +1,4 @@
-def convert_si_units(val, unit_in, unit_out):
+def convert_si_units(val: int, unit_in: str, unit_out: str) -> int:
     prefix_to_exponent = {
         "yotta": 24,
         "zetta": 21,
@@ -22,7 +22,7 @@ def convert_si_units(val, unit_in, unit_out):
         "yocto": -24,
     }
 
-    def get_exponent(unit):
+    def get_exponent(unit: str) -> int:
         possible_exponent = [
             exponent
             for prefix, exponent in prefix_to_exponent.items()
