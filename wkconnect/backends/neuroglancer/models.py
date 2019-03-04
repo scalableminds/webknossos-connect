@@ -4,9 +4,9 @@ from dataclasses import InitVar, dataclass, field
 
 from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox
-from ...webknossos.models import DataLayer as WKDataLayer
-from ...webknossos.models import DataSource as WKDataSource
-from ...webknossos.models import DataSourceId as WKDataSourceId
+from ...webknossos.models import DataLayer as WkDataLayer
+from ...webknossos.models import DataSource as WkDataSource
+from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
 
 
@@ -60,11 +60,11 @@ class Layer:
     def min_scale(self) -> Scale:
         return min(self.scales, key=lambda scale: sum(scale.resolution))
 
-    def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WKDataLayer:
+    def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WkDataLayer:
         normalized_resolutions = [
             scale.resolution // global_scale for scale in self.scales
         ]
-        return WKDataLayer(
+        return WkDataLayer(
             layer_name,
             {"image": "color", "segmentation": "segmentation"}[self.type],
             self.min_scale().bounding_box(),
@@ -87,9 +87,9 @@ class Dataset(DatasetInfo):
         assert len(min_resolution) == 1
         self.scale = next(iter(min_resolution))
 
-    def to_webknossos(self) -> WKDataSource:
-        return WKDataSource(
-            WKDataSourceId(self.organization_name, self.dataset_name),
+    def to_webknossos(self) -> WkDataSource:
+        return WkDataSource(
+            WkDataSourceId(self.organization_name, self.dataset_name),
             [
                 layer.to_webknossos(layer_name, self.scale)
                 for layer_name, layer in self.layers.items()
