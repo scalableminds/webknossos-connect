@@ -1,8 +1,9 @@
-from typing import Dict, cast
+import asyncio
+from typing import Dict, Optional, cast
 
 import blosc
 import numpy as np
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 
 from ...utils.si import convert_si_units
@@ -19,12 +20,32 @@ class Boss(Backend):
         self.http_client = http_client
         self.client = Client(http_client, self.tokens)
 
-    async def auth_get(
-        self, url: str, dataset: TokenRepository.DatasetDescriptor
-    ) -> ClientResponse:
-        return await self.http_client.get(
-            url, headers=await self.tokens.get_header(dataset)
+    async def handle_new_channel(
+        self,
+        domain: str,
+        collection: str,
+        experiment: str,
+        channel: str,
+        token_key: TokenRepository.DatasetDescriptor,
+    ) -> Optional[Channel]:
+        channel_info = await self.client.get_channel(
+            domain, collection, experiment, channel, token_key
         )
+        if channel_info["type"] != "image":
+            return None
+        assert channel_info["base_resolution"] == 0
+        assert channel_info["downsample_status"] == "DOWNSAMPLED"
+        datatype = channel_info["datatype"]
+
+        downsample_info = await self.client.get_downsample(
+            domain, collection, experiment, channel, token_key
+        )
+        resolutions = [
+            Vec3D(*map(int, i)) for i in sorted(downsample_info["voxel_size"].values())
+        ]
+        resolutions = [i // resolutions[0] for i in resolutions]
+
+        return Channel(channel, datatype, resolutions)
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
@@ -34,7 +55,6 @@ class Boss(Backend):
 
         username = dataset_info["username"]
         password = dataset_info["password"]
-
         collection = dataset_info["collection"]
         experiment = dataset_info["experiment"]
 
@@ -65,34 +85,17 @@ class Boss(Backend):
             )
         )
 
-        channels = []
-        # TODO use extra method & asyncio.gather
-        for channel in experiment_info["channels"]:
-            channel_info = await self.client.get_channel(
-                domain, collection, experiment, channel, token_key
+        channels = await asyncio.gather(
+            *(
+                self.handle_new_channel(
+                    domain, collection, experiment, channel, token_key
+                )
+                for channel in experiment_info["channels"]
             )
-            if channel_info["type"] != "image":
-                # TODO add issue for annotations
-                continue
-            assert channel_info["base_resolution"] == 0
-            assert channel_info["downsample_status"] == "DOWNSAMPLED"
-            datatype = channel_info["datatype"]
-            assert datatype in ["uint8", "uint16"]
+        )
+        channels_filtered = [i for i in channels if i is not None]
 
-            downsample_info = await self.client.get_downsample(
-                domain, collection, experiment, channel, token_key
-            )
-            # TODO consider using cuboid size to download & for caching
-            resolutions = [
-                Vec3D(*map(int, i))
-                for i in sorted(downsample_info["voxel_size"].values())
-            ]
-            resolutions = [i // resolutions[0] for i in resolutions]
-            assert all(max(res) == 2 ** i for i, res in enumerate(resolutions))
-
-            channels.append(Channel(channel, datatype, resolutions))
-
-        experiment = Experiment(collection, experiment, channels)
+        experiment = Experiment(collection, experiment, channels_filtered)
 
         return Dataset(
             organization_name,
@@ -139,7 +142,6 @@ class Boss(Backend):
         data = blosc.decompress(compressed_data)
 
         data_8bit = (
-            # TODO issue for 16 bit
             np.frombuffer(data, dtype="uint8")
             if channel.datatype == "uint8"
             else np.frombuffer(data, dtype=">u2").astype("uint8")

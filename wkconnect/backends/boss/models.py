@@ -16,6 +16,10 @@ class Channel:
     datatype: str
     resolutions: List[Vec3D]
 
+    def __post_init__(self) -> None:
+        assert self.datatype in ["uint8", "uint16"]
+        assert all(max(res) == 2 ** i for i, res in enumerate(self.resolutions))
+
     def to_webknossos(self, wk_bounding_box: WkBoundingBox) -> WkDataLayer:
         return WkDataLayer(
             self.channel_name, "color", wk_bounding_box, self.resolutions, "uint8"
