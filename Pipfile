@@ -55,6 +55,6 @@ type-check = '''
         MYPYPATH=\"$(pipenv --venv)/lib/python3.7/site-packages/:stubs\" \
         mypy \
             --disallow-untyped-defs \
-            wkconnect benchmarks \
+            wkconnect benchmarks stubs \
     "
 '''
