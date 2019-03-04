@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Iterable, Optional, Tuple, Union
 
 from .types import JSON, Vec3D
 
@@ -51,19 +51,37 @@ def from_json(data: JSON, cls: Optional[type]) -> Any:
         return data
 
 
+def yield_jsons(
+    obj_iter: Iterable, keys: Optional[Iterable[str]] = None
+) -> Iterable[Union[JSON, Tuple[str, JSON]]]:
+    if keys is None:
+        for obj in obj_iter:
+            json = to_json(obj)
+            if json is not None:
+                yield json
+    else:
+        for key, obj in zip(keys, obj_iter):
+            json = to_json(obj)
+            if json is not None:
+                yield key, json
+
+
 def to_json(obj: Any) -> JSON:
     cls = type(obj)
     if issubclass(cls, Vec3D):
         return tuple(obj)
     elif hasattr(cls, "__annotations__"):
         return dict(
-            map(lambda name: (name, to_json(getattr(obj, name))), cls.__annotations__)
+            yield_jsons(
+                (getattr(obj, name) for name in cls.__annotations__),
+                keys=cls.__annotations__.keys(),
+            )
         )
     elif issubclass(cls, list):
-        return list(map(to_json, obj))
+        return list(yield_jsons(obj))
     elif issubclass(cls, tuple):
-        return tuple(map(to_json, obj))
+        return tuple(yield_jsons(obj))
     elif issubclass(cls, dict):
-        return dict([(name, to_json(value)) for name, value in obj.items()])
+        return dict(yield_jsons(obj.values(), keys=obj.keys()))
     else:
         return obj
