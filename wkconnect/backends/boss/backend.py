@@ -31,11 +31,8 @@ class Boss(Backend):
         channel_info = await self.client.get_channel(
             domain, collection, experiment, channel, token_key
         )
-        if channel_info["type"] != "image":
-            return None
         assert channel_info["base_resolution"] == 0
         assert channel_info["downsample_status"] == "DOWNSAMPLED"
-        datatype = channel_info["datatype"]
 
         downsample_info = await self.client.get_downsample(
             domain, collection, experiment, channel, token_key
@@ -45,7 +42,9 @@ class Boss(Backend):
         ]
         resolutions = [i // resolutions[0] for i in resolutions]
 
-        return Channel(channel, datatype, resolutions)
+        return Channel(
+            channel, channel_info["datatype"], resolutions, channel_info["type"]
+        )
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
@@ -139,14 +138,16 @@ class Boss(Backend):
             # will be reported in MISSING-BUCKETS, frontend will retry
             return None
 
-        data = blosc.decompress(compressed_data)
+        byte_data = blosc.decompress(compressed_data)
 
-        data_8bit = (
-            np.frombuffer(data, dtype="uint8")
-            if channel.datatype == "uint8"
-            else np.frombuffer(data, dtype=">u2").astype("uint8")
-        )
-        return data_8bit.reshape(shape, order="F")
+        if channel.type == "color" and channel.datatype == "uint16":
+            # this will be downscaled to uint8,
+            # we want to take the higher-order bits here
+            data = np.frombuffer(byte_data, dtype=">u2")
+        else:
+            data = np.frombuffer(byte_data, dtype=channel.datatype)
+
+        return data.astype(channel.wk_datatype()).reshape(shape, order="F")
 
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         pass

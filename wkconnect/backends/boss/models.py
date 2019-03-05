@@ -10,19 +10,36 @@ from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
 
 
-@dataclass(frozen=True)
+@dataclass(unsafe_hash=True)
 class Channel:
     channel_name: str
     datatype: str
     resolutions: List[Vec3D]
+    type: str
 
     def __post_init__(self) -> None:
-        assert self.datatype in ["uint8", "uint16"]
+        supported_datatypes = {
+            "color": ["uint8", "uint16"],
+            "segmentation": ["uint32", "uint64"],
+        }
+        if self.type == "image":
+            self.type = "color"
+        elif self.type == "annotation":
+            self.type = "segmentation"
+        assert self.type in supported_datatypes
+        assert self.datatype in supported_datatypes[self.type]
         assert all(max(res) == 2 ** i for i, res in enumerate(self.resolutions))
+
+    def wk_datatype(self) -> str:
+        return "uint8" if self.type == "color" else "uint32"
 
     def to_webknossos(self, wk_bounding_box: WkBoundingBox) -> WkDataLayer:
         return WkDataLayer(
-            self.channel_name, "color", wk_bounding_box, self.resolutions, "uint8"
+            self.channel_name,
+            self.type,
+            wk_bounding_box,
+            self.resolutions,
+            self.wk_datatype(),
         )
 
 
