@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from copy import deepcopy
-from typing import Dict, List, Tuple, Type, Any
+from typing import Any, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientConnectorError
