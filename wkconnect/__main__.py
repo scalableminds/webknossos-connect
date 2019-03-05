@@ -53,6 +53,7 @@ class Server(Sanic):
                 if isinstance(val, str):
                     dict[key] = os.path.expandvars(val)
             return dict
+
         try:
             with open(self.config["datasets_path"]) as datasets_file:
                 datasets = json.load(datasets_file, object_hook=expandvars_hook)
