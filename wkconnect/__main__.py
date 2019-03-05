@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 from copy import deepcopy
 from typing import Dict, List, Tuple, Type
 
@@ -47,9 +48,14 @@ class Server(Sanic):
         await self.webknossos.report_dataset(dataset.to_webknossos())
 
     async def load_persisted_datasets(self) -> None:
+        def expandvars_hook(dict):
+            for key, val in dict.items():
+                if isinstance(val, str):
+                    dict[key] = os.path.expandvars(val)
+            return dict
         try:
             with open(self.config["datasets_path"]) as datasets_file:
-                datasets = json.load(datasets_file)
+                datasets = json.load(datasets_file, object_hook=expandvars_hook)
         except FileNotFoundError:
             datasets = {}
         await asyncio.gather(
