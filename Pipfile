@@ -15,6 +15,7 @@ pylint = "*"
 [packages]
 aiohttp = "*"
 async-lru = "*"
+blosc = "*"
 compressed-segmentation = ">=1.0.0"
 jpeg4py = "*"
 numpy = "*"

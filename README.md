@@ -10,8 +10,13 @@ A [webKnossos](https://github.com/scalableminds/webknossos) compatible data conn
   INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") 
   VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
   ```
-2. `docker-compose up --build webknossos-connect`
-3. By default, some public datasets are reported. Add more datasets from the webKnossos user interface.
+2. To use the initial datasets from [neurodata.io](https://neurodata.io/ndcloud/#data), create a `.env` file:
+  ```
+  NEURODATA_IO_USER="<your username>"
+  NEURODATA_IO_PW="<your password>"
+  ```
+3. `docker-compose up --build webknossos-connect`
+4. By default, some public datasets are reported. Add more datasets from the webKnossos user interface.
 
 ## Development
 ### In Docker :whale:

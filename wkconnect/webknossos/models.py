@@ -30,6 +30,10 @@ class BoundingBox(NamedTuple):
     def box(self) -> Box3D:
         return Box3D.from_size(self.topLeft, Vec3D(self.width, self.height, self.depth))
 
+    @classmethod
+    def from_box(cls, box: Box3D) -> BoundingBox:
+        return cls(box.left, *box.size())
+
 
 class DataSourceId(NamedTuple):
     team: str

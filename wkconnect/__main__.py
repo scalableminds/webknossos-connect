@@ -1,8 +1,9 @@
 import asyncio
 import json
 import logging
+import os
 from copy import deepcopy
-from typing import Dict, List, Tuple, Type
+from typing import Any, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientConnectorError
@@ -12,7 +13,8 @@ from sanic_cors import CORS
 from uvloop import Loop
 
 from .backends.backend import Backend
-from .backends.neuroglancer.backend import NeuroglancerBackend as Neuroglancer
+from .backends.boss.backend import Boss
+from .backends.neuroglancer.backend import Neuroglancer
 from .repository import Repository
 from .routes import routes
 from .utils.scheduler import repeat_every_seconds
@@ -29,7 +31,7 @@ class Server(Sanic):
         self.repository: Repository
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
-        self.available_backends: List[Type[Backend]] = [Neuroglancer]
+        self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer]
 
     async def add_dataset(
         self,
@@ -46,9 +48,15 @@ class Server(Sanic):
         await self.webknossos.report_dataset(dataset.to_webknossos())
 
     async def load_persisted_datasets(self) -> None:
+        def expandvars_hook(dict: Dict[str, Any]) -> Dict[str, Any]:
+            for key, val in dict.items():
+                if isinstance(val, str):
+                    dict[key] = os.path.expandvars(val)
+            return dict
+
         try:
             with open(self.config["datasets_path"]) as datasets_file:
-                datasets = json.load(datasets_file)
+                datasets = json.load(datasets_file, object_hook=expandvars_hook)
         except FileNotFoundError:
             datasets = {}
         await asyncio.gather(
@@ -80,14 +88,13 @@ with open("data/config.json") as config_file:
 async def setup(app: Server, loop: Loop) -> None:
     def instanciate_backend(backend_class: Type[Backend]) -> Tuple[str, Backend]:
         backend_name = backend_class.name()
-        config = app.config["backends"][backend_name]
+        config = app.config["backends"].get(backend_name, {})
         return (backend_name, backend_class(config, app.http_client))
 
     app.http_client = await ClientSession(raise_for_status=True).__aenter__()
     app.repository = Repository()
     app.webknossos = WebKnossos(app.config, app.http_client)
     app.backends = dict(map(instanciate_backend, app.available_backends))
-    # await app.load_persisted_datasets()
 
 
 @app.listener("before_server_stop")
