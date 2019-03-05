@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from copy import deepcopy
-from typing import Dict, List, Tuple, Type
+from typing import Dict, List, Tuple, Type, Any
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientConnectorError
@@ -48,7 +48,7 @@ class Server(Sanic):
         await self.webknossos.report_dataset(dataset.to_webknossos())
 
     async def load_persisted_datasets(self) -> None:
-        def expandvars_hook(dict):
+        def expandvars_hook(dict: Dict[str, Any]) -> Dict[str, Any]:
             for key, val in dict.items():
                 if isinstance(val, str):
                     dict[key] = os.path.expandvars(val)
