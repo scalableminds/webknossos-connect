@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import List, NamedTuple, Optional, Tuple, cast
+from typing import Any, List, NamedTuple, Optional, Tuple, cast
 
 import numpy as np
 
 from dataclasses import dataclass, field
 
-from ..utils.types import Box3D, Vec3D
+from ..utils.types import JSON, Box3D, Vec3D
 
 
 class DataStoreStatus(NamedTuple):
@@ -43,14 +43,20 @@ class DataLayer:
     boundingBox: BoundingBox
     resolutions: List[Vec3D]
     elementClass: str
-    largestSegmentId: Optional[int] = field(default=None, init=False)
     dataFormat: str = field(default="wkw", init=False)
+    wkwResolutions: JSON = field(init=False)
+    largestSegmentId: Optional[int] = field(default=None, init=False)
+    mappings: Optional[List[Any]] = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         assert self.category in ["color", "segmentation"]
         assert self.elementClass in ["uint8", "uint16", "uint32", "uint64"]
         if self.category == "segmentation":
             self.largestSegmentId = cast(int, np.iinfo(self.elementClass).max)
+            self.mappings = []
+        self.wkwResolutions = [
+            {"resolution": i, "cubeLength": 1024} for i in self.resolutions
+        ]
 
 
 class DataSource(NamedTuple):
