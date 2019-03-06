@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from copy import deepcopy
+import traceback
 from typing import Any, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
@@ -10,6 +11,8 @@ from aiohttp.client_exceptions import ClientConnectorError
 from sanic import Sanic, response
 from sanic.request import Request
 from sanic_cors import CORS
+from sanic.handlers import ErrorHandler
+from sanic.exceptions import SanicException
 from uvloop import Loop
 
 from .backends.backend import Backend
@@ -79,6 +82,22 @@ CORS(app, automatic_options=True)
 
 with open("data/config.json") as config_file:
     app.config.update(json.load(config_file))
+
+
+## ERROR HANDLING
+
+
+class CustomErrorHandler(ErrorHandler):
+    def default(self, request, exception):
+        '''handles errors that have no other error handlers assigned'''
+        if isinstance(exception, SanicException):
+            return super().default(request, exception)
+        else:
+            message = f"{type(exception).__name__} in webknossos-connect."
+            message_json = {"messages":[{"error": message, "chain": [traceback.format_exc()]}]}
+            return response.json(message_json, status=500)
+
+app.error_handler = CustomErrorHandler()
 
 
 ## TASKS ##
