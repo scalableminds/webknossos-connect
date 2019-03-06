@@ -88,7 +88,7 @@ with open("data/config.json") as config_file:
 
 
 class CustomErrorHandler(ErrorHandler):
-    def default(self, request, exception):
+    def default(self, request: Request, exception: Exception) -> response.HTTPResponse:
         """handles errors that have no other error handlers assigned"""
         if isinstance(exception, SanicException):
             return super().default(request, exception)
