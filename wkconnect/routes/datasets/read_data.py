@@ -14,6 +14,17 @@ from ...webknossos.models import DataRequest as WKDataRequest
 read_data = Blueprint(__name__)
 
 
+def convert_data(to_four_bit: bool, data: np.ndarray) -> np.ndarray:
+    data = data.flatten(order="F")
+    if to_four_bit:
+        assert data.dtype == np.dtype("uint8")
+        odds = data[::2]
+        evens = data[1::2]
+        return ((odds >> 4) << 4) | (evens >> 4)
+    else:
+        return data
+
+
 @read_data.route(
     "/<organization_name>/<dataset_name>/layers/<layer_name>/data", methods=["POST"]
 )
@@ -27,7 +38,6 @@ async def get_data_post(
     backend = request.app.backends[backend_name]
 
     bucket_requests = from_json(request.json, List[WKDataRequest])
-    assert all(not request.fourBit for request in bucket_requests)
 
     buckets = await asyncio.gather(
         *(
@@ -42,7 +52,11 @@ async def get_data_post(
         )
     )
     missing_buckets = [index for index, data in enumerate(buckets) if data is None]
-    existing_buckets = [data.flatten(order="F") for data in buckets if data is not None]
+    existing_buckets = [
+        convert_data(r.fourBit, data)
+        for r, data in zip(bucket_requests, buckets)
+        if data is not None
+    ]
     data = (
         np.concatenate(existing_buckets).tobytes() if len(existing_buckets) > 0 else b""
     )
