@@ -94,9 +94,9 @@ class CustomErrorHandler(ErrorHandler):
             return super().default(request, exception)
         else:
             message = f"{type(exception).__name__} in webknossos-connect."
-            message_json = {
-                "messages": [{"error": message, "chain": [traceback.format_exc()]}]
-            }
+            stack = traceback.format_exc()
+            message_json = {"messages": [{"error": message, "chain": [stack]}]}
+            logger.error(stack)
             return response.json(message_json, status=500)
 
 

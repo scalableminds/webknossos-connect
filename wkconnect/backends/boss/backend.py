@@ -1,14 +1,15 @@
 import asyncio
-from typing import Dict, Optional, cast
+from typing import Dict, Optional, Tuple, cast
 
 import blosc
 import numpy as np
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
+from async_lru import alru_cache
 
 from ...utils.si import convert_si_units
-from ...utils.types import JSON, Box3D, Vec3D
-from ..backend import Backend, DatasetInfo
+from ...utils.types import JSON, Box3D, HashableDict, Vec3D
+from ..backend import Backend, Chunk, DatasetInfo
 from .client import Client
 from .models import Channel, Dataset, Experiment
 from .token_repository import TokenRepository
@@ -20,14 +21,14 @@ class Boss(Backend):
         self.http_client = http_client
         self.client = Client(http_client, self.tokens)
 
-    async def handle_new_channel(
+    async def __handle_new_channel(
         self,
         domain: str,
         collection: str,
         experiment: str,
         channel: str,
         token_key: TokenRepository.DatasetDescriptor,
-    ) -> Optional[Channel]:
+    ) -> Tuple[str, Channel]:
         channel_info = await self.client.get_channel(
             domain, collection, experiment, channel, token_key
         )
@@ -37,13 +38,22 @@ class Boss(Backend):
         downsample_info = await self.client.get_downsample(
             domain, collection, experiment, channel, token_key
         )
-        resolutions = [
+        resolutions = tuple(
             Vec3D(*map(int, i)) for i in sorted(downsample_info["voxel_size"].values())
-        ]
-        resolutions = [i // resolutions[0] for i in resolutions]
+        )
+        resolutions = tuple(i // resolutions[0] for i in resolutions)
 
-        return Channel(
-            channel, channel_info["datatype"], resolutions, channel_info["type"]
+        cuboid_sizes = set(Vec3D(*i) for i in downsample_info["cuboid_size"].values())
+        assert len(cuboid_sizes) == 1
+
+        return (
+            channel,
+            Channel(
+                channel_info["datatype"],
+                resolutions,
+                cuboid_sizes.pop(),
+                channel_info["type"],
+            ),
         )
 
     async def handle_new_dataset(
@@ -86,15 +96,14 @@ class Boss(Backend):
 
         channels = await asyncio.gather(
             *(
-                self.handle_new_channel(
+                self.__handle_new_channel(
                     domain, collection, experiment, channel, token_key
                 )
                 for channel in experiment_info["channels"]
             )
         )
-        channels_filtered = [i for i in channels if i is not None]
 
-        experiment = Experiment(collection, experiment, channels_filtered)
+        experiment = Experiment(collection, experiment, HashableDict(channels))
 
         return Dataset(
             organization_name,
@@ -107,6 +116,33 @@ class Boss(Backend):
             global_scale,
         )
 
+    @alru_cache(maxsize=2 ** 8)
+    async def __download_data(
+        self,
+        dataset: Dataset,
+        channel_name: str,
+        channel: Channel,
+        zoom_step: int,
+        box: Box3D,
+    ) -> Chunk:
+        compressed_data = await self.client.get_cutout(
+            dataset.domain,
+            dataset.experiment.collection_name,
+            dataset.experiment.experiment_name,
+            channel_name,
+            zoom_step,
+            box,
+            dataset,
+        )
+        byte_data = blosc.decompress(compressed_data)
+        if channel.type == "color" and channel.datatype == "uint16":
+            # this will be downscaled to uint8,
+            # we want to take the higher-order bits here
+            data = np.frombuffer(byte_data, dtype=">u2")
+        else:
+            data = np.frombuffer(byte_data, dtype=channel.datatype)
+        return (box, data.astype(channel.wk_datatype()).reshape(box.size(), order="F"))
+
     async def read_data(
         self,
         abstract_dataset: DatasetInfo,
@@ -114,40 +150,28 @@ class Boss(Backend):
         zoom_step: int,
         wk_offset: Vec3D,
         shape: Vec3D,
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         dataset = cast(Dataset, abstract_dataset)
-
-        channel = [
-            i for i in dataset.experiment.channels if i.channel_name == layer_name
-        ][0]
+        channel = dataset.experiment.channels[layer_name]
 
         channel_offset = wk_offset // channel.resolutions[zoom_step]
         box = Box3D.from_size(channel_offset, shape)
 
+        chunk_boxes = self._chunks(box, dataset.bounding_box, channel.cuboid_size)
         try:
-            compressed_data = await self.client.get_cutout(
-                dataset.domain,
-                dataset.experiment.collection_name,
-                dataset.experiment.experiment_name,
-                layer_name,
-                zoom_step,
-                box,
-                dataset,
+            chunks = await asyncio.gather(
+                *(
+                    self.__download_data(
+                        dataset, layer_name, channel, zoom_step, chunk_box
+                    )
+                    for chunk_box in chunk_boxes
+                )
             )
         except ClientResponseError:
             # will be reported in MISSING-BUCKETS, frontend will retry
             return None
 
-        byte_data = blosc.decompress(compressed_data)
-
-        if channel.type == "color" and channel.datatype == "uint16":
-            # this will be downscaled to uint8,
-            # we want to take the higher-order bits here
-            data = np.frombuffer(byte_data, dtype=">u2")
-        else:
-            data = np.frombuffer(byte_data, dtype=channel.datatype)
-
-        return data.astype(channel.wk_datatype()).reshape(shape, order="F")
+        return self._cutout(chunks, box)
 
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         pass

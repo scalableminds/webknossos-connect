@@ -96,3 +96,8 @@ class Box3D(NamedTuple):
 # TODO refine this when recursive types are possible:
 # see https://github.com/python/mypy/issues/731
 JSON = Any
+
+
+class HashableDict(dict):
+    def __hash__(self) -> int:
+        return hash(tuple(sorted(self.items())))

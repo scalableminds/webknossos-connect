@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List, Tuple
 
 from dataclasses import dataclass
 
@@ -12,9 +12,9 @@ from ..backend import DatasetInfo
 
 @dataclass(unsafe_hash=True)
 class Channel:
-    channel_name: str
     datatype: str
-    resolutions: List[Vec3D]
+    resolutions: Tuple[Vec3D, ...]
+    cuboid_size: Vec3D
     type: str
 
     def __post_init__(self) -> None:
@@ -33,21 +33,24 @@ class Channel:
     def wk_datatype(self) -> str:
         return "uint8" if self.type == "color" else "uint32"
 
-    def to_webknossos(self, wk_bounding_box: WkBoundingBox) -> WkDataLayer:
-        return WkDataLayer(
-            self.channel_name,
-            self.type,
-            wk_bounding_box,
-            self.resolutions,
-            self.wk_datatype(),
-        )
-
 
 @dataclass(frozen=True)
 class Experiment:
     collection_name: str
     experiment_name: str
-    channels: List[Channel]
+    channels: Dict[str, Channel]
+
+    def webknossos_layers(self, wk_bounding_box: WkBoundingBox) -> List[WkDataLayer]:
+        return [
+            WkDataLayer(
+                channel_name,
+                channel.type,
+                wk_bounding_box,
+                list(channel.resolutions),
+                channel.wk_datatype(),
+            )
+            for channel_name, channel in self.channels.items()
+        ]
 
 
 @dataclass(frozen=True)
@@ -65,9 +68,6 @@ class Dataset(DatasetInfo):
         bounding_box = WkBoundingBox.from_box(self.bounding_box)
         return WkDataSource(
             WkDataSourceId(self.organization_name, self.dataset_name),
-            [
-                channel.to_webknossos(bounding_box)
-                for channel in self.experiment.channels
-            ],
+            self.experiment.webknossos_layers(bounding_box),
             self.global_scale,
         )

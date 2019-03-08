@@ -1,11 +1,13 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from aiohttp import ClientSession
 
-from ..utils.types import JSON, Vec3D
+from ..utils.types import JSON, Box3D, Vec3D
 from ..webknossos.models import DataSource as WKDataSource
+
+Chunk = Tuple[Box3D, np.ndarray]
 
 
 class DatasetInfo(metaclass=ABCMeta):
@@ -32,6 +34,27 @@ class Backend(metaclass=ABCMeta):
     ) -> DatasetInfo:
         pass
 
+    def _chunks(self, box: Box3D, frame: Box3D, chunk_size: Vec3D) -> Iterable[Box3D]:
+        # clip data outside available data
+        inside = box.intersect(frame)
+
+        # align request to chunks
+        aligned = (inside - frame.left).div(chunk_size) * chunk_size + frame.left
+
+        for chunk_offset in aligned.range(offset=chunk_size):
+            # The size is at most chunk_size but capped to fit the dataset:
+            capped_chunk_size = chunk_size.pairmin(frame.size() - chunk_offset)
+            yield Box3D.from_size(chunk_offset, capped_chunk_size)
+
+    def _cutout(self, chunks: List[Chunk], box: Box3D) -> np.ndarray:
+        result = np.zeros(box.size(), dtype=chunks[0][1].dtype, order="F")
+        for chunk_box, chunk_data in chunks:
+            inner = chunk_box.intersect(box)
+            result[(inner - box.left).np_slice()] = chunk_data[
+                (inner - chunk_box.left).np_slice()
+            ]
+        return result
+
     @abstractmethod
     async def read_data(
         self,
@@ -40,7 +63,7 @@ class Backend(metaclass=ABCMeta):
         zoom_step: int,
         wk_offset: Vec3D,
         shape: Vec3D,
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """
         Read voxels from the backend.
 
