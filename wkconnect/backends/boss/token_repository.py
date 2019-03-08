@@ -2,8 +2,13 @@ import time
 from typing import Dict, Tuple, Union
 
 from aiohttp import ClientSession
+from aiohttp.client_exceptions import ClientResponseError
 
 from .models import Dataset
+
+
+class BossAuthenticationError(RuntimeError):
+    pass
 
 
 class TokenRepository:
@@ -48,18 +53,26 @@ class TokenRepository:
                 "password": password,
             }
             now = time.monotonic()
-            async with await self.http_client.post(url, data=data) as r:
-                token_info = await r.json()
-                # {
-                #     "access_token": "…",
-                #     "expires_in": 1800,
-                #     "refresh_expires_in": 3600,
-                #     "refresh_token": "…",
-                #     "token_type": "bearer",
-                #     "id_token": "…",
-                #     "not-before-policy": 0,
-                #     "session_state": "…"
-                # }
+            try:
+                async with await self.http_client.post(url, data=data) as r:
+                    token_info = await r.json()
+            except ClientResponseError as e:
+                if e.status == 401:  # Unauthorized
+                    raise BossAuthenticationError(
+                        f'Could not authorize user "{username}" at {auth_url}.'
+                    )
+                else:
+                    raise e
+            # {
+            #     "access_token": "…",
+            #     "expires_in": 1800,
+            #     "refresh_expires_in": 3600,
+            #     "refresh_token": "…",
+            #     "token_type": "bearer",
+            #     "id_token": "…",
+            #     "not-before-policy": 0,
+            #     "session_state": "…"
+            # }
 
             token_info["time"] = now
             assert token_info["token_type"] == "bearer"

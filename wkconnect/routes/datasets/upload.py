@@ -21,7 +21,7 @@ def iterate_datasets(datasets: JSON) -> Iterable[Tuple[Any, str, str, str]]:
 @upload.route("", methods=["POST"])
 @authorized(AccessRequest.administrate_datasets)
 async def add_dataset(request: Request) -> response.HTTPResponse:
-    for dataset_args in iterate_datasets(request.json):
+    for dataset_args in iterate_datasets(request.json):  # TODO gather
         await request.app.add_dataset(*dataset_args)
 
     ds_path = request.app.config["datasets_path"]

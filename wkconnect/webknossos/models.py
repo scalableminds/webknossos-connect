@@ -67,3 +67,8 @@ class DataSource(NamedTuple):
     id: DataSourceId
     dataLayers: List[DataLayer]
     scale: Tuple[float, float, float]
+
+
+class UnusableDataSource(NamedTuple):
+    id: DataSourceId
+    status: str

@@ -1,10 +1,12 @@
+from typing import Union
+
 from aiohttp import ClientSession
 from sanic.config import Config
 
 from ..utils.caching import atlru_cache
 from ..utils.json import from_json, to_json
 from .access import AccessAnswer, AccessRequest
-from .models import DataSource, DataStoreStatus
+from .models import DataSource, DataStoreStatus, UnusableDataSource
 
 
 class WebKnossosClient:
@@ -26,7 +28,9 @@ class WebKnossosClient:
             url, headers=self.headers, params=self.params, json=to_json(status)
         )
 
-    async def report_dataset(self, dataset: DataSource) -> None:
+    async def report_dataset(
+        self, dataset: Union[DataSource, UnusableDataSource]
+    ) -> None:
         url = f"{self.webknossos_url}/api/datastores/{self.datastore_name}/datasource"
         await self.http_client.put(
             url, headers=self.headers, params=self.params, json=to_json(dataset)
