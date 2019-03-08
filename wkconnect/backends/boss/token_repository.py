@@ -26,7 +26,7 @@ class TokenRepository:
         self.client_id = "endpoint"
         self.login_realm = "boss"
 
-    def _make_key(self, dataset: DatasetDescriptor) -> TokenRepository.Key:
+    def __make_key(self, dataset: DatasetDescriptor) -> TokenRepository.Key:
         if isinstance(dataset, Dataset):
             return TokenRepository.Key(
                 dataset.domain, dataset.username, dataset.password
@@ -44,7 +44,7 @@ class TokenRepository:
         return f"{auth_url}/realms/{self.login_realm}/protocol/openid-connect/"
 
     async def get(self, dataset: DatasetDescriptor) -> str:
-        key = self._make_key(dataset)
+        key = self.__make_key(dataset)
 
         request_new = True
         if key in self.token_infos:
@@ -84,7 +84,7 @@ class TokenRepository:
         return {"Authorization": await self.get(dataset)}
 
     async def logout(self, dataset: DatasetDescriptor) -> None:
-        key = self._make_key(dataset)
+        key = self.__make_key(dataset)
         url = self._openid_url(key) + "logout"
         data = {
             "refresh_token": self.token_infos[key]["refresh_token"],
