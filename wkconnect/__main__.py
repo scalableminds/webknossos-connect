@@ -127,7 +127,8 @@ async def stop_tasks(app: Server, loop: Loop) -> None:
 
 
 @app.listener("after_server_stop")
-async def close_http_client(app: Server, loop: Loop) -> None:
+async def shutdown(app: Server, loop: Loop) -> None:
+    await asyncio.gather(*(backend.on_shutdown() for backend in app.backends.values()))
     await app.http_client.__aexit__(None, None, None)
 
 

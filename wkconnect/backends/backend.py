@@ -55,3 +55,6 @@ class Backend(metaclass=ABCMeta):
     @abstractmethod
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         pass
+
+    async def on_shutdown(self) -> None:
+        pass
