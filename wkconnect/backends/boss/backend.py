@@ -144,7 +144,7 @@ class Boss(Backend):
             data = np.frombuffer(byte_data, dtype=">u2")
         else:
             data = np.frombuffer(byte_data, dtype=channel.datatype)
-        return data.astype(channel.wk_datatype()).reshape(box.size(), order="F")
+        return data.astype(channel.wk_datatype()).reshape(shape, order="F")
 
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         pass
