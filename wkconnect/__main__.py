@@ -23,6 +23,7 @@ from .routes import routes
 from .utils.scheduler import repeat_every_seconds
 from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
+from .webknossos.models import DataSourceId, UnusableDataSource
 
 logger = logging.getLogger()
 
@@ -35,6 +36,9 @@ class Server(Sanic):
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
         self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer]
+
+    def format_exception(self, exception: Exception) -> str:
+        return f"{type(exception).__name__} in webknossos-connect."
 
     async def add_dataset(
         self,
@@ -62,17 +66,36 @@ class Server(Sanic):
                 datasets = json.load(datasets_file, object_hook=expandvars_hook)
         except FileNotFoundError:
             datasets = {}
-        await asyncio.gather(
+        dataset_tuples = [
+            (backend, organization, dataset, dataset_details)
+            for backend, backend_details in datasets.items()
+            for organization, organization_details in backend_details.items()
+            for dataset, dataset_details in organization_details.items()
+        ]
+        results = await asyncio.gather(
             *(
-                app.add_dataset(
+                self.add_dataset(
                     dataset_config=dataset_details,
                     backend_name=backend,
                     organization_name=organization,
                     dataset_name=dataset,
                 )
-                for backend, backend_details in datasets.items()
-                for organization, organization_details in backend_details.items()
-                for dataset, dataset_details in organization_details.items()
+                for backend, organization, dataset, dataset_details in dataset_tuples
+            ),
+            return_exceptions=True,
+        )
+        await asyncio.gather(
+            *(
+                self.webknossos.report_dataset(
+                    UnusableDataSource(
+                        DataSourceId(organization, dataset),
+                        status=self.format_exception(result),
+                    )
+                )
+                for result, (_, organization, dataset, _) in zip(
+                    results, dataset_tuples
+                )
+                if isinstance(result, Exception)
             )
         )
 
@@ -93,7 +116,7 @@ class CustomErrorHandler(ErrorHandler):
         if isinstance(exception, SanicException):
             return super().default(request, exception)
         else:
-            message = f"{type(exception).__name__} in webknossos-connect."
+            message = app.format_exception(exception)
             message_json = {
                 "messages": [{"error": message, "chain": [traceback.format_exc()]}]
             }

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 from typing import Any, Iterable, Tuple
@@ -21,8 +22,12 @@ def iterate_datasets(datasets: JSON) -> Iterable[Tuple[Any, str, str, str]]:
 @upload.route("", methods=["POST"])
 @authorized(AccessRequest.administrate_datasets)
 async def add_dataset(request: Request) -> response.HTTPResponse:
-    for dataset_args in iterate_datasets(request.json):
-        await request.app.add_dataset(*dataset_args)
+    await asyncio.gather(
+        *(
+            request.app.add_dataset(*dataset_args)
+            for dataset_args in iterate_datasets(request.json)
+        )
+    )
 
     ds_path = request.app.config["datasets_path"]
     os.makedirs(os.path.dirname(ds_path), exist_ok=True)
