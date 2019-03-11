@@ -175,3 +175,6 @@ class Boss(Backend):
 
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         pass
+
+    async def on_shutdown(self) -> None:
+        await self.tokens.logout_all()
