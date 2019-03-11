@@ -14,7 +14,6 @@ from ..backend import DatasetInfo
 class Channel:
     datatype: str
     resolutions: Tuple[Vec3D, ...]
-    cuboid_size: Vec3D
     type: str
 
     def __post_init__(self) -> None:

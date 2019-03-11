@@ -9,7 +9,7 @@ from async_lru import alru_cache
 
 from ...utils.si import convert_si_units
 from ...utils.types import JSON, Box3D, HashableDict, Vec3D
-from ..backend import Backend, Chunk, DatasetInfo
+from ..backend import Backend, DatasetInfo
 from .client import Client
 from .models import Channel, Dataset, Experiment
 from .token_repository import TokenRepository
@@ -43,17 +43,9 @@ class Boss(Backend):
         )
         resolutions = tuple(i // resolutions[0] for i in resolutions)
 
-        cuboid_sizes = set(Vec3D(*i) for i in downsample_info["cuboid_size"].values())
-        assert len(cuboid_sizes) == 1
-
         return (
             channel,
-            Channel(
-                channel_info["datatype"],
-                resolutions,
-                cuboid_sizes.pop(),
-                channel_info["type"],
-            ),
+            Channel(channel_info["datatype"], resolutions, channel_info["type"]),
         )
 
     async def handle_new_dataset(
@@ -116,33 +108,7 @@ class Boss(Backend):
             global_scale,
         )
 
-    @alru_cache(maxsize=2 ** 8)
-    async def __download_data(
-        self,
-        dataset: Dataset,
-        channel_name: str,
-        channel: Channel,
-        zoom_step: int,
-        box: Box3D,
-    ) -> Chunk:
-        compressed_data = await self.client.get_cutout(
-            dataset.domain,
-            dataset.experiment.collection_name,
-            dataset.experiment.experiment_name,
-            channel_name,
-            zoom_step,
-            box,
-            dataset,
-        )
-        byte_data = blosc.decompress(compressed_data)
-        if channel.type == "color" and channel.datatype == "uint16":
-            # this will be downscaled to uint8,
-            # we want to take the higher-order bits here
-            data = np.frombuffer(byte_data, dtype=">u2")
-        else:
-            data = np.frombuffer(byte_data, dtype=channel.datatype)
-        return (box, data.astype(channel.wk_datatype()).reshape(box.size(), order="F"))
-
+    @alru_cache(maxsize=2 ** 12)
     async def read_data(
         self,
         abstract_dataset: DatasetInfo,
@@ -157,21 +123,28 @@ class Boss(Backend):
         channel_offset = wk_offset // channel.resolutions[zoom_step]
         box = Box3D.from_size(channel_offset, shape)
 
-        chunk_boxes = self._chunks(box, dataset.bounding_box, channel.cuboid_size)
         try:
-            chunks = await asyncio.gather(
-                *(
-                    self.__download_data(
-                        dataset, layer_name, channel, zoom_step, chunk_box
-                    )
-                    for chunk_box in chunk_boxes
-                )
+            compressed_data = await self.client.get_cutout(
+                dataset.domain,
+                dataset.experiment.collection_name,
+                dataset.experiment.experiment_name,
+                layer_name,
+                zoom_step,
+                box,
+                dataset,
             )
         except ClientResponseError:
             # will be reported in MISSING-BUCKETS, frontend will retry
             return None
 
-        return self._cutout(chunks, box)
+        byte_data = blosc.decompress(compressed_data)
+        if channel.type == "color" and channel.datatype == "uint16":
+            # this will be downscaled to uint8,
+            # we want to take the higher-order bits here
+            data = np.frombuffer(byte_data, dtype=">u2")
+        else:
+            data = np.frombuffer(byte_data, dtype=channel.datatype)
+        return data.astype(channel.wk_datatype()).reshape(box.size(), order="F")
 
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         pass
