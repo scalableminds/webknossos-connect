@@ -71,7 +71,7 @@ class TokenRepository:
             except ClientResponseError as e:
                 if e.status == 401:  # Unauthorized
                     raise BossAuthenticationError(
-                        f'Could not authorize user "{username}" at {auth_url}.'
+                        f'Could not authorize user "{key.username}" at {key.domain}.'
                     )
                 else:
                     raise e
