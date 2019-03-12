@@ -61,15 +61,12 @@ class Layer:
             return "uint32"
         return self.data_type
 
-    def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WkDataLayer:
-        normalized_resolutions = [
-            scale.resolution // global_scale for scale in self.scales
-        ]
+    def to_webknossos(self, layer_name: str) -> WkDataLayer:
         return WkDataLayer(
             layer_name,
             {"image": "color", "segmentation": "segmentation"}[self.type],
             self.scales[0].bounding_box(),
-            normalized_resolutions,
+            [scale.resolution for scale in self.scales],
             self.wk_data_type(),
         )
 
@@ -90,7 +87,7 @@ class Dataset(DatasetInfo):
         return WkDataSource(
             WkDataSourceId(self.organization_name, self.dataset_name),
             [
-                layer.to_webknossos(layer_name, self.scale)
+                layer.to_webknossos(layer_name)
                 for layer_name, layer in self.layers.items()
             ],
             self.scale,
