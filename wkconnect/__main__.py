@@ -7,7 +7,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
-from aiohttp.client_exceptions import ClientConnectorError
+from aiohttp.client_exceptions import ClientConnectorError, ClientResponseError
 from sanic import Sanic, response
 from sanic.exceptions import SanicException
 from sanic.handlers import ErrorHandler
@@ -28,6 +28,22 @@ from .webknossos.models import DataSourceId, UnusableDataSource
 logger = logging.getLogger()
 
 
+def exception_traceback(exception: Exception) -> str:
+    return "".join(
+        traceback.format_exception(
+            etype=type(exception), value=exception, tb=exception.__traceback__
+        )
+    )
+
+
+def format_exception(exception: Exception) -> str:
+    if isinstance(exception, ClientResponseError):
+        description = f"HTTP {exception.message} ({exception.status})"
+    else:
+        description = type(exception).__name__
+    return f"{description} in webknossos-connect."
+
+
 class Server(Sanic):
     def __init__(self) -> None:
         super().__init__()
@@ -36,9 +52,6 @@ class Server(Sanic):
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
         self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer]
-
-    def format_exception(self, exception: Exception) -> str:
-        return f"{type(exception).__name__} in webknossos-connect."
 
     async def add_dataset(
         self,
@@ -84,12 +97,15 @@ class Server(Sanic):
             ),
             return_exceptions=True,
         )
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(exception_traceback(result))
         await asyncio.gather(
             *(
                 self.webknossos.report_dataset(
                     UnusableDataSource(
                         DataSourceId(organization, dataset),
-                        status=self.format_exception(result),
+                        status=format_exception(result),
                     )
                 )
                 for result, (_, organization, dataset, _) in zip(
@@ -116,8 +132,8 @@ class CustomErrorHandler(ErrorHandler):
         if isinstance(exception, SanicException):
             return super().default(request, exception)
         else:
-            message = app.format_exception(exception)
-            stack = traceback.format_exc()
+            message = format_exception(exception)
+            stack = exception_traceback(exception)
             message_json = {"messages": [{"error": message, "chain": [stack]}]}
             logger.error(stack)
             return response.json(message_json, status=500)

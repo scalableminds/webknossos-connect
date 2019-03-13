@@ -1,6 +1,5 @@
-from typing import Dict, List, Tuple
-
 from dataclasses import dataclass
+from typing import Dict, List, Tuple
 
 from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox as WkBoundingBox

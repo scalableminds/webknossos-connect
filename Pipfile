@@ -10,13 +10,14 @@ isort = "*"
 mypy = "==0.660"
 pep8-naming = "*"
 py-spy = "*"
-pylint = "*"
+pylint = "<2.3.0"
 
 [packages]
 aiohttp = "*"
 async-lru = "*"
 blosc = "*"
 compressed-segmentation = ">=1.0.0"
+gcloud-aio-auth = "*"
 jpeg4py = "*"
 numpy = "*"
 Pillow = "*"
@@ -41,13 +42,13 @@ pretty = '''
             --remove-all-unused-imports --remove-unused-variables \
             wkconnect benchmarks stubs && \
         black wkconnect benchmarks stubs && \
-        isort --recursive wkconnect benchmarks stubs \
+        isort --recursive wkconnect benchmarks \
     "
 '''
 pretty-check = '''
     bash -c " \
         black --check wkconnect benchmarks stubs && \
-        isort --check-only --recursive wkconnect benchmarks stubs \
+        isort --check-only --recursive wkconnect benchmarks \
     "
 '''
 type-check = '''

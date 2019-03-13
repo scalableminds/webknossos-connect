@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Any, List, NamedTuple, Optional, Tuple, cast
 
 import numpy as np
-
-from dataclasses import dataclass, field
 
 from ..utils.types import JSON, Box3D, Vec3D
 
