@@ -40,7 +40,9 @@ class Neuroglancer(Backend):
         layer["scales"] = sorted(layer["scales"], key=lambda scale: scale["resolution"])
         min_resolution = Vec3D(*layer["scales"][0]["resolution"])
         for scale in layer["scales"]:
-            scale["resolution"] = Vec3D(*scale["resolution"]) // min_resolution
+            resolution = Vec3D(*scale["resolution"])
+            assert resolution % min_resolution == Vec3D.zeros()
+            scale["resolution"] = resolution // min_resolution
         layer["relative_scale"] = min_resolution
         return (layer_name, from_json(layer, Layer))
 
@@ -86,19 +88,23 @@ class Neuroglancer(Backend):
             buffer, chunk_size, data_type, block_size, order="F"
         )
 
-    def __chunks(self, box: Box3D, frame: Box3D, chunk_size: Vec3D) -> Iterable[Box3D]:
+    def __chunks(
+        self, requested: Box3D, ds_frame: Box3D, wk_chunk_size: Vec3D
+    ) -> Iterable[Box3D]:
         # clip data outside available data
-        inside = box.intersect(frame)
+        inside = requested.intersect(ds_frame)
 
         # align request to chunks
-        aligned = (inside - frame.left).div(chunk_size) * chunk_size + frame.left
+        aligned = (inside - ds_frame.left).div(
+            wk_chunk_size
+        ) * wk_chunk_size + ds_frame.left
 
-        for chunk_offset in aligned.range(offset=chunk_size):
-            # The size is at most chunk_size but capped to fit the dataset:
-            capped_chunk_size = chunk_size.pairmin(frame.size() - chunk_offset)
-            yield Box3D.from_size(chunk_offset, capped_chunk_size)
+        for chunk_offset in aligned.range(offset=wk_chunk_size):
+            chunk = Box3D.from_size(chunk_offset, wk_chunk_size)
+            # chunk is capped to fit the dataset:
+            yield chunk.intersect(ds_frame)
 
-    @alru_cache(maxsize=2 ** 12)
+    @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
     async def __read_chunk(
         self,
         layer: Layer,
@@ -141,6 +147,8 @@ class Neuroglancer(Backend):
     ) -> Optional[np.ndarray]:
         neuroglancer_dataset = cast(Dataset, dataset)
         layer = neuroglancer_dataset.layers[layer_name]
+        # we can use zoom_step as the index, as the scales are sorted
+        # see assertion in the Layer initialization
         scale = layer.scales[zoom_step]
         decoder = self.decoders[scale.encoding]
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from operator import add, floordiv, mul, sub
+from operator import add, floordiv, mod, mul, sub
 from typing import Any, Callable, Iterator, NamedTuple, Union
 
 import numpy as np
@@ -28,6 +28,9 @@ class Vec3D(NamedTuple):
     def __floordiv__(self, other: Any) -> Vec3D:
         return self._element_wise(other, floordiv)
 
+    def __mod__(self, other: Any) -> Vec3D:
+        return self._element_wise(other, mod)
+
     def ceildiv(self, other: Any) -> Vec3D:
         return (self + other - 1) // other
 
@@ -36,6 +39,14 @@ class Vec3D(NamedTuple):
 
     def pairmin(self, other: Any) -> Vec3D:
         return self._element_wise(other, min)
+
+    @classmethod
+    def zeros(cls) -> Vec3D:
+        return cls(0, 0, 0)
+
+    @classmethod
+    def ones(cls) -> Vec3D:
+        return cls(1, 1, 1)
 
 
 class Box3D(NamedTuple):
@@ -79,7 +90,7 @@ class Box3D(NamedTuple):
     def intersect(self, other: Box3D) -> Box3D:
         return Box3D(self.left.pairmax(other.left), self.right.pairmin(other.right))
 
-    def range(self, offset: Vec3D = Vec3D(1, 1, 1)) -> Iterator[Vec3D]:
+    def range(self, offset: Vec3D = Vec3D.ones()) -> Iterator[Vec3D]:
         for x in range(self.left.x, self.right.x, offset.x):
             for y in range(self.left.y, self.right.y, offset.y):
                 for z in range(self.left.z, self.right.z, offset.z):
