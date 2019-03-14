@@ -47,6 +47,14 @@
                     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dev-test%40webknossos-dev.iam.gserviceaccount.com"
                 }
             },
+            "no-auth-test": {
+                "layers": {
+                    "image": {
+                        "source": "gs://webknossos-neuroglancer/kasthuri2011/image_color_corrected",
+                        "type": "image"
+                    }
+                }
+            },
             "kasthuri2011": {
                 "layers": {
                     "corrected_image": {

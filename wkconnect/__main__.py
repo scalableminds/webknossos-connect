@@ -2,12 +2,11 @@ import asyncio
 import json
 import logging
 import os
-import traceback
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
-from aiohttp.client_exceptions import ClientConnectorError, ClientResponseError
+from aiohttp.client_exceptions import ClientConnectorError
 from sanic import Sanic, response
 from sanic.exceptions import SanicException
 from sanic.handlers import ErrorHandler
@@ -26,22 +25,6 @@ from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataSourceId, UnusableDataSource
 
 logger = logging.getLogger()
-
-
-def exception_traceback(exception: Exception) -> str:
-    return "".join(
-        traceback.format_exception(
-            etype=type(exception), value=exception, tb=exception.__traceback__
-        )
-    )
-
-
-def format_exception(exception: Exception) -> str:
-    if isinstance(exception, ClientResponseError):
-        description = f"HTTP {exception.message} ({exception.status})"
-    else:
-        description = type(exception).__name__
-    return f"{description} in webknossos-connect."
 
 
 class Server(Sanic):
