@@ -117,9 +117,9 @@ class CustomErrorHandler(ErrorHandler):
             return super().default(request, exception)
         else:
             message = app.format_exception(exception)
-            message_json = {
-                "messages": [{"error": message, "chain": [traceback.format_exc()]}]
-            }
+            stack = traceback.format_exc()
+            message_json = {"messages": [{"error": message, "chain": [stack]}]}
+            logger.error(stack)
             return response.json(message_json, status=500)
 
 

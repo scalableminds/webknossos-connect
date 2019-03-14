@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast
 
 import jpeg4py as jpeg
 import numpy as np
@@ -11,7 +11,7 @@ import compressed_segmentation
 from ...utils.json import from_json
 from ...utils.types import JSON, Box3D, Vec3D
 from ..backend import Backend, DatasetInfo
-from .models import Dataset, Layer, Scale
+from .models import Dataset, Layer
 
 DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
@@ -37,6 +37,13 @@ class Neuroglancer(Backend):
         async with await self.http_client.get(info_url) as r:
             response = await r.json()
         layer.update(response)
+        layer["scales"] = sorted(layer["scales"], key=lambda scale: scale["resolution"])
+        min_resolution = Vec3D(*layer["scales"][0]["resolution"])
+        for scale in layer["scales"]:
+            resolution = Vec3D(*scale["resolution"])
+            assert resolution % min_resolution == Vec3D.zeros()
+            scale["resolution"] = resolution // min_resolution
+        layer["relative_scale"] = min_resolution
         return (layer_name, from_json(layer, Layer))
 
     async def handle_new_dataset(
@@ -81,21 +88,23 @@ class Neuroglancer(Backend):
             buffer, chunk_size, data_type, block_size, order="F"
         )
 
-    def __chunks(self, box: Box3D, scale: Scale, chunk_size: Vec3D) -> Iterable[Box3D]:
+    def __chunks(
+        self, requested: Box3D, ds_frame: Box3D, wk_chunk_size: Vec3D
+    ) -> Iterable[Box3D]:
         # clip data outside available data
-        inside = box.intersect(scale.box())
+        inside = requested.intersect(ds_frame)
 
         # align request to chunks
-        aligned = (inside - scale.voxel_offset).div(
-            chunk_size
-        ) * chunk_size + scale.voxel_offset
+        aligned = (inside - ds_frame.left).div(
+            wk_chunk_size
+        ) * wk_chunk_size + ds_frame.left
 
-        for chunk_offset in aligned.range(offset=chunk_size):
-            # The size is at most chunk_size but capped to fit the dataset:
-            capped_chunk_size = chunk_size.pairmin(scale.size - chunk_offset)
-            yield Box3D.from_size(chunk_offset, capped_chunk_size)
+        for chunk_offset in aligned.range(offset=wk_chunk_size):
+            chunk = Box3D.from_size(chunk_offset, wk_chunk_size)
+            # chunk is capped to fit the dataset:
+            yield chunk.intersect(ds_frame)
 
-    @alru_cache(maxsize=2 ** 12)
+    @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
     async def __read_chunk(
         self,
         layer: Layer,
@@ -109,31 +118,23 @@ class Neuroglancer(Backend):
         )
         data_url = f"{layer.source}/{scale_key}/{url_coords}"
 
-        try:
-            async with await self.http_client.get(data_url) as r:
-                response_buffer = await r.read()
-        except ClientResponseError:
-            chunk_data = np.zeros(chunk_box.size(), dtype=layer.wk_data_type())
-        else:
-            chunk_data = decoder_fn(
-                response_buffer,
-                layer.data_type,
-                chunk_box.size(),
-                compressed_segmentation_block_size,
-            ).astype(layer.wk_data_type())
+        async with await self.http_client.get(data_url) as r:
+            response_buffer = await r.read()
+        chunk_data = decoder_fn(
+            response_buffer,
+            layer.data_type,
+            chunk_box.size(),
+            compressed_segmentation_block_size,
+        ).astype(layer.wk_data_type())
         return (chunk_box, chunk_data)
 
-    def __cutout(
-        self, chunks: Iterable[Chunk], data_type: str, offset: Vec3D, shape: Vec3D
-    ) -> np.ndarray:
-        result = np.zeros(shape, dtype=data_type, order="F")
-        box = Box3D.from_size(offset, shape)
+    def __cutout(self, chunks: List[Chunk], box: Box3D) -> np.ndarray:
+        result = np.zeros(box.size(), dtype=chunks[0][1].dtype, order="F")
         for chunk_box, chunk_data in chunks:
             inner = chunk_box.intersect(box)
-            result[(inner - offset).np_slice()] = chunk_data[
+            result[(inner - box.left).np_slice()] = chunk_data[
                 (inner - chunk_box.left).np_slice()
             ]
-
         return result
 
     async def read_data(
@@ -143,38 +144,37 @@ class Neuroglancer(Backend):
         zoom_step: int,
         wk_offset: Vec3D,
         shape: Vec3D,
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         neuroglancer_dataset = cast(Dataset, dataset)
         layer = neuroglancer_dataset.layers[layer_name]
-        # TODO add lookup table for scale for efficiency
-
-        def fits_resolution(scale: Scale) -> bool:
-            wk_resolution = scale.resolution // neuroglancer_dataset.scale
-            return max(wk_resolution) == 2 ** zoom_step
-
-        scale = next(scale for scale in layer.scales if fits_resolution(scale))
+        # we can use zoom_step as the index, as the scales are sorted
+        # see assertion in the Layer initialization
+        scale = layer.scales[zoom_step]
         decoder = self.decoders[scale.encoding]
 
         # convert to coordinate system of current scale
-        offset = wk_offset * neuroglancer_dataset.scale // scale.resolution
+        offset = wk_offset // scale.resolution
+        box = Box3D.from_size(offset, shape)
 
-        chunk_boxes = self.__chunks(
-            Box3D.from_size(offset, shape), scale, scale.chunk_sizes[0]
-        )
-        chunks = await asyncio.gather(
-            *(
-                self.__read_chunk(
-                    layer,
-                    scale.key,
-                    chunk_box,
-                    decoder,
-                    scale.compressed_segmentation_block_size,
+        chunk_boxes = self.__chunks(box, scale.box(), scale.chunk_sizes[0])
+        try:
+            chunks = await asyncio.gather(
+                *(
+                    self.__read_chunk(
+                        layer,
+                        scale.key,
+                        chunk_box,
+                        decoder,
+                        scale.compressed_segmentation_block_size,
+                    )
+                    for chunk_box in chunk_boxes
                 )
-                for chunk_box in chunk_boxes
             )
-        )
+        except ClientResponseError:
+            # will be reported in MISSING-BUCKETS, frontend will retry
+            return None
 
-        return self.__cutout(chunks, layer.wk_data_type(), offset, shape)
+        return self.__cutout(chunks, box)
 
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         self.__read_chunk.cache_clear()  # pylint: disable=no-member

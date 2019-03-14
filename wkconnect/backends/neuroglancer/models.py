@@ -39,6 +39,7 @@ class Layer:
     data_type: str
     num_channels: int
     scales: Tuple[Scale, ...]
+    relative_scale: Vec3D
     type: str
     # InitVar allows to consume mesh argument in init without storing it
     mesh: InitVar[Any] = None
@@ -51,24 +52,21 @@ class Layer:
         assert self.type in supported_data_types
         assert self.data_type in supported_data_types[self.type]
         assert self.num_channels == 1
+        assert all(
+            max(scale.resolution) == 2 ** i for i, scale in enumerate(self.scales)
+        )
 
     def wk_data_type(self) -> str:
         if self.type == "segmentation":
             return "uint32"
         return self.data_type
 
-    def min_scale(self) -> Scale:
-        return min(self.scales, key=lambda scale: sum(scale.resolution))
-
-    def to_webknossos(self, layer_name: str, global_scale: Vec3D) -> WkDataLayer:
-        normalized_resolutions = [
-            scale.resolution // global_scale for scale in self.scales
-        ]
+    def to_webknossos(self, layer_name: str) -> WkDataLayer:
         return WkDataLayer(
             layer_name,
             {"image": "color", "segmentation": "segmentation"}[self.type],
-            self.min_scale().bounding_box(),
-            normalized_resolutions,
+            self.scales[0].bounding_box(),
+            [scale.resolution for scale in self.scales],
             self.wk_data_type(),
         )
 
@@ -81,17 +79,15 @@ class Dataset(DatasetInfo):
     scale: Vec3D = field(init=False)
 
     def __post_init__(self) -> None:
-        min_resolution = set(
-            layer.min_scale().resolution for layer in self.layers.values()
-        )
-        assert len(min_resolution) == 1
-        self.scale = next(iter(min_resolution))
+        relative_scale = set(layer.relative_scale for layer in self.layers.values())
+        assert len(relative_scale) == 1
+        self.scale = relative_scale.pop()
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
             WkDataSourceId(self.organization_name, self.dataset_name),
             [
-                layer.to_webknossos(layer_name, self.scale)
+                layer.to_webknossos(layer_name)
                 for layer_name, layer in self.layers.items()
             ],
             self.scale,

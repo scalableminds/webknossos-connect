@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 from aiohttp import ClientSession
@@ -40,7 +40,7 @@ class Backend(metaclass=ABCMeta):
         zoom_step: int,
         wk_offset: Vec3D,
         shape: Vec3D,
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """
         Read voxels from the backend.
 
