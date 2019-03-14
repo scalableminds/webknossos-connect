@@ -12,7 +12,7 @@ def atlru_cache(
 ) -> Callable[[T], T]:
     def decorator(f: T) -> T:
         @wraps(f)
-        @alru_cache(maxsize=maxsize, typed=typed)
+        @alru_cache(maxsize=maxsize, typed=typed, cache_exceptions=False)
         async def time_f(*args: Any, **kwargs: Any) -> Any:
             return (time.monotonic(), await f(*args, **kwargs))
 

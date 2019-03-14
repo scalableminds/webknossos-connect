@@ -108,8 +108,8 @@ class Boss(Backend):
             global_scale,
         )
 
-    @alru_cache(maxsize=2 ** 12)
-    async def read_data(
+    @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
+    async def __cached_read_data(
         self,
         abstract_dataset: DatasetInfo,
         layer_name: str,
@@ -123,19 +123,15 @@ class Boss(Backend):
         channel_offset = wk_offset // channel.resolutions[zoom_step]
         box = Box3D.from_size(channel_offset, shape)
 
-        try:
-            compressed_data = await self.client.get_cutout(
-                dataset.domain,
-                dataset.experiment.collection_name,
-                dataset.experiment.experiment_name,
-                layer_name,
-                zoom_step,
-                box,
-                dataset,
-            )
-        except ClientResponseError:
-            # will be reported in MISSING-BUCKETS, frontend will retry
-            return None
+        compressed_data = await self.client.get_cutout(
+            dataset.domain,
+            dataset.experiment.collection_name,
+            dataset.experiment.experiment_name,
+            layer_name,
+            zoom_step,
+            box,
+            dataset,
+        )
 
         byte_data = blosc.decompress(compressed_data)
         if channel.type == "color" and channel.datatype == "uint16":
@@ -145,6 +141,22 @@ class Boss(Backend):
         else:
             data = np.frombuffer(byte_data, dtype=channel.datatype)
         return data.astype(channel.wk_datatype()).reshape(shape, order="F")
+
+    async def read_data(
+        self,
+        abstract_dataset: DatasetInfo,
+        layer_name: str,
+        zoom_step: int,
+        wk_offset: Vec3D,
+        shape: Vec3D,
+    ) -> Optional[np.ndarray]:
+        try:
+            return await self.__cached_read_data(
+                abstract_dataset, layer_name, zoom_step, wk_offset, shape
+            )
+        except ClientResponseError:
+            # will be reported in MISSING-BUCKETS, frontend will retry
+            return None
 
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         pass
