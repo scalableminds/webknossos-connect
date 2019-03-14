@@ -31,7 +31,8 @@ python_version = "3.7.2"
 main = "python -m wkconnect"
 lint = '''
     bash -c " \
-        pylint --errors-only --jobs 0 wkconnect benchmarks stubs && \
+        pylint --errors-only --jobs 0 stubs && \
+        pylint --errors-only --jobs 0 wkconnect benchmarks && \
         flake8 wkconnect benchmarks stubs \
     "
 '''

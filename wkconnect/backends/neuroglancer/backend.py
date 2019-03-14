@@ -32,6 +32,8 @@ async def get_header(token: Optional[Token]) -> Dict[str, str]:
             token_str = await token.get()
         except Exception as e:
             raise NeuroglancerAuthenticationError(*e.args)
+        if token_str is None:
+            return {}
         return {"Authorization": "Bearer " + token_str}
 
 
@@ -152,7 +154,7 @@ class Neuroglancer(Backend):
         chunk_box: Box3D,
         decoder_fn: DecoderFn,
         compressed_segmentation_block_size: Optional[Vec3D],
-        token: Optional[str],
+        token: Optional[Token],
     ) -> Chunk:
         url_coords = "_".join(
             f"{left_dim}-{right_dim}" for left_dim, right_dim in zip(*chunk_box)
