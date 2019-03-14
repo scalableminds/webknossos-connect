@@ -19,6 +19,7 @@ from .backends.boss.backend import Boss
 from .backends.neuroglancer.backend import Neuroglancer
 from .repository import Repository
 from .routes import routes
+from .utils.exceptions import exception_traceback, format_exception
 from .utils.scheduler import repeat_every_seconds
 from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
