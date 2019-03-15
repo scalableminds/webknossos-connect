@@ -2,43 +2,45 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Dict, NamedTuple, Tuple, Union
+from typing import Dict, Optional
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 
+from dataclasses import dataclass
+
 from ...utils.json import JSON
-from .models import Dataset
 
 
 class BossAuthenticationError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class TokenKey:
+    domain: str
+    username: Optional[str] = None
+    password: Optional[str] = None
+    token: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.token is None:
+            self.username is not None
+            self.password is not None
+        else:
+            self.username is None
+            self.password is None
+
+
 class TokenRepository:
-    class Key(NamedTuple):
-        domain: str
-        username: str
-        password: str
-
-    DatasetDescriptor = Union[Dataset, Tuple[str, str, str], Key]
-
     def __init__(self, http_client: ClientSession):
         self.http_client = http_client
-        self.token_infos: Dict[TokenRepository.Key, JSON] = {}
+        self.token_infos: Dict[TokenKey, JSON] = {}
 
         self.client_id = "endpoint"
         self.login_realm = "boss"
 
-    def __make_key(self, dataset: DatasetDescriptor) -> TokenRepository.Key:
-        if isinstance(dataset, Dataset):
-            return TokenRepository.Key(
-                dataset.domain, dataset.username, dataset.password
-            )
-        else:
-            return TokenRepository.Key(*dataset)
-
-    def _openid_url(self, key: Key) -> str:
+    def _openid_url(self, key: TokenKey) -> str:
         # domain:   https://api.boss.neurodata.io
         # auth_url: https://auth.boss.neurodata.io/auth
         protocol = key.domain.split("://", 1)[0]
@@ -47,8 +49,9 @@ class TokenRepository:
 
         return f"{auth_url}/realms/{self.login_realm}/protocol/openid-connect/"
 
-    async def get(self, dataset: DatasetDescriptor) -> str:
-        key = self.__make_key(dataset)
+    async def get(self, key: TokenKey) -> str:
+        if key.token is not None:
+            return "Token " + key.token
 
         request_new = True
         if key in self.token_infos:
@@ -92,11 +95,12 @@ class TokenRepository:
 
         return "Bearer " + token_info["access_token"]
 
-    async def get_header(self, dataset: DatasetDescriptor) -> Dict[str, str]:
-        return {"Authorization": await self.get(dataset)}
+    async def get_header(self, key: TokenKey) -> Dict[str, str]:
+        return {"Authorization": await self.get(key)}
 
-    async def logout(self, dataset: DatasetDescriptor) -> None:
-        key = self.__make_key(dataset)
+    async def logout(self, key: TokenKey) -> None:
+        if key.token is not None:
+            return
         url = self._openid_url(key) + "logout"
         data = {
             "refresh_token": self.token_infos[key]["refresh_token"],
