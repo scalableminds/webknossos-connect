@@ -25,11 +25,11 @@ class TokenKey:
 
     def __post_init__(self) -> None:
         if self.token is None:
-            self.username is not None
-            self.password is not None
+            assert self.username is not None
+            assert self.password is not None
         else:
-            self.username is None
-            self.password is None
+            assert self.username is None
+            assert self.password is None
 
 
 class TokenRepository:
