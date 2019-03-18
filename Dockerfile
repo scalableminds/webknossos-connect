@@ -18,6 +18,10 @@ RUN pipenv install --system
 
 COPY wkconnect wkconnect
 
+HEALTHCHECK \
+  --interval=15s --timeout=5s --retries=3 \
+  CMD curl --fail http://localhost:8000/data/health || exit 1
+
 CMD [ "python", "-m", "wkconnect" ]
 
 
