@@ -7,6 +7,7 @@ from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
 from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
+from .token_repository import TokenKey
 
 
 @dataclass(unsafe_hash=True)
@@ -57,10 +58,9 @@ class Dataset(DatasetInfo):
     dataset_name: str
     domain: str
     experiment: Experiment
-    username: str
-    password: str
     bounding_box: Box3D
     global_scale: Vec3D
+    token_key: TokenKey
 
     def to_webknossos(self) -> WkDataSource:
         bounding_box = WkBoundingBox.from_box(self.bounding_box)

@@ -1,9 +1,7 @@
 from aiohttp import ClientResponse, ClientSession
 
 from ...utils.types import JSON, Box3D
-from .token_repository import TokenRepository
-
-Key = TokenRepository.DatasetDescriptor
+from .token_repository import TokenKey, TokenRepository
 
 
 class Client:
@@ -11,15 +9,13 @@ class Client:
         self.http_client = http_client
         self.tokens = tokens
 
-    async def auth_get(
-        self, url: str, token_key: TokenRepository.DatasetDescriptor
-    ) -> ClientResponse:
+    async def auth_get(self, url: str, token_key: TokenKey) -> ClientResponse:
         return await self.http_client.get(
             url, headers=await self.tokens.get_header(token_key)
         )
 
     async def get_experiment(
-        self, domain: str, collection: str, experiment: str, token_key: Key
+        self, domain: str, collection: str, experiment: str, token_key: TokenKey
     ) -> JSON:
         # {
         #     "channels": ["annotation_50um", "average_50um", "nissl_50um"],
@@ -40,7 +36,9 @@ class Client:
         async with await self.auth_get(experiment_url, token_key) as r:
             return await r.json()
 
-    async def get_coord(self, domain: str, coord_frame: str, token_key: Key) -> JSON:
+    async def get_coord(
+        self, domain: str, coord_frame: str, token_key: TokenKey
+    ) -> JSON:
         # {
         #     "name": "ara_2016_50um",
         #     "description": "50 um Allen reference atlas",
@@ -65,7 +63,7 @@ class Client:
         collection: str,
         experiment: str,
         channel: str,
-        token_key: Key,
+        token_key: TokenKey,
     ) -> JSON:
         # {
         #     "name": "nissl_50um",
@@ -101,7 +99,7 @@ class Client:
         collection: str,
         experiment: str,
         channel: str,
-        token_key: Key,
+        token_key: TokenKey,
     ) -> JSON:
         # {
         #     "num_hierarchy_levels": 1,
@@ -124,7 +122,7 @@ class Client:
         channel: str,
         resolution: int,
         range_box: Box3D,
-        token_key: Key,
+        token_key: TokenKey,
     ) -> bytes:
 
         url = "/".join(
