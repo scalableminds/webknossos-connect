@@ -43,7 +43,7 @@ jobs:
           command: |
             export DOCKER_TAG=${CIRCLE_BRANCH}__${CIRCLE_BUILD_NUM}
             docker-compose build webknossos-connect
-       - run:
+      - run:
           name: Smoketest
           command: |
             export DOCKER_TAG=${CIRCLE_BRANCH}__${CIRCLE_BUILD_NUM}
