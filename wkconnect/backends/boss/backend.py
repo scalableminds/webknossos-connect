@@ -12,7 +12,7 @@ from ...utils.types import JSON, Box3D, HashableDict, Vec3D
 from ..backend import Backend, DatasetInfo
 from .client import Client
 from .models import Channel, Dataset, Experiment
-from .token_repository import TokenRepository
+from .token_repository import TokenKey, TokenRepository
 
 
 class Boss(Backend):
@@ -27,7 +27,7 @@ class Boss(Backend):
         collection: str,
         experiment: str,
         channel: str,
-        token_key: TokenRepository.DatasetDescriptor,
+        token_key: TokenKey,
     ) -> Tuple[str, Channel]:
         channel_info = await self.client.get_channel(
             domain, collection, experiment, channel, token_key
@@ -54,12 +54,15 @@ class Boss(Backend):
         domain = dataset_info["domain"]
         assert domain.startswith("https://api") or domain.startswith("http://api")
 
-        username = dataset_info["username"]
-        password = dataset_info["password"]
         collection = dataset_info["collection"]
         experiment = dataset_info["experiment"]
 
-        token_key = (domain, username, password)
+        token_key = TokenKey(
+            domain,
+            dataset_info.get("username", None),
+            dataset_info.get("password", None),
+            dataset_info.get("token", None),
+        )
 
         experiment_info = await self.client.get_experiment(
             domain, collection, experiment, token_key
@@ -102,10 +105,9 @@ class Boss(Backend):
             dataset_name,
             domain,
             experiment,
-            username,
-            password,
             bounding_box,
             global_scale,
+            token_key,
         )
 
     @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
@@ -130,7 +132,7 @@ class Boss(Backend):
             layer_name,
             zoom_step,
             box,
-            dataset,
+            dataset.token_key,
         )
 
         byte_data = blosc.decompress(compressed_data)
