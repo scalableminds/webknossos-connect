@@ -27,34 +27,6 @@
                     }
                 }
             },
-            "auth-test": {
-                "layers": {
-                    "image": {
-                        "source": "gs://webknossos-neuroglancer/kasthuri2011/image_color_corrected",
-                        "type": "image"
-                    }
-                },
-                "credentials": {
-                    "type": "service_account",
-                    "project_id": "webknossos-dev",
-                    "private_key_id": "ddbc51affa94919f4a1c15fb0c377219a047776b",
-                    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDTuFlvzEo4KvNQ\nQYxvn+FMB+4QtoEA0c6Nw1WDEiU3Hl/8Y1HrPKyJgeCIm7cmYG1IMZK1vsDCeClM\n2sz4q6cP8H2IuFuBhrIBwCUinKs8hm071ZHG5nyAOM00wqtIQeFAsOziYOMstK4M\nUrRf/KtuUThL3UW8mboyNRFvf3fnFw2BjTCOYtjPsh0KwxEYyHSs2uYGViWKcSR/\nrQsy3LPHCm8IVlqKgmeFSGsX+MbDcAz+BtMf8UA02xZIQDwfVRmAqpI9lv1Jtt62\n3bCvigOYjg/4UPJzEL/2ijNMhyvuTwrni89CzAqYpfMHL73P9wWPHg+Hy4h+COsA\nDOTbY8Q5AgMBAAECggEAAZACwIYFEOtBYr3nJd2S7cALO347uUGuKut5gR9H7X/B\ni8CEvoi3OTnHNxqIQWH/IuCKshpD43YzuPwYXYxxKn/wMmWpeijbNP9HOV9naPgF\nlxgR2agF7Ym1P2x4J77dhpM4xLHr2YRcQOFc2HnjAmi4ZpD6tZy523Sf/MAg8ILq\nlU6FLhfrB/X/h+N6DrEFRMsr5NutVYwOQv/oKf4YqvH7tScFbcyEg9QFj2KztX+j\nqHaGxCsBF6wtutOO/xaPx0ulHwBKYYVjBssJf9BoC14VxqqQoFPRX7fqzAfHHREh\n3frtMt4HHqRy1yBB2zMKHV9f+djU2UvaPexDLgfVdwKBgQD96Z+fzoGqOfwFqkkQ\nL3xdlAmYEL733YWyf9NkgikpypElxFR3wIzO/nQaImacq2cacjszz3UyF9LN2r1D\noimt4BEV+qialwKhseoye/PRScpRmvzCNSHlPdzKK6vfRSw5F6L/+EwEjsY8y+B9\nHfe7yC89CVMJtMELReNZSzY7LwKBgQDVde3KPtMyMGpfp2JQixRrYsEM7MFRpE3A\nR50G4MNZop9XuzoHVW9MhAc+rv3AfCeZEsgAeaMH6lxHMKyf3/YBKMg3vhmK/lZZ\nQhQWuV4V6rirn93nln4/McZobskcNsake1EGI6SXgX1mFsLixXuXKbOfj1zMcK9P\nV2cRwan9FwKBgHnaExOjC9EAcLTbSqLs1vcloxEKAEt9ULsf4vfaCx0WLF/+fzbU\n/f4cWOVt2uaWzyz+4vBzP9/hVPYbYjbB7NSXsjtlBmLh0457jlPZ7mFi0ygkg+ZD\nj1evP3T6TkogrR9c+4lxxDFvvyzP/pSsvAWvBRR6lBIVX4skZ/2jPYxbAoGAJMrO\n0a1CecQekZ4oM/nE6z16SOAF8ix/ukSdrDHRegGttVFwDxOKu4WGOievVR4RNTEn\nh+1vTE342cxp9KSFom2FFRaPEIYGHBxnmgMZVG3AptRHS0OFPx81M4rk3xgR5Qfc\nT1KVbAfFtXL25F9ljgiCDV6IgDRsAyDtgwH+asECgYBs8la+pci1RQT3Tkr+FJ0v\nzFXOWqArRoChju9RqmdLsfiv5M4z5KRlFxRtZjqtXqukhnEnBgOMWUoOINPjHAu1\nxVFb4Kfg/1afsS429KN8h6PZJ4+Ei6uxomhZ34dxlqj0OruK2JwAhrEGakrzRIYe\nhXoSFhdn4xraOJrXGFxz0Q==\n-----END PRIVATE KEY-----\n",
-                    "client_email": "dev-test@webknossos-dev.iam.gserviceaccount.com",
-                    "client_id": "115892789753011390464",
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dev-test%40webknossos-dev.iam.gserviceaccount.com"
-                }
-            },
-            "no-auth-test": {
-                "layers": {
-                    "image": {
-                        "source": "gs://webknossos-neuroglancer/kasthuri2011/image_color_corrected",
-                        "type": "image"
-                    }
-                }
-            },
             "kasthuri2011": {
                 "layers": {
                     "corrected_image": {
