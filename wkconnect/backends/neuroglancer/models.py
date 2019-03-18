@@ -1,6 +1,7 @@
+from dataclasses import InitVar, dataclass, field
 from typing import Any, Dict, Optional, Tuple
 
-from dataclasses import InitVar, dataclass, field
+from gcloud.aio.auth import Token
 
 from ...utils.types import Box3D, Vec3D
 from ...webknossos.models import BoundingBox
@@ -76,6 +77,7 @@ class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     layers: Dict[str, Layer]
+    token: Optional[Token] = None
     scale: Vec3D = field(init=False)
 
     def __post_init__(self) -> None:

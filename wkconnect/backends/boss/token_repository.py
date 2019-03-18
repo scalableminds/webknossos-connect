@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import time
+from dataclasses import dataclass
 from typing import Dict, Optional
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
-
-from dataclasses import dataclass
 
 from ...utils.json import JSON
 

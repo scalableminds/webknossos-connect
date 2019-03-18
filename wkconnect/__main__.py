@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 import os
-import traceback
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Type
 
@@ -20,6 +19,7 @@ from .backends.boss.backend import Boss
 from .backends.neuroglancer.backend import Neuroglancer
 from .repository import Repository
 from .routes import routes
+from .utils.exceptions import exception_traceback, format_exception
 from .utils.scheduler import repeat_every_seconds
 from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
@@ -36,9 +36,6 @@ class Server(Sanic):
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
         self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer]
-
-    def format_exception(self, exception: Exception) -> str:
-        return f"{type(exception).__name__} in webknossos-connect."
 
     async def add_dataset(
         self,
@@ -84,12 +81,15 @@ class Server(Sanic):
             ),
             return_exceptions=True,
         )
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(exception_traceback(result))
         await asyncio.gather(
             *(
                 self.webknossos.report_dataset(
                     UnusableDataSource(
                         DataSourceId(organization, dataset),
-                        status=self.format_exception(result),
+                        status=format_exception(result),
                     )
                 )
                 for result, (_, organization, dataset, _) in zip(
@@ -116,8 +116,8 @@ class CustomErrorHandler(ErrorHandler):
         if isinstance(exception, SanicException):
             return super().default(request, exception)
         else:
-            message = app.format_exception(exception)
-            stack = traceback.format_exc()
+            message = format_exception(exception)
+            stack = exception_traceback(exception)
             message_json = {"messages": [{"error": message, "chain": [stack]}]}
             logger.error(stack)
             return response.json(message_json, status=500)

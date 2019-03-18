@@ -1,6 +1,5 @@
-from typing import Any, Iterable, Optional, Tuple, Union, get_type_hints
-
 from dataclasses import InitVar
+from typing import Any, Iterable, Optional, Tuple, Union, get_type_hints
 
 from .types import JSON, Vec3D
 
