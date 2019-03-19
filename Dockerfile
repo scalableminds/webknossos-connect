@@ -17,6 +17,8 @@ COPY Pipfile.lock .
 RUN pipenv install --system
 
 COPY wkconnect wkconnect
+COPY data data
+VOLUME /app/data
 
 HEALTHCHECK \
   --interval=15s --timeout=5s --retries=3 \
