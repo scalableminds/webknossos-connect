@@ -7,7 +7,7 @@ services:
       target: prod
     image: scalableminds/webknossos-connect:${DOCKER_TAG:-master}
     volumes:
-      - ./data:${CI:-/app/data}
+      - ./data:/${CI:-app/data}
     network_mode: host
     environment:
       - TZ=${TZ:-Europe/Berlin}
