@@ -23,7 +23,7 @@ from .utils.exceptions import exception_traceback, format_exception
 from .utils.scheduler import repeat_every_seconds
 from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
-from .webknossos.models import DataSourceId, UnusableDataSource
+from .webknossos.models import DataSource, DataSourceId, UnusableDataSource
 
 logger = logging.getLogger()
 
@@ -43,13 +43,17 @@ class Server(Sanic):
         backend_name: str,
         organization_name: str,
         dataset_name: str,
-    ) -> None:
+        report_to_wk: bool = True,
+    ) -> DataSource:
         backend = self.backends[backend_name]
         dataset = await backend.handle_new_dataset(
             organization_name, dataset_name, deepcopy(dataset_config)
         )
         self.repository.add_dataset(backend_name, dataset)
-        await self.webknossos.report_dataset(dataset.to_webknossos())
+        wk_dataset = dataset.to_webknossos()
+        if report_to_wk:
+            await self.webknossos.report_dataset(wk_dataset)
+        return wk_dataset
 
     async def load_persisted_datasets(self) -> None:
         def expandvars_hook(dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -76,6 +80,7 @@ class Server(Sanic):
                     backend_name=backend,
                     organization_name=organization,
                     dataset_name=dataset,
+                    report_to_wk=False,
                 )
                 for backend, organization, dataset, dataset_details in dataset_tuples
             ),
@@ -84,20 +89,16 @@ class Server(Sanic):
         for result in results:
             if isinstance(result, Exception):
                 logger.error(exception_traceback(result))
-        await asyncio.gather(
-            *(
-                self.webknossos.report_dataset(
-                    UnusableDataSource(
-                        DataSourceId(organization, dataset),
-                        status=format_exception(result),
-                    )
-                )
-                for result, (_, organization, dataset, _) in zip(
-                    results, dataset_tuples
-                )
-                if isinstance(result, Exception)
+
+        usable = [result for result in results if not isinstance(result, Exception)]
+        unusable = [
+            UnusableDataSource(
+                DataSourceId(organization, dataset), status=format_exception(result)
             )
-        )
+            for result, (_, organization, dataset, _) in zip(results, dataset_tuples)
+            if isinstance(result, Exception)
+        ]
+        await self.webknossos.report_all_datasets(usable + unusable)
 
 
 app = Server()

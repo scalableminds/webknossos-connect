@@ -7,12 +7,14 @@ triggers = Blueprint(__name__, url_prefix="/triggers")
 
 
 @triggers.route("/checkInboxBlocking")
+@authorized(AccessRequest.administrate_datasets)
 async def check_inbox_blocking(request: Request) -> response.HTTPResponse:
     await request.app.load_persisted_datasets()
     return response.text("Ok")
 
 
 @triggers.route("/newOrganizationFolder")
+@authorized(AccessRequest.administrate_datasets)
 async def new_organization_folder(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
