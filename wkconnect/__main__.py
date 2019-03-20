@@ -3,10 +3,10 @@ import json
 import logging
 import os
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Awaitable, Callable, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
-from aiohttp.client_exceptions import ClientConnectorError
+from aiohttp.client_exceptions import ClientConnectorError, ClientResponseError
 from sanic import Sanic, response
 from sanic.exceptions import SanicException
 from sanic.handlers import ErrorHandler
@@ -117,7 +117,7 @@ class CustomErrorHandler(ErrorHandler):
         if isinstance(exception, SanicException):
             return super().default(request, exception)
         else:
-            message = format_exception(exception)
+            message = format_exception(exception) + "."
             stack = exception_traceback(exception)
             message_json = {"messages": [{"error": message, "chain": [stack]}]}
             logger.error(stack)
@@ -187,25 +187,28 @@ async def build_info(request: Request) -> response.HTTPResponse:
 
 if __name__ == "__main__":
 
-    @repeat_every_seconds(10 * 60)
-    async def ping_webknossos(app: Server) -> None:
-        try:
-            await app.webknossos.report_status()
-        except ClientConnectorError:
-            logger.warning("Could not ping webknossos, retrying in 10 min.")
+    def add_regular_interaction(
+        action_name: str, fn: Callable[[Server], Awaitable[None]]
+    ) -> None:
+        @repeat_every_seconds(10 * 60)
+        async def do_interaction(app: Server) -> None:
+            try:
+                await fn(app)
+            except ClientConnectorError:
+                logger.warning(f"Could not {action_name}, retrying in 10 min.")
+            except ClientResponseError as exception:
+                logger.warning(
+                    f"Could not {action_name}, retrying in 10 min. Got {format_exception(exception)}."
+                )
 
-    app.add_task(ping_webknossos)
+        app.add_task(repeat_every_seconds(10 * 60)(do_interaction))
 
-    @repeat_every_seconds(10 * 60)  # , initial_call = False)
-    async def scan_inbox(app: Server) -> None:
-        try:
-            await app.load_persisted_datasets()
-        except ClientConnectorError:
-            logger.warning(
-                "Could not report datasets to webknossos, retrying in 10 min."
-            )
-
-    app.add_task(scan_inbox)
+    add_regular_interaction(
+        "ping webknossos", lambda app: app.webknossos.report_status()
+    )
+    add_regular_interaction(
+        "report datasets to webknossos", lambda app: app.load_persisted_datasets()
+    )
 
     app.run(
         host=app.config["server"]["host"],

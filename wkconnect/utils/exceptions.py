@@ -16,4 +16,4 @@ def format_exception(exception: Exception) -> str:
         description = f"HTTP {exception.message} ({exception.status})"
     else:
         description = type(exception).__name__
-    return f"{description} in webknossos-connect."
+    return f"{description} in webknossos-connect"
