@@ -7,8 +7,8 @@ A [webKnossos](https://github.com/scalableminds/webknossos) compatible data conn
 
 1. Add webknossos-connect to the webKnossos database:
   ```
-  INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") 
-  VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
+  INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign","isconnector")
+  VALUES (E'connect',E'http://localhost:8000',E'secret-key',FALSE,FALSE,FALSE,TRUE);
   ```
 2. To use the initial datasets from [neurodata.io](https://neurodata.io/ndcloud/#data), create a `.env` file:
   ```
