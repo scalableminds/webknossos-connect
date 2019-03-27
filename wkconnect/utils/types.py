@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from operator import add, floordiv, mod, mul, sub
+from operator import add, floordiv, mod, mul, sub, truediv
 from typing import Any, Callable, Iterator, NamedTuple, Union
 
 import numpy as np
@@ -40,6 +40,9 @@ class Vec3D(NamedTuple):
     def pairmin(self, other: Any) -> Vec3D:
         return self._element_wise(other, min)
 
+    def toVec3Df(self) -> Vec3Df:
+        return Vec3Df(*map(float, self))
+
     @classmethod
     def zeros(cls) -> Vec3D:
         return cls(0, 0, 0)
@@ -47,6 +50,32 @@ class Vec3D(NamedTuple):
     @classmethod
     def ones(cls) -> Vec3D:
         return cls(1, 1, 1)
+
+
+class Vec3Df(NamedTuple):
+    x: float
+    y: float
+    z: float
+
+    def _element_wise(self, other: Any, fn: Callable[[float, Any], float]) -> Vec3Df:
+        if isinstance(other, tuple):
+            return Vec3Df(*(fn(a, b) for a, b in zip(self, other)))
+        return Vec3Df(*(fn(a, other) for a in self))  # pylint: disable=not-an-iterable
+
+    def __add__(self, other: Any) -> Vec3Df:
+        return self._element_wise(other, add)
+
+    def __sub__(self, other: Any) -> Vec3Df:
+        return self._element_wise(other, sub)
+
+    def __mul__(self, other: Any) -> Vec3Df:
+        return self._element_wise(other, mul)
+
+    def __truediv__(self, other: Any) -> Vec3Df:
+        return self._element_wise(other, truediv)
+
+    def toVec3D(self) -> Vec3D:
+        return Vec3D(*map(int, self))
 
 
 class Box3D(NamedTuple):

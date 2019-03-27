@@ -1,7 +1,7 @@
 from dataclasses import InitVar
 from typing import Any, Iterable, Optional, Tuple, Union, get_type_hints
 
-from .types import JSON, Vec3D
+from .types import JSON, Vec3D, Vec3Df
 
 
 def from_json(data: JSON, cls: Optional[type]) -> Any:
@@ -69,7 +69,7 @@ def yield_jsons(
 
 def to_json(obj: Any) -> JSON:
     cls = type(obj)
-    if issubclass(cls, Vec3D):
+    if issubclass(cls, (Vec3D, Vec3Df)):
         return tuple(obj)
     elif hasattr(cls, "__annotations__"):
         annotations = get_type_hints(cls)

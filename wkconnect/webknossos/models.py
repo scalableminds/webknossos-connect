@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, List, NamedTuple, Optional, Tuple, cast
+from typing import Any, List, NamedTuple, Optional, cast
 
 import numpy as np
 
-from ..utils.types import JSON, Box3D, Vec3D
+from ..utils.types import JSON, Box3D, Vec3D, Vec3Df
 
 
 class DataStoreStatus(NamedTuple):
@@ -65,7 +65,7 @@ class DataLayer:
 class DataSource(NamedTuple):
     id: DataSourceId
     dataLayers: List[DataLayer]
-    scale: Tuple[float, float, float]
+    scale: Vec3Df
 
 
 class UnusableDataSource(NamedTuple):

@@ -8,7 +8,7 @@ from aiohttp.client_exceptions import ClientResponseError
 from async_lru import alru_cache
 
 from ...utils.si import convert_si_units
-from ...utils.types import JSON, Box3D, HashableDict, Vec3D
+from ...utils.types import JSON, Box3D, HashableDict, Vec3D, Vec3Df
 from ..backend import Backend, DatasetInfo
 from .client import Client
 from .models import Channel, Dataset, Experiment
@@ -39,13 +39,17 @@ class Boss(Backend):
             domain, collection, experiment, channel, token_key
         )
         resolutions = tuple(
-            Vec3D(*map(int, i)) for i in sorted(downsample_info["voxel_size"].values())
+            Vec3Df(*i) for i in sorted(downsample_info["voxel_size"].values())
         )
-        resolutions = tuple(i // resolutions[0] for i in resolutions)
+        normalized_resolutions = tuple(
+            (i / resolutions[0]).toVec3D() for i in resolutions
+        )
 
         return (
             channel,
-            Channel(channel_info["datatype"], resolutions, channel_info["type"]),
+            Channel(
+                channel_info["datatype"], normalized_resolutions, channel_info["type"]
+            ),
         )
 
     async def handle_new_dataset(
@@ -76,14 +80,12 @@ class Boss(Backend):
             Vec3D(coord_info["x_start"], coord_info["y_start"], coord_info["z_start"]),
             Vec3D(coord_info["x_stop"], coord_info["y_stop"], coord_info["z_stop"]),
         )
-        global_scale = Vec3D(
+        global_scale = Vec3Df(
             *(
-                int(
-                    convert_si_units(
-                        coord_info[f"{dim}_voxel_size"],
-                        coord_info["voxel_unit"],
-                        "nanometers",
-                    )
+                convert_si_units(
+                    coord_info[f"{dim}_voxel_size"],
+                    coord_info["voxel_unit"],
+                    "nanometers",
                 )
                 for dim in "xyz"
             )
