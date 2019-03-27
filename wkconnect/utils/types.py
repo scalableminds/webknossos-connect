@@ -40,7 +40,7 @@ class Vec3D(NamedTuple):
     def pairmin(self, other: Any) -> Vec3D:
         return self._element_wise(other, min)
 
-    def toVec3Df(self) -> Vec3Df:
+    def to_float(self) -> Vec3Df:
         return Vec3Df(*map(float, self))
 
     @classmethod
@@ -74,7 +74,7 @@ class Vec3Df(NamedTuple):
     def __truediv__(self, other: Any) -> Vec3Df:
         return self._element_wise(other, truediv)
 
-    def toVec3D(self) -> Vec3D:
+    def to_int(self) -> Vec3D:
         return Vec3D(*map(int, self))
 
 

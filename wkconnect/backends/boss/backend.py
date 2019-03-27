@@ -42,7 +42,7 @@ class Boss(Backend):
             Vec3Df(*i) for i in sorted(downsample_info["voxel_size"].values())
         )
         normalized_resolutions = tuple(
-            (i / resolutions[0]).toVec3D() for i in resolutions
+            (i / resolutions[0]).to_int() for i in resolutions
         )
 
         return (
