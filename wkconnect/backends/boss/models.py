@@ -1,13 +1,17 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
-from ...utils.types import Box3D, Vec3D
+from ...utils.types import Box3D, Vec3D, Vec3Df
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
 from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
 from .token_repository import TokenKey
+
+
+class BossResolutionsError(RuntimeError):
+    pass
 
 
 @dataclass(unsafe_hash=True)
@@ -27,7 +31,15 @@ class Channel:
             self.type = "segmentation"
         assert self.type in supported_datatypes
         assert self.datatype in supported_datatypes[self.type]
-        assert all(max(res) == 2 ** i for i, res in enumerate(self.resolutions))
+        if not all(max(res) == 2 ** i for i, res in enumerate(self.resolutions)):
+            error_msg = "\n".join(
+                [
+                    f"Boss resolutions do not follow power of two factors:",
+                    str(self.resolutions),
+                    f"Maximum dimensions should be {[2 ** i for i in range(len(self.resolutions))]}.",
+                ]
+            )
+            raise BossResolutionsError(error_msg)
 
     def wk_datatype(self) -> str:
         return "uint8" if self.type == "color" else "uint32"
@@ -59,7 +71,7 @@ class Dataset(DatasetInfo):
     domain: str
     experiment: Experiment
     bounding_box: Box3D
-    global_scale: Vec3D
+    global_scale: Vec3Df
     token_key: TokenKey
 
     def to_webknossos(self) -> WkDataSource:

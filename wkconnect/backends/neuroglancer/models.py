@@ -92,5 +92,5 @@ class Dataset(DatasetInfo):
                 layer.to_webknossos(layer_name)
                 for layer_name, layer in self.layers.items()
             ],
-            self.scale,
+            self.scale.to_float(),
         )
