@@ -26,7 +26,7 @@ Add and configure datasets to webKnossos-connect to make them available for view
 #### 3.1 REST API
 You can add new datasets to webKnossos-connect through the REST interface. POST a JSON configuration to:
 ```
-POST <http://<webKnossos-connect>/data/datasets?token
+http://<webKnossos-connect>/data/datasets?token
 ```
 The access `token` can be obained from your user profile in the webKnossos main instance. [Read more in the webKnosssos docs.](https://docs.webknossos.org/reference/rest_api#authentication)
 
