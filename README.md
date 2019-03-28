@@ -1,7 +1,7 @@
 # webknossos-connect
 A [webKnossos](https://github.com/scalableminds/webknossos) compatible data connector written in Python. 
 
-webKnossos-connect serves as an adapter between the webKnossos data store interface and other alternative data storage servers (e.g BossDB) or static files hosted on Google Cloud Storage (e.g. Neurodata Precomputed)
+webKnossos-connect serves as an adapter between the webKnossos data store interface and other alternative data storage servers (e.g BossDB) or static files hosted on Cloud Storage (e.g. Neuroglancer Precomputed)
 
 [![CircleCI](https://circleci.com/gh/scalableminds/webknossos-connect.svg?style=svg&circle-token=1d7b55b40a5733c7563033064cee0ed0beef36b6)](https://circleci.com/gh/scalableminds/webknossos-connect)
 
