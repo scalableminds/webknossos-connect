@@ -1,22 +1,82 @@
 # webknossos-connect
-A [webKnossos](https://github.com/scalableminds/webknossos) compatible data connector written in Python
+A [webKnossos](https://github.com/scalableminds/webknossos) compatible data connector written in Python. 
+
+webKnossos-connect serves as an adapter between the webKnossos data store interface and other alternative data storage servers (e.g BossDB) or static files hosted on Google Cloud Storage (e.g. Neurodata Precomputed)
 
 [![CircleCI](https://circleci.com/gh/scalableminds/webknossos-connect.svg?style=svg&circle-token=1d7b55b40a5733c7563033064cee0ed0beef36b6)](https://circleci.com/gh/scalableminds/webknossos-connect)
 
-## Usage
+Available Adapaters / Supported Data Formats:
+- [BossDB](https://bossdb.org/)
+- [Neuroglancer Precomputed](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed)
 
-1. Add webknossos-connect to the webKnossos database:
+## Usage
+### 1. Installation / Docker
+Install webKnossos-connect using Docker or use the instructions for native installation below.
+`docker-compose up --build webknossos-connect`
+
+### 2. Connecting to webKnossos
+Register your webknossos-connect instance with your main webKnossos instance. Modify the webKnossos Postgres database:
   ```
   INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign","isconnector")
-  VALUES (E'connect',E'http://localhost:8000',E'secret-key',FALSE,FALSE,FALSE,TRUE);
+  VALUES (E'connect', E'http://localhost:8000', E'secret-key', FALSE, FALSE, FALSE, TRUE);
   ```
-2. To use the initial datasets from [neurodata.io](https://neurodata.io/ndcloud/#data), create a `.env` file:
+### 3. Adding Datasets
+Add and configure datasets to webKnossos-connect to make them available for viewing in webKnossos
+
+#### 3.1 REST API
+You can add new datasets to webKnossos-connect through the REST interface. POST a JSON configuration to:
+```
+POST <http://<webKnossos-connect>/data/datasets?token
+```
+The access `token` can be obained from your user profile in the webKnossos main instance. [Read more in the webKnosssos docs.](https://docs.webknossos.org/reference/rest_api#authentication)
+
+Example JSON body. More examples can be found [here](https://github.com/scalableminds/webknossos-connect/blob/master/data/datasets.json).
+```
+{
+    "boss": {
+        "Test Organisation": {
+            "ara": {
+                "domain": "https://api.boss.neurodata.io",
+                "collection": "ara_2016",
+                "experiment": "sagittal_50um",
+                "username": "<NEURODATA_IO_USER>",
+                "password": "<NEURODATA_IO_PW>"
+            },
+        }
+    },
+    "neuroglancer": {
+        "Test Organisation": {
+            "fafb_v14": {
+                "layers": {
+                    "image": {
+                        "source": "gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_clahe",
+                        "type": "image"
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+CURL Example
+```
+curl http:/<webKnossos-connect>/data/datasets -X POST -H "Content-Type: application/json" --data-binary "@datasets.json"
+```
+
+#### 3.2 webKnossos UI
+Alternatively, new datasets can be added directly through the webKnossos UI. Configure and import a new datasets from the webKnossos dashboard. (Dashboard -> Datasets -> Upload Dataset -> Add wk-connect Dataset) 
+
+(Read more in the webKnossos docs.)[https://docs.webknossos.org/guides/datasets#uploading-through-the-web-browser]
+
+#### 3.2 Default test datasets
+
+By default, some public datasets are added to webKnossos-connect to get you started when using the Docker image. The initial datasets are hosted on [neurodata.io](https://neurodata.io/ndcloud/#data). For access , create a `.env` file with your Neurodata.io credentials:
   ```
   NEURODATA_IO_USER="<your username>"
   NEURODATA_IO_PW="<your password>"
   ```
-3. `docker-compose up --build webknossos-connect`
-4. By default, some public datasets are reported. Add more datasets from the webKnossos user interface.
+
 
 ## Development
 ### In Docker :whale:
