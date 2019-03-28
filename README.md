@@ -71,7 +71,7 @@ Alternatively, new datasets can be added directly through the webKnossos UI. Con
 
 #### 3.2 Default test datasets
 
-By default, some public datasets are added to webKnossos-connect to get you started when using the Docker image. The initial datasets are hosted on [neurodata.io](https://neurodata.io/ndcloud/#data). For access , create a `.env` file with your Neurodata.io credentials:
+By default, some public datasets are added to webKnossos-connect to get you started when using the Docker image. Some initial datasets are hosted on [neurodata.io](https://neurodata.io/ndcloud/#data). For access, create a `.env` file with your Neurodata.io credentials:
   ```
   NEURODATA_IO_USER="<your username>"
   NEURODATA_IO_PW="<your password>"
