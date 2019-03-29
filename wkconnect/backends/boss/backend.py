@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Dict, Optional, Tuple, cast
 
 import blosc
@@ -13,6 +14,8 @@ from ..backend import Backend, DatasetInfo
 from .client import Client
 from .models import Channel, Dataset, Experiment
 from .token_repository import TokenKey, TokenRepository
+
+logger = logging.getLogger()
 
 
 class Boss(Backend):
@@ -33,7 +36,10 @@ class Boss(Backend):
             domain, collection, experiment, channel, token_key
         )
         assert channel_info["base_resolution"] == 0
-        assert channel_info["downsample_status"] == "DOWNSAMPLED"
+        if channel_info["downsample_status"] != "DOWNSAMPLED":
+            logger.warn(
+                f"BOSS did not finish downsampling for \"{'/'.join([domain, collection, experiment])}\", current status is {channel_info['downsample_status']}."
+            )
 
         downsample_info = await self.client.get_downsample(
             domain, collection, experiment, channel, token_key
