@@ -67,7 +67,7 @@ curl http:/<webKnossos-connect>/data/datasets -X POST -H "Content-Type: applicat
 #### 3.2 webKnossos UI
 Alternatively, new datasets can be added directly through the webKnossos UI. Configure and import a new datasets from the webKnossos dashboard. (Dashboard -> Datasets -> Upload Dataset -> Add wk-connect Dataset) 
 
-(Read more in the webKnossos docs.)[https://docs.webknossos.org/guides/datasets#uploading-through-the-web-browser]
+[Read more in the webKnossos docs.](https://docs.webknossos.org/guides/datasets#uploading-through-the-web-browser)
 
 #### 3.2 Default test datasets
 
