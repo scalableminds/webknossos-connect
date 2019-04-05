@@ -69,7 +69,7 @@ Alternatively, new datasets can be added directly through the webKnossos UI. Con
 
 [Read more in the webKnossos docs.](https://docs.webknossos.org/guides/datasets#uploading-through-the-web-browser)
 
-#### 3.2 Default test datasets
+#### 3.3 Default test datasets
 
 By default, some public datasets are added to webKnossos-connect to get you started when using the Docker image. Some initial datasets are hosted on [neurodata.io](https://neurodata.io/ndcloud/#data). For access, create a `.env` file with your Neurodata.io credentials:
   ```
