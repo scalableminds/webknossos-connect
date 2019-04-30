@@ -11,6 +11,7 @@ from aiohttp import ClientResponseError, ClientSession
 from async_lru import alru_cache
 from gcloud.aio.auth import Token
 
+from ...utils.exceptions import RuntimeErrorWithUserMessage
 from ...utils.json import from_json
 from ...utils.types import JSON, Box3D, Vec3D
 from ..backend import Backend, DatasetInfo
@@ -21,6 +22,10 @@ Chunk = Tuple[Box3D, np.ndarray]
 
 
 class NeuroglancerAuthenticationError(RuntimeError):
+    pass
+
+
+class NeuroglancerAuthenticationMissingError(RuntimeErrorWithUserMessage):
     pass
 
 
@@ -70,10 +75,19 @@ class Neuroglancer(Backend):
         )
         info_url = layer["source"] + "/info"
 
-        async with await self.http_client.get(
-            info_url, headers=await get_header(token)
-        ) as r:
-            response = await r.json()
+        try:
+            async with await self.http_client.get(
+                info_url, headers=await get_header(token)
+            ) as r:
+                response = await r.json()
+        except ClientResponseError as e:
+            if e.status == 403:
+                raise NeuroglancerAuthenticationMissingError(
+                    "Could not authenticate the neuroglancer dataset, "
+                    + "please add authentication"
+                )
+            else:
+                raise e
         layer.update(response)
         layer["scales"] = sorted(layer["scales"], key=lambda scale: scale["resolution"])
         min_resolution = Vec3D(*layer["scales"][0]["resolution"])
