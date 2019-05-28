@@ -79,7 +79,7 @@ class Neuroglancer(Backend):
             async with await self.http_client.get(
                 info_url, headers=await get_header(token)
             ) as r:
-                response = await r.json()
+                response = await r.json(content_type=None)
         except ClientResponseError as e:
             if e.status == 403:
                 raise NeuroglancerAuthenticationMissingError(
