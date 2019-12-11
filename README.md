@@ -71,12 +71,7 @@ Alternatively, new datasets can be added directly through the webKnossos UI. Con
 
 #### 3.3 Default test datasets
 
-By default, some public datasets are added to webKnossos-connect to get you started when using the Docker image. Some initial datasets are hosted on [neurodata.io](https://neurodata.io/ndcloud/#data). For access, create a `.env` file with your Neurodata.io credentials:
-  ```
-  NEURODATA_IO_USER="<your username>"
-  NEURODATA_IO_PW="<your password>"
-  ```
-
+By default, some public datasets are added to webKnossos-connect to get you started when using the Docker image.
 
 ## Development
 ### In Docker :whale:
@@ -89,33 +84,12 @@ By default, some public datasets are added to webKnossos-connect to get you star
 ### Native
 #### Installation
 
-You need Python 3.7 with `pipenv` installed.
-The recommended way is to use `pyenv` and `pipenv`:
+You need Python 3.7 with `poetry` installed.
 
-* Install `pyenv` with  
-  `curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash`
-* Install your system requirements to build Python, see
-  https://github.com/pyenv/pyenv/wiki/common-build-problems
-* To install the correct Python version, run
-  `pyenv install`
-* Start a new shell to activate the Python version:
-  `bash`
-* Install Pipenv:
-  `pip install --user --upgrade pipenv`
-* On current Debian and Ubuntu setups, you have to fix a bug manually:
-  Add `~/.local/bin` to your PATH like this:
-  ```
-  echo '
-  # set PATH so it includes the private local bin if it exists
-  # This should be the default, but is broken in some Debian/Ubuntu Versions,
-  # see https://unix.stackexchange.com/questions/316765/which-distributions-have-home-local-bin-in-path#answer-392710
-  if [ -d "$HOME/.local/bin" ] ; then
-      PATH="$HOME/.local/bin:$PATH"
-  fi
-  ' >> ~/.profile
-  ```
-  This will be activated after the next login automatically, to use it right now, run
-  `. ~/.profile`
+```bash
+pip install poetry==1.0.0b4
+poetry install
+```
 
 #### Run
 
@@ -124,8 +98,7 @@ The recommended way is to use `pyenv` and `pipenv`:
   INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") 
   VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
   ```
-* `pipenv install --dev`
-* `pipenv run main`
+* `python -m wkconnect`
 * ```
   curl http://localhost:8000/api/neuroglancer/Demo_Lab/test \
     -X POST -H "Content-Type: application/json" \
@@ -142,13 +115,12 @@ Useful commands:
 * Benchark with `timeit`
 * Trace with `py-spy`
 
-Use the commands with `pipenv run …`:
+Use the commands:
 
-* `pretty`
-* `pretty-check`
-* `lint`
-* `lint-details`
-* `type-check`
+* `scripts/pretty.sh`
+* `scripts/pretty-check.sh`
+* `scripts/lint.sh`
+* `scripts/type-check.sh`
 * `benchmarks/run_all.sh`
 
 Trace the server on http://localhost:8000/trace.
