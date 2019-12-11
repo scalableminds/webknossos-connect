@@ -70,10 +70,10 @@ class Neuroglancer(Backend):
     async def __handle_layer(
         self, layer_name: str, layer: Dict[str, Any], token: Optional[Token]
     ) -> Tuple[str, Layer]:
-        layer["source"] = layer["source"].replace(
-            "gs://", "https://storage.googleapis.com/"
-        ).replace(
-            "s3://", "https://s3.amazonaws.com/"
+        layer["source"] = (
+            layer["source"]
+            .replace("gs://", "https://storage.googleapis.com/")
+            .replace("s3://", "https://s3.amazonaws.com/")
         )
         info_url = layer["source"] + "/info"
 
