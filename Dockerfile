@@ -1,6 +1,6 @@
 FROM python:3.7.2 as prod
 
-RUN pip install poetry && poetry config virtualenvs.create false
+RUN pip install poetry==1.0.0b4 && poetry config virtualenvs.create false
 
 RUN mkdir /app
 WORKDIR /app
