@@ -7,6 +7,10 @@ jobs:
       - checkout
 
       - run:
+          name: Fix file permissions
+          command: sudo chown -R circleci:circleci /usr/local/bin
+
+      - run:
           name: Install poetry
           command: pip install --user poetry==1.0.0b4 && poetry config virtualenvs.create false
 
