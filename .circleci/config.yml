@@ -8,11 +8,11 @@ jobs:
 
       - run:
           name: Fix file permissions
-          command: sudo chown -R circleci:circleci /usr/local/bin
+          command: sudo chown -R circleci:circleci /usr/local/lib/python3.7/
 
       - run:
           name: Install poetry
-          command: pip install --user poetry==1.0.0b4 && poetry config virtualenvs.create false
+          command: pip install poetry==1.0.0b4 && poetry config virtualenvs.create false
 
       - run:
           name: Install packages
