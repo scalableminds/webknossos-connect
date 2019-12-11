@@ -5,38 +5,24 @@ jobs:
       - image: circleci/python:3.7.2
     steps:
       - checkout
-      - restore_cache:
-          name: Restore pipenv cache
-          keys:
-            - pipenv-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}
-            - pipenv-cache-{{ checksum ".circleci/cache_version" }}-master
+
+      - run:
+          name: Install poetry
+          command: pip install poetry && poetry config virtualenvs.create false
+
       - run:
           name: Install packages
-          command: pipenv sync --dev
+          command: poetry install
       - run:
           name: Lint
-          command: pipenv run lint
+          command: scripts/lint.sh
       - run:
           name: Check pretty
-          command: pipenv run pretty-check
-      - restore_cache:
-          name: Restore mypy cache
-          keys:
-            - mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}
-            - mypy-cache-{{ checksum ".circleci/cache_version" }}-master
+          command: scripts/pretty-check.sh
       - run:
           name: Check typing
-          command: pipenv run type-check
-      - save_cache:
-          name: Save pipenv cache
-          key: pipenv-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - "~/.cache/pipenv"
-      - save_cache:
-          name: Save mypy cache
-          key: mypy-cache-{{ checksum ".circleci/cache_version" }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ".mypy_cache"
+          command: scripts/type-check.sh
+
       - setup_remote_docker
       - run:
           name: Build docker image

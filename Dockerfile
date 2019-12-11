@@ -1,9 +1,6 @@
 FROM python:3.7.2 as prod
 
-RUN pip install --user --upgrade pipenv
-# We have to set PATH by hand because of this bug:
-# https://unix.stackexchange.com/questions/316765/which-distributions-have-home-local-bin-in-path#answer-392710
-ENV PATH=/root/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN pip install poetry && poetry config virtualenvs.create false
 
 RUN mkdir /app
 WORKDIR /app
@@ -12,9 +9,9 @@ RUN apt-get update && \
     apt-get install -y libturbojpeg0 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY Pipfile .
-COPY Pipfile.lock .
-RUN pipenv install --system
+COPY pyproject.toml .
+COPY poetry.lock .
+RUN poetry install
 
 COPY wkconnect wkconnect
 COPY data data
@@ -29,5 +26,5 @@ CMD [ "python", "-m", "wkconnect" ]
 
 FROM prod as dev
 
-RUN pipenv sync --dev
-CMD [ "pipenv", "run", "main" ]
+RUN poetry install
+CMD [ "python", "-m", "wkconnect" ]
