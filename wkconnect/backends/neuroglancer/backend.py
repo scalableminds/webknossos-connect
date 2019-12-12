@@ -70,8 +70,10 @@ class Neuroglancer(Backend):
     async def __handle_layer(
         self, layer_name: str, layer: Dict[str, Any], token: Optional[Token]
     ) -> Tuple[str, Layer]:
-        layer["source"] = layer["source"].replace(
-            "gs://", "https://storage.googleapis.com/"
+        layer["source"] = (
+            layer["source"]
+            .replace("gs://", "https://storage.googleapis.com/")
+            .replace("s3://", "https://s3.amazonaws.com/")
         )
         info_url = layer["source"] + "/info"
 
@@ -119,12 +121,12 @@ class Neuroglancer(Backend):
     def __decode_raw(
         self, buffer: bytes, data_type: str, chunk_size: Vec3D, _: Optional[Vec3D]
     ) -> np.ndarray:
-        return np.asarray(buffer).astype(data_type).reshape(chunk_size)
+        return np.frombuffer(buffer, dtype=data_type).reshape(chunk_size, order="F")
 
     def __decode_jpeg(
         self, buffer: bytes, data_type: str, chunk_size: Vec3D, _: Optional[Vec3D]
     ) -> np.ndarray:
-        np_bytes = np.fromstring(buffer, dtype="uint8")
+        np_bytes = np.frombuffer(buffer, dtype="uint8")
         return (
             jpeg.JPEG(np_bytes)
             .decode()[:, :, 0]
