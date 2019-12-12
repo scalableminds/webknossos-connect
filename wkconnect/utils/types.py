@@ -103,7 +103,7 @@ class Box3D(NamedTuple):
     def from_size(cls, left: Vec3D, size: Vec3D) -> Box3D:
         return cls(left, left + size)
 
-    def to_int(seld) -> Box3D:
+    def to_int(self) -> Box3D:
         return Box3D(self.left.to_int(), self.right.to_int())
 
     def size(self) -> Vec3D:
