@@ -43,6 +43,9 @@ class Vec3D(NamedTuple):
     def to_float(self) -> Vec3Df:
         return Vec3Df(*map(float, self))
 
+    def to_int(self) -> Vec3D:
+        return Vec3Df(*map(int, self))
+
     @classmethod
     def zeros(cls) -> Vec3D:
         return cls(0, 0, 0)
@@ -71,11 +74,21 @@ class Vec3Df(NamedTuple):
     def __mul__(self, other: Any) -> Vec3Df:
         return self._element_wise(other, mul)
 
+    def __floordiv__(self, other: Any) -> Vec3Df:
+        return self._element_wise(other, floordiv)
+
     def __truediv__(self, other: Any) -> Vec3Df:
         return self._element_wise(other, truediv)
 
+    def __mod__(self, other: Any) -> Vec3Df:
+        return self._element_wise(other, mod)
+
     def to_int(self) -> Vec3D:
         return Vec3D(*map(int, self))
+
+    @classmethod
+    def zeros(cls) -> Vec3Df:
+        return cls(0.0, 0.0, 0.0)
 
 
 class Box3D(NamedTuple):
@@ -89,6 +102,9 @@ class Box3D(NamedTuple):
     @classmethod
     def from_size(cls, left: Vec3D, size: Vec3D) -> Box3D:
         return cls(left, left + size)
+
+    def to_int(self) -> Box3D:
+        return Box3D(self.left.to_int(), self.right.to_int())
 
     def size(self) -> Vec3D:
         return self.right - self.left

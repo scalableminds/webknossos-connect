@@ -13,7 +13,7 @@ from gcloud.aio.auth import Token
 
 from ...utils.exceptions import RuntimeErrorWithUserMessage
 from ...utils.json import from_json
-from ...utils.types import JSON, Box3D, Vec3D
+from ...utils.types import JSON, Box3D, Vec3D, Vec3Df
 from ..backend import Backend, DatasetInfo
 from .models import Dataset, Layer
 
@@ -92,12 +92,13 @@ class Neuroglancer(Backend):
                 raise e
         layer.update(response)
         layer["scales"] = sorted(layer["scales"], key=lambda scale: scale["resolution"])
-        min_resolution = Vec3D(*layer["scales"][0]["resolution"])
+        min_resolution = Vec3Df(*layer["scales"][0]["resolution"])
         for scale in layer["scales"]:
-            resolution = Vec3D(*scale["resolution"])
+            resolution = Vec3Df(*scale["resolution"])
             assert resolution % min_resolution == Vec3D.zeros()
-            scale["resolution"] = resolution // min_resolution
-        layer["relative_scale"] = min_resolution
+            scale["resolution"] = (resolution // min_resolution).to_int()
+            scale["voxel_offset"] = Vec3D(*scale["voxel_offset"]).to_int()
+        layer["relative_scale"] = min_resolution.to_int()
         return (layer_name, from_json(layer, Layer))
 
     async def handle_new_dataset(
