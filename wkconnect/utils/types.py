@@ -74,7 +74,7 @@ class Vec3Df(NamedTuple):
     def __mul__(self, other: Any) -> Vec3Df:
         return self._element_wise(other, mul)
 
-    def __floordiv__(self, other: Any) -> Vec3D:
+    def __floordiv__(self, other: Any) -> Vec3Df:
         return self._element_wise(other, floordiv)
 
     def __truediv__(self, other: Any) -> Vec3Df:
