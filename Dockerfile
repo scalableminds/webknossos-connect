@@ -1,6 +1,6 @@
 FROM python:3.7.2 as prod
 
-RUN pip install poetry==1.0.0b4 && poetry config virtualenvs.create false
+RUN pip install poetry==1.0.0
 
 RUN mkdir /app
 WORKDIR /app
@@ -11,6 +11,7 @@ RUN apt-get update && \
 
 COPY pyproject.toml .
 COPY poetry.lock .
+COPY poetry.toml .
 RUN poetry install
 
 COPY wkconnect wkconnect
