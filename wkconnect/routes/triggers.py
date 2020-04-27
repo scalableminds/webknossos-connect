@@ -20,7 +20,6 @@ async def new_organization_folder(request: Request) -> response.HTTPResponse:
 
 
 @triggers.route("/checkNewOrganizationFolder")
-@authorized(AccessRequest.administrate_datasets)
 async def check_new_organization_folder(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
