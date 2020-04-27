@@ -18,10 +18,12 @@ async def check_inbox_blocking(request: Request) -> response.HTTPResponse:
 async def new_organization_folder(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
+
 @triggers.route("/checkNewOrganizationFolder")
 @authorized(AccessRequest.administrate_datasets)
 async def check_new_organization_folder(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
+
 
 @triggers.route("/reload/<organization_name>/<dataset_name>")
 @authorized(AccessRequest.administrate_datasets)
