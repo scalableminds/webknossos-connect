@@ -1,5 +1,5 @@
 # webknossos-connect
-A [webKnossos](https://github.com/scalableminds/webknossos) compatible data connector written in Python. 
+A [webKnossos](https://github.com/scalableminds/webknossos) compatible data connector written in Python.
 
 webKnossos-connect serves as an adapter between the webKnossos data store interface and other alternative data storage servers (e.g BossDB) or static files hosted on Cloud Storage (e.g. Neuroglancer Precomputed)
 
@@ -17,8 +17,8 @@ Install webKnossos-connect using Docker or use the instructions for native insta
 ### 2. Connecting to webKnossos
 Register your webknossos-connect instance with your main webKnossos instance. Modify the webKnossos Postgres database:
   ```
-  INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign","isconnector")
-  VALUES (E'connect', E'http://localhost:8000', E'secret-key', FALSE, FALSE, FALSE, TRUE);
+  INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign","isconnector")
+  VALUES (E'connect', E'http://localhost:8000', E'http://localhost:8000', E'secret-key', FALSE, FALSE, FALSE, TRUE);
   ```
 ### 3. Adding Datasets
 Add and configure datasets to webKnossos-connect to make them available for viewing in webKnossos
@@ -65,7 +65,7 @@ curl http:/<webKnossos-connect>/data/datasets -X POST -H "Content-Type: applicat
 ```
 
 #### 3.2 webKnossos UI
-Alternatively, new datasets can be added directly through the webKnossos UI. Configure and import a new datasets from the webKnossos dashboard. (Dashboard -> Datasets -> Upload Dataset -> Add wk-connect Dataset) 
+Alternatively, new datasets can be added directly through the webKnossos UI. Configure and import a new datasets from the webKnossos dashboard. (Dashboard -> Datasets -> Upload Dataset -> Add wk-connect Dataset)
 
 [Read more in the webKnossos docs.](https://docs.webknossos.org/guides/datasets#uploading-through-the-web-browser)
 
@@ -95,7 +95,7 @@ poetry install
 
 * Add webknossos-connect to the webKnossos database:
   ```
-  INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign") 
+  INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign")
   VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
   ```
 * `python -m wkconnect`
