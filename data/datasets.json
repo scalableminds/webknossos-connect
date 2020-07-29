@@ -35,5 +35,10 @@
                 }
             }
         }
+    },
+    "tiff": {
+        "sample_organization": {
+            "sample_tif_dataset": {}
+        }
     }
 }
