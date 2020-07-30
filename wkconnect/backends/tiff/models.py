@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional
+import time
 
 import numpy as np
 from wkcuber.api.Dataset import TiffDataset
 from wkcuber.api.Properties import LayerProperties
 from wkcuber.mag import Mag
+from functools import lru_cache
 
 from wkconnect.utils.types import Vec3D, Vec3Df
 
@@ -15,14 +17,11 @@ from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
 
 
-@dataclass
+@dataclass(frozen=True)
 class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     dataset_handle: TiffDataset = None
-
-    def __post_init__(self) -> None:
-        print("tiff dataset post init")
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
@@ -55,6 +54,7 @@ class Dataset(DatasetInfo):
             layer_properties._element_class,
         )
 
+    @lru_cache(maxsize=2 ** 12)
     def read_data(
         self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
     ) -> Optional[np.ndarray]:
@@ -64,4 +64,18 @@ class Dataset(DatasetInfo):
         offset = (
             np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / np.array(Mag(mag).mag)
         ).astype(np.uint32)
-        return mag_dataset.read(shape, tuple(offset))
+        if not mag_dataset.view._is_opened:
+            mag_dataset.open()
+
+        before = time.time()
+        data = mag_dataset.read(shape, tuple(offset))
+        after = time.time()
+        print(f"{(after - before)*1000:.1f} ms")
+        return data
+
+    def clear_cache(self) -> None:
+        self.read_data.cache_clear()  # pylint: disable=no-member
+        for layer_handle in self.dataset_handle.layers.values():
+            for mag in layer_handle.mags.values():
+                if mag.view._is_opened:
+                    mag.close()
