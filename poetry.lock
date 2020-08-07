@@ -1209,7 +1209,7 @@ description = "A cubing tool for webKnossos"
 name = "wkcuber"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.2.62"
+version = "0.2.63"
 
 [package.dependencies]
 cluster_tools = "1.49"
@@ -1272,7 +1272,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "715d3ea3e0087eb80e7447816a31535c46262fad1e35ecd9d72fbd3d4cc39fba"
+content-hash = "dd7305053c3cc521cf0aaad446a6a42563282cdd8d4ff17f3564b7c43d57a817"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -2016,8 +2016,8 @@ websockets = [
     {file = "websockets-6.0.tar.gz", hash = "sha256:8f3b956d11c5b301206382726210dc1d3bee1a9ccf7aadf895aaf31f71c3716c"},
 ]
 wkcuber = [
-    {file = "wkcuber-0.2.62-py3-none-any.whl", hash = "sha256:7f4c28314d64997e6f06c46992f5ed325eee6e4938f3ab5d5f6d6fafd20c2a3a"},
-    {file = "wkcuber-0.2.62.tar.gz", hash = "sha256:ca7aa3720f7ddb2cdf867b87a69f7b8ee4527e8f24cf1a71199a2f1d7f75c01b"},
+    {file = "wkcuber-0.2.63-py3-none-any.whl", hash = "sha256:c91f8dca985be7253d3d6dff79f7222504a7594043c9da03ee436b8e8a218f80"},
+    {file = "wkcuber-0.2.63.tar.gz", hash = "sha256:658dc89d0451e7c8bf2c4ba6a89797d73a387d20e93efad013faf8018b2996c2"},
 ]
 wkw = [
     {file = "wkw-0.1.2-py3-none-manylinux1_x86_64.whl", hash = "sha256:c0b56b7ac2250850d495bb7e0ac12ffbba94aea5e46ef79a4e6724e35aa2b35a"},
