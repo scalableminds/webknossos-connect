@@ -1,12 +1,11 @@
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Optional
-import time
 
 import numpy as np
 from wkcuber.api.Dataset import TiffDataset
 from wkcuber.api.Properties import LayerProperties
 from wkcuber.mag import Mag
-from functools import lru_cache
 
 from wkconnect.utils.types import Vec3D, Vec3Df
 
