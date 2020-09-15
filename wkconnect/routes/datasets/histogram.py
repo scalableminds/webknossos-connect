@@ -1,6 +1,6 @@
 import asyncio
-from typing import List
 from collections import OrderedDict
+from typing import List
 
 import numpy as np
 from sanic import Blueprint, response
@@ -9,11 +9,9 @@ from sanic.request import Request
 from ...utils.json import to_json
 from ...utils.types import Vec3D
 from ...webknossos.access import AccessRequest, authorized
-from ...webknossos.models import (
-    DataRequest as WKDataRequest,
-    BoundingBox as WkBoundingBox,
-    Histogram,
-)
+from ...webknossos.models import BoundingBox as WkBoundingBox
+from ...webknossos.models import DataRequest as WKDataRequest
+from ...webknossos.models import Histogram
 
 histogram = Blueprint(__name__)
 
@@ -80,7 +78,7 @@ async def histogram_post(
 def generate_sample_positions(
     iterations: int, bounding_box: WkBoundingBox, resolution_limit: int
 ) -> List[Vec3D]:
-    positions = []
+    positions: List[Vec3D] = []
     for exponent in range(1, iterations + 1):
         power = 2 ** exponent
         distance = Vec3D(

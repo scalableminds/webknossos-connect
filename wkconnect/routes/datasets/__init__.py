@@ -1,8 +1,8 @@
 from sanic import Blueprint
 
 from .datasource_properties import datasource_properties
-from .read_data import read_data
 from .histogram import histogram
+from .read_data import read_data
 from .thumbnail import thumbnail
 from .upload import upload
 
