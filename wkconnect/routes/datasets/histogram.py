@@ -1,4 +1,5 @@
 import asyncio
+import time
 from collections import OrderedDict
 from typing import List
 
@@ -30,16 +31,15 @@ async def histogram_post(
 
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
 
-    import time
-
-    before = time.time()
     sample_positions = generate_sample_positions(2, layer.boundingBox, 32)
     sample_positions_distinct = list(OrderedDict.fromkeys(sample_positions))
 
     bucket_requests = [
-        WKDataRequest(position, 1, 32, False) for position in sample_positions_distinct
+        WKDataRequest(position, zoomStep=1, cubeSize=32, fourBit=False)
+        for position in sample_positions_distinct
     ]
 
+    before = time.time()
     buckets = await asyncio.gather(
         *(
             backend.read_data(
@@ -60,7 +60,7 @@ async def histogram_post(
 
     after = time.time()
     print(
-        f"fetched histogram data for {len(sample_positions_distinct)} positions, shape {data.shape} dtype {data.dtype}. took {(after - before)*1000:.2f} ms "
+        f"Fetched histogram data for {len(sample_positions_distinct)} positions, shape {data.shape} dtype {data.dtype}. Took {(after - before)*1000:.2f} ms."
     )
 
     if np.issubdtype(data.dtype, np.integer):
