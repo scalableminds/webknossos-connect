@@ -69,8 +69,16 @@ async def histogram_post(
         histogram = Histogram(
             [int(c) for c in list(counts)], len(data), int(minimum), int(maximum)
         )
+    elif np.issubdtype(data.dtype, np.float):
+        minimum, maximum = np.min(data), np.max(data)
+        bucket_size = (maximum - minimum) / 255
+        bucket_size = 1.0 if np.isclose(bucket_size, 0.0) else bucket_size
+        counts, _ = np.histogram(data, bins=np.arange(minimum, maximum, bucket_size))
+        histogram = Histogram(
+            [int(c) for c in list(counts)], len(data), float(minimum), float(maximum)
+        )
     else:
-        raise Exception("float histograms not supported yet")
+        raise Exception("Histogram for data type {data.dtype} is not supported.")
 
     return response.json(to_json([histogram]))
 
