@@ -1,5 +1,4 @@
 import asyncio
-import time
 from collections import OrderedDict
 from typing import List
 
@@ -39,7 +38,6 @@ async def histogram_post(
         for position in sample_positions_distinct
     ]
 
-    before = time.time()
     buckets = await asyncio.gather(
         *(
             backend.read_data(
@@ -58,16 +56,11 @@ async def histogram_post(
     data = np.concatenate(existing_buckets) if len(existing_buckets) > 0 else b""
     data = data[np.nonzero(data)]
 
-    after = time.time()
-    print(
-        f"Fetched histogram data for {len(sample_positions_distinct)} positions, shape {data.shape} dtype {data.dtype}. Took {(after - before)*1000:.2f} ms."
-    )
-
     if np.issubdtype(data.dtype, np.integer):
         minimum, maximum = np.iinfo(data.dtype).min, np.iinfo(data.dtype).max
-        counts, _ = np.histogram(data, bins=np.arange(maximum))
+        counts, _ = np.histogram(data, bins=np.arange(minimum, maximum))
         histogram = Histogram(
-            [int(c) for c in list(counts)], len(data), int(minimum), int(maximum)
+            [int(c) for c in counts], len(data), int(minimum), int(maximum)
         )
     elif np.issubdtype(data.dtype, np.float):
         minimum, maximum = np.min(data), np.max(data)
@@ -75,7 +68,7 @@ async def histogram_post(
         bucket_size = 1.0 if np.isclose(bucket_size, 0.0) else bucket_size
         counts, _ = np.histogram(data, bins=np.arange(minimum, maximum, bucket_size))
         histogram = Histogram(
-            [int(c) for c in list(counts)], len(data), float(minimum), float(maximum)
+            [int(c) for c in counts], len(data), float(minimum), float(maximum)
         )
     else:
         raise Exception("Histogram for data type {data.dtype} is not supported.")
