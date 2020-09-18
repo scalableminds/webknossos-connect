@@ -17,8 +17,8 @@ Install webKnossos-connect using Docker or use the instructions for native insta
 ### 2. Connecting to webKnossos
 Register your webknossos-connect instance with your main webKnossos instance. Modify the webKnossos Postgres database:
   ```
-  INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign","isconnector")
-  VALUES (E'connect', E'http://localhost:8000', E'http://localhost:8000', E'secret-key', FALSE, FALSE, FALSE, TRUE);
+INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign")
+VALUES (E'connect',E'http://localhost:8000',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
   ```
 ### 3. Adding Datasets
 Add and configure datasets to webKnossos-connect to make them available for viewing in webKnossos
@@ -95,8 +95,8 @@ poetry install
 
 * Add webknossos-connect to the webKnossos database:
   ```
-  INSERT INTO "webknossos"."datastores"("name","url","key","isscratch","isdeleted","isforeign")
-  VALUES (E'connect',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
+INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign")
+VALUES (E'connect',E'http://localhost:8000',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
   ```
 * `python -m wkconnect`
 * ```
