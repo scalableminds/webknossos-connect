@@ -101,7 +101,7 @@ class Dataset(DatasetInfo):
 
     def read_tile(
         self, filename: str, page: int, target_offset: Tuple[int, int]
-    ) -> np.ndarray:
+    ) -> Tuple[Tuple[int, int], np.ndarray]:
         _, tile_shape, page_shapes, dtype, tile_byte_offsets = self.read_properties(
             filename
         )
