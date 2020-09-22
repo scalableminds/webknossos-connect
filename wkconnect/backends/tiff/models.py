@@ -2,6 +2,7 @@ import math
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from os import listdir
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -25,18 +26,22 @@ class Dataset(DatasetInfo):
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
             WkDataSourceId(self.organization_name, self.dataset_name),
-            [self.layer_to_webknossos()],
+            [self.layer_to_webknossos(layer_name) for layer_name in self.list_layers()],
             self.scale,
         )
 
-    def layer_to_webknossos(self) -> WkDataLayer:
-        layer_name = "color"
-        filename = self.path() / layer_name / "0.tif"
-        mags, tile_shape, page_shapes, dtype, _ = self.read_properties(filename)
+    def list_layers(self) -> List[str]:
+        for filename in listdir(str(self.path())):
+            filepath = Path(filename)
+            if filepath.suffix == '.tif':
+                yield filepath.stem
+
+    def layer_to_webknossos(self, layer_name) -> WkDataLayer:
+        mags, tile_shape, page_shapes, dtype, _ = self.read_properties(layer_name)
 
         return WkDataLayer(
             layer_name,
-            "color",
+            "segmentation" if layer_name.startswith("segmentation") else "color",
             WkBoundingBox(
                 topLeft=Vec3D(0, 0, 0),
                 width=page_shapes[0][0],
@@ -44,20 +49,18 @@ class Dataset(DatasetInfo):
                 depth=1,
             ),
             mags,
-            "uint8",
+            str(np.dtype(dtype)),
         )
 
     @lru_cache(maxsize=2 ** 12)
     def read_data(
         self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
     ) -> Optional[np.ndarray]:
-        filename = self.path() / layer_name / "0.tif"
-
         mag_factor = 2 ** zoom_step
         wk_offset_scaled = wk_offset // mag_factor
 
         tile_coordinate_offset, tile_data = self.read_tile(
-            str(filename), zoom_step, (wk_offset_scaled.x, wk_offset_scaled.y)
+            layer_name, zoom_step, (wk_offset_scaled.x, wk_offset_scaled.y)
         )
         left_in_tile = wk_offset_scaled[0] - tile_coordinate_offset[0]
         top_in_tile = wk_offset_scaled[1] - tile_coordinate_offset[1]
@@ -75,21 +78,25 @@ class Dataset(DatasetInfo):
     def path(self) -> Path:
         return Path("data", "binary", self.organization_name, self.dataset_name)
 
+    def layer_filepath(self, layer_name: str) -> Path:
+        return self.path() / f"{layer_name}.tif"
+
     def clear_cache(self) -> None:
         self.read_properties.cache_clear()  # pylint: disable=no-member
         self.read_mmapped.cache_clear()  # pylint: disable=no-member
 
     @lru_cache(5)
     def read_properties(
-        self, filename: str
+        self, layer_name: str
     ) -> Tuple[
         List[Vec3D], Tuple[int, int], List[Tuple[int, int]], np.dtype, List[List[int]]
     ]:
-        with TiffFile(filename) as tif:
+        filepath = self.layer_filepath(layer_name)
+        with TiffFile(str(filepath)) as tif:
             mags = [Vec3D(2 ** mag, 2 ** mag, 1) for mag in range(len(tif.pages))]
             assert (
                 len(mags) > 0
-            ), f"no magnifications found. empty tif file at {filename}?"
+            ), f"no magnifications found. empty tif file at {str(filepath)}?"
             tags = tif.pages[0].tags
             tile_shape = (tags[322].value, tags[323].value)
             page_shapes = [
@@ -100,10 +107,10 @@ class Dataset(DatasetInfo):
             return mags, tile_shape, page_shapes, dtype, tile_byte_offsets
 
     def read_tile(
-        self, filename: str, page: int, target_offset: Tuple[int, int]
+        self, layer_name: str, page: int, target_offset: Tuple[int, int]
     ) -> Tuple[Tuple[int, int], np.ndarray]:
         _, tile_shape, page_shapes, dtype, tile_byte_offsets = self.read_properties(
-            filename
+            layer_name
         )
 
         target_tile = (
@@ -119,15 +126,15 @@ class Dataset(DatasetInfo):
         target_tile_index = target_tile[0] + target_tile[1] * tiles_per_row
         tile_byte_offset = tile_byte_offsets[page][target_tile_index]
 
-        data = self.read_mmapped(filename, dtype, tile_byte_offset, tile_shape)
+        data = self.read_mmapped(layer_name, dtype, tile_byte_offset, tile_shape)
         return tile_coordinate_offset, data
 
     @lru_cache(maxsize=2 ** 9)
     def read_mmapped(
-        self, filename: str, dtype: np.dtype, byte_offset: int, shape: Tuple[int, int]
+        self, layer_name: str, dtype: np.dtype, byte_offset: int, shape: Tuple[int, int]
     ) -> np.ndarray:
         image = np.zeros(shape, dtype=dtype)
-        mapped = np.memmap(filename, dtype, "r", byte_offset, shape, "C")
+        mapped = np.memmap(str(self.layer_filepath(layer_name)), dtype, "r", byte_offset, shape, "C")
         image[:] = mapped
         del mapped
         return image
