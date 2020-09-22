@@ -117,6 +117,14 @@ class Dataset(DatasetInfo):
                 + "Only tiled tifs with resolution pyramid are supported."
             )
             tile_shape = (tags[322].value, tags[323].value)
+            assert (
+                math.log2(tile_shape[0]).is_integer()
+                and math.log2(tile_shape[1]).is_integer()
+                and tile_shape[0] >= 32
+                and tile_shape[1] >= 32
+                and tile_shape[0] <= 2048
+                and tile_shape[1] <= 2048
+            ), f"Tiff tile shapes must be power of two, min 32 and max 2048. Found {tile_shape}."
             page_shapes = [
                 (page.tags[256].value, page.tags[257].value) for page in tif.pages
             ]
