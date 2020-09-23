@@ -18,11 +18,12 @@ class Tiff(Backend):
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
-        return Dataset(
-            organization_name,
-            dataset_name,
-            Vec3Df(dataset_info["scale"][0], dataset_info["scale"][1], 1),
+        scale = (
+            Vec3Df(dataset_info["scale"][0], dataset_info["scale"][1], 1)
+            if "scale" in dataset_info
+            else Vec3Df(1, 1, 1)
         )
+        return Dataset(organization_name, dataset_name, scale)
 
     async def read_data(
         self,

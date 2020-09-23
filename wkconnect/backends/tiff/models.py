@@ -45,7 +45,7 @@ class Dataset(DatasetInfo):
         return layers
 
     def layer_to_webknossos(self, layer_name: str) -> WkDataLayer:
-        mags, tile_shape, page_shapes, dtype, _ = self.read_properties(layer_name)
+        mags, _, page_shapes, dtype, _ = self.read_properties(layer_name)
 
         return WkDataLayer(
             layer_name,
@@ -57,7 +57,7 @@ class Dataset(DatasetInfo):
                 depth=1,
             ),
             mags,
-            str(np.dtype(dtype)),
+            str(self.repair_dtype(dtype)),
         )
 
     @lru_cache(maxsize=2 ** 12)
@@ -68,7 +68,10 @@ class Dataset(DatasetInfo):
         wk_offset_scaled = wk_offset // mag_factor
 
         tile_coordinate_offset, tile_data = self.read_tile(
-            layer_name, zoom_step, (wk_offset_scaled.x, wk_offset_scaled.y)
+            layer_name,
+            zoom_step,
+            (wk_offset_scaled.x, wk_offset_scaled.y),
+            (shape.x, shape.y),
         )
         left_in_tile = wk_offset_scaled[0] - tile_coordinate_offset[0]
         top_in_tile = wk_offset_scaled[1] - tile_coordinate_offset[1]
@@ -80,7 +83,7 @@ class Dataset(DatasetInfo):
         ].transpose()
 
         bucket = np.zeros(shape, dtype=cropout.dtype)
-        bucket[:, :, 0] = cropout
+        bucket[0 : cropout.shape[0], 0 : cropout.shape[1], 0] = cropout
         return bucket
 
     def path(self) -> Path:
@@ -97,52 +100,84 @@ class Dataset(DatasetInfo):
     def read_properties(
         self, layer_name: str
     ) -> Tuple[
-        List[Vec3D], Tuple[int, int], List[Tuple[int, int]], np.dtype, List[List[int]]
+        List[Vec3D],
+        List[Tuple[int, int]],
+        List[Tuple[int, int]],
+        np.dtype,
+        List[List[int]],
     ]:
+        # Accessing the tiff header tags via their numbers:
+        tag_tile_width = 322
+        tag_tile_height = 323
+        tag_tile_byte_offsets = 324
+        tag_page_width = 256
+        tag_page_height = 257
+
         filepath = self.layer_filepath(layer_name)
         with TiffFile(str(filepath)) as tif:
-            mags = [Vec3D(2 ** mag, 2 ** mag, 1) for mag in range(len(tif.pages))]
             assert (
-                len(mags) > 0
+                len(tif.pages) > 0
             ), f"No magnifications found. Empty tiff at {str(filepath)}?"
-            tags = tif.pages[0].tags
-            assert (
-                322 in tags
-                and 323 in tags
-                and 324 in tags
-                and 256 in tags
-                and 257 in tags
-            ), (
-                f"Incomplete tags in tif file at {str(filepath)}."
-                + "Only tiled tifs with resolution pyramid are supported."
-            )
-            tile_shape = (tags[322].value, tags[323].value)
-            assert (
-                math.log2(tile_shape[0]).is_integer()
-                and math.log2(tile_shape[1]).is_integer()
-                and tile_shape[0] >= 32
-                and tile_shape[1] >= 32
-                and tile_shape[0] <= 2048
-                and tile_shape[1] <= 2048
-            ), f"Tiff tile shapes must be power of two, min 32 and max 2048. Found {tile_shape}."
+
+            mags = [Vec3D(2 ** mag, 2 ** mag, 1) for mag in range(len(tif.pages))]
+            for i, page in enumerate(tif.pages):
+                assert (
+                    tag_tile_width in page.tags
+                    and tag_tile_height in page.tags
+                    and tag_tile_byte_offsets in page.tags
+                    and tag_page_width in page.tags
+                    and tag_page_height in page.tags
+                ), (
+                    f"Incomplete tags in tif file at {str(filepath)} for page {i}. "
+                    + "Only tiled tifs with resolution pyramid are supported."
+                )
             page_shapes = [
-                (page.tags[256].value, page.tags[257].value) for page in tif.pages
+                (page.tags[tag_page_width].value, page.tags[tag_page_height].value)
+                for page in tif.pages
             ]
+            tile_byte_offsets = [
+                page.tags[tag_tile_byte_offsets].value for page in tif.pages
+            ]
+            tile_shapes = [
+                (page.tags[tag_tile_width].value, page.tags[tag_tile_height].value)
+                for page in tif.pages
+            ]
+            for i, tile_shape in enumerate(tile_shapes):
+                assert (
+                    math.log2(tile_shape[0]).is_integer()
+                    and math.log2(tile_shape[1]).is_integer()
+                    and tile_shape[0] >= 32
+                    and tile_shape[1] >= 32
+                    and tile_shape[0] <= 2048
+                    and tile_shape[1] <= 2048
+                ), f"Tiff tile shapes must be power of two, min 32 and max 2048. Found {tile_shape} in page {i} at {str(filepath)}."
             dtype = tif.byteorder + tif.pages[0].dtype.char
-            tile_byte_offsets = [page.tags[324].value for page in tif.pages]
-            return mags, tile_shape, page_shapes, dtype, tile_byte_offsets
+            return mags, tile_shapes, page_shapes, dtype, tile_byte_offsets
 
     def read_tile(
-        self, layer_name: str, page: int, target_offset: Tuple[int, int]
+        self,
+        layer_name: str,
+        page: int,
+        target_offset: Tuple[int, int],
+        target_shape: Tuple[int, int],
     ) -> Tuple[Tuple[int, int], np.ndarray]:
-        _, tile_shape, page_shapes, dtype, tile_byte_offsets = self.read_properties(
+        _, tile_shapes, page_shapes, dtype, tile_byte_offsets = self.read_properties(
             layer_name
         )
+        tile_shape = tile_shapes[page]
 
         target_tile = (
             target_offset[0] // tile_shape[0],
             target_offset[1] // tile_shape[1],
         )
+        target_tile_bottomright = (
+            (target_offset[0] + target_shape[0] - 1) // tile_shape[0],
+            (target_offset[1] + target_shape[1] - 1) // tile_shape[1],
+        )
+        assert (
+            target_tile == target_tile_bottomright
+        ), f"Requested tif data at {target_offset} from page {page} of {str(self.path())} that cannot be served by loading a single tile."
+
         tile_coordinate_offset = (
             target_tile[0] * tile_shape[0],
             target_tile[1] * tile_shape[1],
@@ -159,10 +194,23 @@ class Dataset(DatasetInfo):
     def read_mmapped(
         self, layer_name: str, dtype: np.dtype, byte_offset: int, shape: Tuple[int, int]
     ) -> np.ndarray:
-        image = np.zeros(shape, dtype=dtype)
+        image = np.zeros(shape, dtype=self.repair_dtype(dtype))
         mapped = np.memmap(
             str(self.layer_filepath(layer_name)), dtype, "r", byte_offset, shape, "C"
         )
+        # copy content from mmap handle to array in order to avoid holding open thousands of handles.
         image[:] = mapped
         del mapped
         return image
+
+    @lru_cache(5)
+    def repair_dtype(self, dtype: np.dtype) -> np.dtype:
+        # wk does not support signed datasets. We convert their data to the respective unsigned counterparts.
+        dtype = np.dtype(dtype)
+        if dtype == np.int8:
+            return np.uint8(0).dtype
+        if dtype == np.int16:
+            return np.uint16(0).dtype
+        if dtype == np.int32:
+            return np.uint32(0).dtype
+        return dtype
