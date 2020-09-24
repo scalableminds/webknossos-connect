@@ -35,11 +35,5 @@
                 }
             }
         }
-    },
-    "tiff": {
-        "sample_organization": {
-            "sample_tif_dataset": {},
-            "large_2d_tif": {}
-        }
     }
 }
