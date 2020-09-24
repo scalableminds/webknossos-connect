@@ -17,8 +17,8 @@ Install webKnossos-connect using Docker or use the instructions for native insta
 ### 2. Connecting to webKnossos
 Register your webknossos-connect instance with your main webKnossos instance. Modify the webKnossos Postgres database:
   ```
-INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign")
-VALUES (E'connect',E'http://localhost:8000',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
+  INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign","isconnector")
+  VALUES (E'connect', E'http://localhost:8000', E'http://localhost:8000', E'secret-key', FALSE, FALSE, FALSE, TRUE);
   ```
 ### 3. Adding Datasets
 Add and configure datasets to webKnossos-connect to make them available for viewing in webKnossos
@@ -55,9 +55,18 @@ Example JSON body. More examples can be found [here](https://github.com/scalable
                 }
             }
         }
+    },
+    "tiff": {
+        "Test Organization": {
+            "my_2d_tiff_dataset": {
+                "scale": [2.1,2.1]
+            }
+        }
     }
 }
 ```
+
+Note that tiff datasets are hosted locally. Create compatible tifs with `vips tiffsave source.tif color.tif --tile --pyramid --bigtiff --compression none --tile-width 256 --tile-height 256` and save the generated `color.tif` file at `data/binary/sample_organization/my_2d_tiff_dataset`.
 
 CURL Example
 ```
@@ -95,8 +104,8 @@ poetry install
 
 * Add webknossos-connect to the webKnossos database:
   ```
-INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign")
-VALUES (E'connect',E'http://localhost:8000',E'http://localhost:8000',E'k',FALSE,FALSE,FALSE);
+  INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign","isconnector")
+  VALUES (E'connect', E'http://localhost:8000', E'http://localhost:8000', E'secret-key', FALSE, FALSE, FALSE, TRUE);
   ```
 * `python -m wkconnect`
 * ```
