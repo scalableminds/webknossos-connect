@@ -19,6 +19,13 @@ from ..backend import DatasetInfo
 
 logger = logging.getLogger()
 
+# Accessing the tiff header tags via their numbers:
+TAG_TILE_WIDTH = 322
+TAG_TILE_HEIGHT = 323
+TAG_TILE_BYTE_OFFSETS = 324
+TAG_PAGE_WIDTH = 256
+TAG_PAGE_HEIGHT = 257
+
 
 @dataclass(frozen=True)
 class Dataset(DatasetInfo):
@@ -106,13 +113,6 @@ class Dataset(DatasetInfo):
         np.dtype,
         List[List[int]],
     ]:
-        # Accessing the tiff header tags via their numbers:
-        TAG_TILE_WIDTH = 322
-        TAG_TILE_HEIGHT = 323
-        TAG_TILE_BYTE_OFFSETS = 324
-        TAG_PAGE_WIDTH = 256
-        TAG_PAGE_HEIGHT = 257
-
         filepath = self.layer_filepath(layer_name)
         with TiffFile(str(filepath)) as tif:
             assert (
