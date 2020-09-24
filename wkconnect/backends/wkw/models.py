@@ -58,7 +58,8 @@ class Dataset(DatasetInfo):
         self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
     ) -> Optional[np.ndarray]:
         layer = self.dataset_handle.get_layer(layer_name)
-        mag = list(layer.mags.keys())[zoom_step]
+        available_mags = sorted([Mag(mag).mag for mag in layer.mags.keys()])
+        mag = available_mags[zoom_step]
         mag_dataset = layer.get_mag(mag)
         offset = (
             np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / np.array(Mag(mag).mag)
