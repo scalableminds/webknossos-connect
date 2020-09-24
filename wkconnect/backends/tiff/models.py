@@ -107,11 +107,11 @@ class Dataset(DatasetInfo):
         List[List[int]],
     ]:
         # Accessing the tiff header tags via their numbers:
-        tag_tile_width = 322
-        tag_tile_height = 323
-        tag_tile_byte_offsets = 324
-        tag_page_width = 256
-        tag_page_height = 257
+        TAG_TILE_WIDTH = 322
+        TAG_TILE_HEIGHT = 323
+        TAG_TILE_BYTE_OFFSETS = 324
+        TAG_PAGE_WIDTH = 256
+        TAG_PAGE_HEIGHT = 257
 
         filepath = self.layer_filepath(layer_name)
         with TiffFile(str(filepath)) as tif:
@@ -122,24 +122,24 @@ class Dataset(DatasetInfo):
             mags = [Vec3D(2 ** mag, 2 ** mag, 1) for mag in range(len(tif.pages))]
             for i, page in enumerate(tif.pages):
                 assert (
-                    tag_tile_width in page.tags
-                    and tag_tile_height in page.tags
-                    and tag_tile_byte_offsets in page.tags
-                    and tag_page_width in page.tags
-                    and tag_page_height in page.tags
+                    TAG_TILE_WIDTH in page.tags
+                    and TAG_TILE_HEIGHT in page.tags
+                    and TAG_TILE_BYTE_OFFSETS in page.tags
+                    and TAG_PAGE_WIDTH in page.tags
+                    and TAG_PAGE_HEIGHT in page.tags
                 ), (
                     f"Incomplete tags in tif file at {str(filepath)} for page {i}. "
                     + "Only tiled tifs with resolution pyramid are supported."
                 )
             page_shapes = [
-                (page.tags[tag_page_width].value, page.tags[tag_page_height].value)
+                (page.tags[TAG_PAGE_WIDTH].value, page.tags[TAG_PAGE_HEIGHT].value)
                 for page in tif.pages
             ]
             tile_byte_offsets = [
-                page.tags[tag_tile_byte_offsets].value for page in tif.pages
+                page.tags[TAG_TILE_BYTE_OFFSETS].value for page in tif.pages
             ]
             tile_shapes = [
-                (page.tags[tag_tile_width].value, page.tags[tag_tile_height].value)
+                (page.tags[TAG_TILE_WIDTH].value, page.tags[TAG_TILE_HEIGHT].value)
                 for page in tif.pages
             ]
             for i, tile_shape in enumerate(tile_shapes):
