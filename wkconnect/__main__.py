@@ -17,7 +17,7 @@ from uvloop import Loop
 from .backends.backend import Backend
 from .backends.boss.backend import Boss
 from .backends.neuroglancer.backend import Neuroglancer
-from .backends.tiff.backend import Tiff
+from .backends.wkw.backend import Wkw
 from .repository import Repository
 from .routes import routes
 from .utils.exceptions import exception_traceback, format_exception
@@ -36,7 +36,7 @@ class Server(Sanic):
         self.repository: Repository
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
-        self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Tiff]
+        self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Wkw]
 
     async def add_dataset(
         self,
