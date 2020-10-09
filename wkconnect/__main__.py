@@ -191,15 +191,15 @@ if __name__ == "__main__":
     def add_regular_interaction(
         action_name: str, fn: Callable[[Server], Awaitable[None]]
     ) -> None:
-        @repeat_every_seconds(10 * 60)
+        @repeat_every_seconds(60)
         async def do_interaction(app: Server) -> None:
             try:
                 await fn(app)
             except ClientConnectorError:
-                logger.warning(f"Could not {action_name}, retrying in 10 min.")
+                logger.warning(f"Could not {action_name}, retrying in 1 min.")
             except ClientResponseError as exception:
                 logger.warning(
-                    f"Could not {action_name}, retrying in 10 min. Got {format_exception(exception)}."
+                    f"Could not {action_name}, retrying in 1 min. Got {format_exception(exception)}."
                 )
 
         app.add_task(repeat_every_seconds(10 * 60)(do_interaction))
