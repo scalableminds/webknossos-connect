@@ -35,5 +35,12 @@
                 }
             }
         }
+    },
+
+    "wkw": {
+        "sample_organization": {
+            "ROI2017_wkw_connect": {},
+            "missing": {}
+        }
     }
 }
