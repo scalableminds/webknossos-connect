@@ -12,9 +12,9 @@ RUN apt-get update && \
 COPY pyproject.toml .
 COPY poetry.lock .
 COPY poetry.toml .
+COPY wkconnect wkconnect
 RUN poetry install
 
-COPY wkconnect wkconnect
 COPY data data
 VOLUME /app/data
 
