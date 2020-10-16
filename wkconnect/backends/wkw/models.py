@@ -67,7 +67,7 @@ class Dataset(DatasetInfo):
         if not mag_dataset.view._is_opened:
             mag_dataset.open()
 
-        return mag_dataset.read(shape, tuple(offset))
+        return mag_dataset.read(tuple(offset), shape)
 
     def clear_cache(self) -> None:
         self.read_data.cache_clear()  # pylint: disable=no-member
