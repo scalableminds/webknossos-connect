@@ -3,10 +3,5 @@
     "datastore": {"name": "connect", "key": "secret-key"},
     "webknossos": {"url": "http://localhost:9000"},
     "backends": {"neuroglancer": {}},
-    "datasets_path": "data/datasets.json",
-    "backends": {
-      "tiff": {
-        "untiled_size_maximum_mp": 20
-      }
-    }
+    "datasets_path": "data/datasets.json"
 }
