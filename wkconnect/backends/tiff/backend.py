@@ -1,6 +1,6 @@
 import logging
-from typing import Dict, Optional, cast
 from pathlib import Path
+from typing import Dict, Optional, cast
 
 import numpy as np
 from aiohttp import ClientSession

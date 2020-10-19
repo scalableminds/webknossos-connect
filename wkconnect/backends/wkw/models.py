@@ -29,7 +29,11 @@ class Dataset(DatasetInfo):
                 self.layer_to_webknossos(layer_name, layer)
                 for layer_name, layer in self.dataset_handle.properties.data_layers.items()
             ],
-            Vec3Df(11.0, 11.0, 24.0),
+            Vec3Df(
+                self.dataset_handle.properties.scale[0],
+                self.dataset_handle.properties.scale[1],
+                self.dataset_handle.properties.scale[2],
+            ),
         )
 
     def layer_to_webknossos(
