@@ -1,4 +1,9 @@
 {
+    "tiff": {
+      "sample_organization": {
+        "small-tiff": {}
+      }
+    },
     "boss": {},
     "neuroglancer": {
         "sample_organization": {

@@ -42,6 +42,7 @@ class Layer:
     scales: Tuple[Scale, ...]
     relative_scale: Vec3D
     type: str
+    largestSegmentId: Optional[int] = field(default=None)
     # InitVar allows to consume mesh argument in init without storing it
     mesh: InitVar[Any] = None
 
@@ -69,6 +70,7 @@ class Layer:
             self.scales[0].bounding_box(),
             [scale.resolution for scale in self.scales],
             self.wk_data_type(),
+            largestSegmentId=self.largestSegmentId,
         )
 
 

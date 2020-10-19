@@ -48,14 +48,15 @@ class DataLayer:
     elementClass: str
     dataFormat: str = field(default="wkw", init=False)
     wkwResolutions: JSON = field(init=False)
-    largestSegmentId: Optional[int] = field(default=None, init=False)
+    largestSegmentId: Optional[int] = field(default=None)
     mappings: Optional[List[Any]] = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         assert self.category in ["color", "segmentation"]
         assert self.elementClass in ["uint8", "uint16", "uint32", "uint64"]
         if self.category == "segmentation":
-            self.largestSegmentId = cast(int, np.iinfo(self.elementClass).max)
+            if self.largestSegmentId is None:
+                self.largestSegmentId = cast(int, np.iinfo(self.elementClass).max)
             self.mappings = []
         self.wkwResolutions = [
             {"resolution": i, "cubeLength": 1024} for i in self.resolutions
