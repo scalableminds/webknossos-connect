@@ -14,6 +14,7 @@ logger = logging.getLogger()
 class Tiff(Backend):
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
         super().__init__(config, http_client)
+        self.config = config
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
@@ -23,7 +24,12 @@ class Tiff(Backend):
             if "scale" in dataset_info
             else Vec3Df(1, 1, 1)
         )
-        return Dataset(organization_name, dataset_name, scale)
+        untiled_size_maximum_mp = (
+            int(self.config["tif_untiled_size_maximum_mp"])
+            if "tif_untiled_size_maximum_mp" in self.config
+            else 20
+        )
+        return Dataset(organization_name, dataset_name, scale, untiled_size_maximum_mp)
 
     async def read_data(
         self,

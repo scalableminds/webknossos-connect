@@ -32,6 +32,7 @@ class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     scale: Vec3Df
+    untiled_size_maximum_mp: int
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
@@ -178,8 +179,9 @@ class Dataset(DatasetInfo):
             else:
                 for i, page_shape in enumerate(page_shapes):
                     assert (
-                        page_shape[0] * page_shape[1] <= 20 * 1000000
-                    ), f"Tiff file has {page_shape[0]}*{page_shape[1]} px in page {i} at {str(filepath)} without tiles. To support images with >20MP, please create a tiled tif instead."
+                        page_shape[0] * page_shape[1]
+                        <= self.untiled_size_maximum_mp * 1000000
+                    ), f"Tiff file has {page_shape[0]}*{page_shape[1]} px in page {i} at {str(filepath)} without tiles. To support images with >{self.untiled_size_maximum_mp} MP, please create a tiled tif instead."
                 return dtype, mags, page_shapes, None, None
 
     @lru_cache(10)
