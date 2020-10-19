@@ -32,6 +32,7 @@ class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     scale: Vec3Df
+    path: Path
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
@@ -42,7 +43,7 @@ class Dataset(DatasetInfo):
 
     def layers(self) -> List[str]:
         layers = []
-        path = str(self.path())
+        path = str(self.path)
         for filename in listdir(path):
             filepath = Path(filename)
             if filepath.suffix == ".tif":
@@ -93,11 +94,8 @@ class Dataset(DatasetInfo):
         bucket[0 : cropout.shape[0], 0 : cropout.shape[1], 0] = cropout
         return bucket
 
-    def path(self) -> Path:
-        return Path("data", "binary", self.organization_name, self.dataset_name)
-
     def layer_filepath(self, layer_name: str) -> Path:
-        return self.path() / f"{layer_name}.tif"
+        return self.path / f"{layer_name}.tif"
 
     def clear_cache(self) -> None:
         self.read_properties.cache_clear()  # pylint: disable=no-member
@@ -150,7 +148,10 @@ class Dataset(DatasetInfo):
                     and tile_shape[1] >= 32
                     and tile_shape[0] <= 2048
                     and tile_shape[1] <= 2048
-                ), f"Tiff tile shapes must be power of two, min 32 and max 2048. Found {tile_shape} in page {i} at {str(filepath)}."
+                ), (
+                    f"Tiff tile shapes must be power of two, min 32 and max 2048. "
+                    + "Found {tile_shape} in page {i} at {str(filepath)}."
+                )
             dtype = tif.byteorder + tif.pages[0].dtype.char
             return mags, tile_shapes, page_shapes, dtype, tile_byte_offsets
 
@@ -174,9 +175,10 @@ class Dataset(DatasetInfo):
             (target_offset[0] + target_shape[0] - 1) // tile_shape[0],
             (target_offset[1] + target_shape[1] - 1) // tile_shape[1],
         )
-        assert (
-            target_tile == target_tile_bottomright
-        ), f"Requested tif data at {target_offset} from page {page} of {str(self.path())} that cannot be served by loading a single tile."
+        assert target_tile == target_tile_bottomright, (
+            f"Requested tif data at {target_offset} from page {page} of {str(self.path)} "
+            + "that cannot be served by loading a single tile."
+        )
 
         tile_coordinate_offset = (
             target_tile[0] * tile_shape[0],

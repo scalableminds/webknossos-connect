@@ -1,5 +1,6 @@
 import logging
 from typing import Dict, Optional, cast
+from pathlib import Path
 
 import numpy as np
 from aiohttp import ClientSession
@@ -23,7 +24,8 @@ class Tiff(Backend):
             if "scale" in dataset_info
             else Vec3Df(1, 1, 1)
         )
-        return Dataset(organization_name, dataset_name, scale)
+        path = Tiff.path(dataset_info, organization_name, dataset_name)
+        return Dataset(organization_name, dataset_name, scale, path)
 
     async def read_data(
         self,
@@ -39,3 +41,10 @@ class Tiff(Backend):
     def clear_dataset_cache(self, abstract_dataset: DatasetInfo) -> None:
         dataset = cast(Dataset, abstract_dataset)
         dataset.clear_cache()
+
+    @staticmethod
+    def path(dataset_info: JSON, organization_name: str, dataset_name: str) -> Path:
+        if "path" in dataset_info:
+            return Path(dataset_info["path"])
+        else:
+            return Path("data", "binary", organization_name, dataset_name)
