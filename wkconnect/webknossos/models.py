@@ -48,7 +48,7 @@ class DataLayer:
     elementClass: str
     dataFormat: str = field(default="wkw", init=False)
     wkwResolutions: JSON = field(init=False)
-    largestSegmentId: Optional[int] = field(default=None)
+    largestSegmentId: Optional[int] = None
     mappings: Optional[List[Any]] = field(default=None, init=False)
 
     def __post_init__(self) -> None:

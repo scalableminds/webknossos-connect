@@ -42,7 +42,7 @@ class Layer:
     scales: Tuple[Scale, ...]
     relative_scale: Vec3D
     type: str
-    largestSegmentId: Optional[int] = field(default=None)
+    largestSegmentId: Optional[int] =None
     # InitVar allows to consume mesh argument in init without storing it
     mesh: InitVar[Any] = None
 
