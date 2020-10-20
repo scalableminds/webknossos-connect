@@ -39,6 +39,13 @@ class DataSourceId(NamedTuple):
     name: str
 
 
+class Histogram(NamedTuple):
+    elementCounts: List[int]
+    numberOfElements: int
+    min: float
+    max: float
+
+
 @dataclass(unsafe_hash=True)
 class DataLayer:
     name: str
