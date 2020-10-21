@@ -31,7 +31,9 @@ class Tiff(Backend):
             if "tif_untiled_size_maximum_mp" in self.config
             else 20
         )
-        return Dataset(organization_name, dataset_name, scale, path, untiled_size_maximum_mp)
+        return Dataset(
+            organization_name, dataset_name, scale, path, untiled_size_maximum_mp
+        )
 
     async def read_data(
         self,
