@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 import numpy as np
-from tifffile import TiffFile
+from tifffile import TiffFile, imread
 
 from wkconnect.utils.types import Vec3D, Vec3Df
 
@@ -32,6 +32,7 @@ class Dataset(DatasetInfo):
     dataset_name: str
     scale: Vec3Df
     path: Path
+    untiled_size_maximum_mp: int
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
@@ -49,7 +50,7 @@ class Dataset(DatasetInfo):
         return layers
 
     def layer_to_webknossos(self, layer_name: str) -> WkDataLayer:
-        mags, _, page_shapes, dtype, _ = self.read_properties(layer_name)
+        dtype, mags, page_shapes, _, _ = self.read_properties(layer_name)
 
         return WkDataLayer(
             layer_name,
@@ -71,20 +72,30 @@ class Dataset(DatasetInfo):
         mag_factor = 2 ** zoom_step
         wk_offset_scaled = wk_offset // mag_factor
 
-        tile_coordinate_offset, tile_data = self.read_tile(
-            layer_name,
-            zoom_step,
-            (wk_offset_scaled.x, wk_offset_scaled.y),
-            (shape.x, shape.y),
-        )
-        left_in_tile = wk_offset_scaled[0] - tile_coordinate_offset[0]
-        top_in_tile = wk_offset_scaled[1] - tile_coordinate_offset[1]
-        right_in_tile = left_in_tile + shape.x
-        bottom_in_tile = top_in_tile + shape.y
+        _, _, _, tile_shapes, _ = self.read_properties(layer_name)
+        if tile_shapes is None:
+            page_data = self.read_whole_page(layer_name, zoom_step)
+            cropout = page_data[
+                wk_offset_scaled[0] : wk_offset_scaled[0] + shape.x,
+                wk_offset_scaled[1] : wk_offset_scaled[1] + shape.y,
+            ]
+            # note that page_data is already transposed, so the cropout does not
+            # have to be transposed again, differing from the else branch
+        else:
+            tile_coordinate_offset, tile_data = self.read_tile(
+                layer_name,
+                zoom_step,
+                (wk_offset_scaled.x, wk_offset_scaled.y),
+                (shape.x, shape.y),
+            )
+            left_in_tile = wk_offset_scaled[0] - tile_coordinate_offset[0]
+            top_in_tile = wk_offset_scaled[1] - tile_coordinate_offset[1]
+            right_in_tile = left_in_tile + shape.x
+            bottom_in_tile = top_in_tile + shape.y
 
-        cropout = tile_data[
-            top_in_tile:bottom_in_tile, left_in_tile:right_in_tile
-        ].transpose()
+            cropout = tile_data[
+                top_in_tile:bottom_in_tile, left_in_tile:right_in_tile
+            ].transpose()
 
         bucket = np.zeros(shape, dtype=cropout.dtype)
         bucket[0 : cropout.shape[0], 0 : cropout.shape[1], 0] = cropout
@@ -97,15 +108,24 @@ class Dataset(DatasetInfo):
         self.read_properties.cache_clear()  # pylint: disable=no-member
         self.read_mmapped.cache_clear()  # pylint: disable=no-member
 
+    @staticmethod
+    def is_tiled(tif: TiffFile) -> bool:
+        return any(
+            TAG_TILE_WIDTH in page.tags
+            and TAG_TILE_HEIGHT in page.tags
+            and TAG_TILE_BYTE_OFFSETS in page.tags
+            for page in tif.pages
+        )
+
     @lru_cache(5)
     def read_properties(
         self, layer_name: str
     ) -> Tuple[
+        np.dtype,
         List[Vec3D],
         List[Tuple[int, int]],
-        List[Tuple[int, int]],
-        np.dtype,
-        List[List[int]],
+        Optional[List[Tuple[int, int]]],
+        Optional[List[List[int]]],
     ]:
         filepath = self.layer_filepath(layer_name)
         with TiffFile(str(filepath)) as tif:
@@ -114,42 +134,52 @@ class Dataset(DatasetInfo):
             ), f"No magnifications found. Empty tiff at {str(filepath)}?"
 
             mags = [Vec3D(2 ** mag, 2 ** mag, 1) for mag in range(len(tif.pages))]
-            for i, page in enumerate(tif.pages):
-                assert (
-                    TAG_TILE_WIDTH in page.tags
-                    and TAG_TILE_HEIGHT in page.tags
-                    and TAG_TILE_BYTE_OFFSETS in page.tags
-                    and TAG_PAGE_WIDTH in page.tags
-                    and TAG_PAGE_HEIGHT in page.tags
-                ), (
-                    f"Incomplete tags in tif file at {str(filepath)} for page {i}. "
-                    + "Only tiled tifs with resolution pyramid are supported."
-                )
             page_shapes = [
                 (page.tags[TAG_PAGE_WIDTH].value, page.tags[TAG_PAGE_HEIGHT].value)
                 for page in tif.pages
             ]
-            tile_byte_offsets = [
-                page.tags[TAG_TILE_BYTE_OFFSETS].value for page in tif.pages
-            ]
-            tile_shapes = [
-                (page.tags[TAG_TILE_WIDTH].value, page.tags[TAG_TILE_HEIGHT].value)
-                for page in tif.pages
-            ]
-            for i, tile_shape in enumerate(tile_shapes):
-                assert (
-                    math.log2(tile_shape[0]).is_integer()
-                    and math.log2(tile_shape[1]).is_integer()
-                    and tile_shape[0] >= 32
-                    and tile_shape[1] >= 32
-                    and tile_shape[0] <= 2048
-                    and tile_shape[1] <= 2048
-                ), (
-                    f"Tiff tile shapes must be power of two, min 32 and max 2048. "
-                    + "Found {tile_shape} in page {i} at {str(filepath)}."
-                )
             dtype = tif.byteorder + tif.pages[0].dtype.char
-            return mags, tile_shapes, page_shapes, dtype, tile_byte_offsets
+
+            if Dataset.is_tiled(tif):
+                for i, page in enumerate(tif.pages):
+                    assert (
+                        TAG_TILE_WIDTH in page.tags
+                        and TAG_TILE_HEIGHT in page.tags
+                        and TAG_TILE_BYTE_OFFSETS in page.tags
+                        and TAG_PAGE_WIDTH in page.tags
+                        and TAG_PAGE_HEIGHT in page.tags
+                    ), (
+                        f"Incomplete tags in tif file at {str(filepath)} for page {i}. "
+                        + "Only tiled tifs with resolution pyramid are supported."
+                    )
+                tile_byte_offsets = [
+                    page.tags[TAG_TILE_BYTE_OFFSETS].value for page in tif.pages
+                ]
+                tile_shapes = [
+                    (page.tags[TAG_TILE_WIDTH].value, page.tags[TAG_TILE_HEIGHT].value)
+                    for page in tif.pages
+                ]
+                for i, tile_shape in enumerate(tile_shapes):
+                    assert (
+                        math.log2(tile_shape[0]).is_integer()
+                        and math.log2(tile_shape[1]).is_integer()
+                        and tile_shape[0] >= 32
+                        and tile_shape[1] >= 32
+                        and tile_shape[0] <= 2048
+                        and tile_shape[1] <= 2048
+                    ), f"Tiff tile shapes must be power of two, min 32 and max 2048. Found {tile_shape} in page {i} at {str(filepath)}."
+                return dtype, mags, page_shapes, tile_shapes, tile_byte_offsets
+            else:
+                for i, page_shape in enumerate(page_shapes):
+                    assert (
+                        page_shape[0] * page_shape[1]
+                        <= self.untiled_size_maximum_mp * 10 ** 6
+                    ), f"Tiff file has {page_shape[0]}*{page_shape[1]} px in page {i} at {str(filepath)} without tiles. To support images with >{self.untiled_size_maximum_mp} MP, please create a tiled tif instead."
+                return dtype, mags, page_shapes, None, None
+
+    @lru_cache(10)
+    def read_whole_page(self, layer_name: str, page: int) -> np.ndarray:
+        return imread(self.layer_filepath(layer_name), key=page).transpose()
 
     def read_tile(
         self,
@@ -158,9 +188,13 @@ class Dataset(DatasetInfo):
         target_offset: Tuple[int, int],
         target_shape: Tuple[int, int],
     ) -> Tuple[Tuple[int, int], np.ndarray]:
-        _, tile_shapes, page_shapes, dtype, tile_byte_offsets = self.read_properties(
+        dtype, _, page_shapes, tile_shapes, tile_byte_offsets = self.read_properties(
             layer_name
         )
+        assert (
+            tile_shapes is not None and tile_byte_offsets is not None
+        ), "read_tile called for non-tiled tif"
+
         tile_shape = tile_shapes[page]
 
         target_tile = (
