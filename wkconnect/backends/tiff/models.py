@@ -2,7 +2,6 @@ import logging
 import math
 from dataclasses import dataclass
 from functools import lru_cache
-from os import listdir
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -43,13 +42,10 @@ class Dataset(DatasetInfo):
 
     def layers(self) -> List[str]:
         layers = []
-        path = str(self.path)
-        for filename in listdir(path):
-            filepath = Path(filename)
+        for filepath in self.path.iterdir():
             if filepath.suffix == ".tif":
                 layers.append(filepath.stem)
-        if len(layers) == 0:
-            logger.info(f"No valid layers found for tif dataset at {path}")
+        assert len(layers) > 0, f"No valid layers found for tif dataset at {self.path}"
         return layers
 
     def layer_to_webknossos(self, layer_name: str) -> WkDataLayer:

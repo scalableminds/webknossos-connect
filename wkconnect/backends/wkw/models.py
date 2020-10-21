@@ -29,11 +29,7 @@ class Dataset(DatasetInfo):
                 self.layer_to_webknossos(layer_name, layer)
                 for layer_name, layer in self.dataset_handle.properties.data_layers.items()
             ],
-            Vec3Df(
-                self.dataset_handle.properties.scale[0],
-                self.dataset_handle.properties.scale[1],
-                self.dataset_handle.properties.scale[2],
-            ),
+            Vec3Df(*self.dataset_handle.properties.scale),
         )
 
     def layer_to_webknossos(
@@ -49,9 +45,7 @@ class Dataset(DatasetInfo):
                 depth=layer_properties._bounding_box["depth"],
             ),
             [
-                Vec3D(
-                    mag.mag.to_array()[0], mag.mag.to_array()[1], mag.mag.to_array()[2]
-                )
+                Vec3D(*mag.mag.to_array())
                 for mag in layer_properties._wkw_magnifications
             ],
             layer_properties._element_class,
