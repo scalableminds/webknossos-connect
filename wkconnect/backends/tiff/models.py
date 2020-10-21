@@ -82,6 +82,8 @@ class Dataset(DatasetInfo):
                 wk_offset_scaled[0] : wk_offset_scaled[0] + shape.x,
                 wk_offset_scaled[1] : wk_offset_scaled[1] + shape.y,
             ]
+            # note that page_data is already transposed, so the cropout does not
+            # have to be transposed again, differing from the else branch
         else:
             tile_coordinate_offset, tile_data = self.read_tile(
                 layer_name,
@@ -114,15 +116,12 @@ class Dataset(DatasetInfo):
 
     @staticmethod
     def is_tiled(tif: TiffFile) -> bool:
-        tiled = False
-        for i, page in enumerate(tif.pages):
-            if (
-                TAG_TILE_WIDTH in page.tags
-                and TAG_TILE_HEIGHT in page.tags
-                and TAG_TILE_BYTE_OFFSETS in page.tags
-            ):
-                tiled = True
-        return tiled
+        return any(
+            TAG_TILE_WIDTH in page.tags
+            and TAG_TILE_HEIGHT in page.tags
+            and TAG_TILE_BYTE_OFFSETS in page.tags
+            for page in tif.pages
+        )
 
     @lru_cache(5)
     def read_properties(
@@ -180,7 +179,7 @@ class Dataset(DatasetInfo):
                 for i, page_shape in enumerate(page_shapes):
                     assert (
                         page_shape[0] * page_shape[1]
-                        <= self.untiled_size_maximum_mp * 1000000
+                        <= self.untiled_size_maximum_mp * 10 ** 6
                     ), f"Tiff file has {page_shape[0]}*{page_shape[1]} px in page {i} at {str(filepath)} without tiles. To support images with >{self.untiled_size_maximum_mp} MP, please create a tiled tif instead."
                 return dtype, mags, page_shapes, None, None
 
