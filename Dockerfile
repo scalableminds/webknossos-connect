@@ -14,7 +14,10 @@ COPY poetry.lock .
 COPY poetry.toml .
 RUN poetry install
 
+# Run install again for installing wkconnect globally
 COPY wkconnect wkconnect
+RUN poetry install
+
 COPY data data
 VOLUME /app/data
 

@@ -4,36 +4,25 @@ from typing import Dict, Optional, cast
 
 import numpy as np
 from aiohttp import ClientSession
+from wkcuber.api.Dataset import WKDataset
 
-from ...utils.types import JSON, Vec3D, Vec3Df
+from ...utils.types import JSON, Vec3D
 from ..backend import Backend, DatasetInfo
 from .models import Dataset
 
 logger = logging.getLogger()
 
 
-class Tiff(Backend):
+class Wkw(Backend):
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
         super().__init__(config, http_client)
-        self.config = config
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
-        scale = (
-            Vec3Df(dataset_info["scale"][0], dataset_info["scale"][1], 1)
-            if "scale" in dataset_info
-            else Vec3Df(1, 1, 1)
-        )
-        path = Tiff.path(dataset_info, organization_name, dataset_name)
-        untiled_size_maximum_mp = (
-            int(self.config["tif_untiled_size_maximum_mp"])
-            if "tif_untiled_size_maximum_mp" in self.config
-            else 20
-        )
-        return Dataset(
-            organization_name, dataset_name, scale, path, untiled_size_maximum_mp
-        )
+
+        path = Wkw.path(dataset_info, organization_name, dataset_name)
+        return Dataset(organization_name, dataset_name, WKDataset(str(path)))
 
     async def read_data(
         self,

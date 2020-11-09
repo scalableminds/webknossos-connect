@@ -2,7 +2,6 @@ import logging
 import math
 from dataclasses import dataclass
 from functools import lru_cache
-from os import listdir
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -32,6 +31,7 @@ class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     scale: Vec3Df
+    path: Path
     untiled_size_maximum_mp: int
 
     def to_webknossos(self) -> WkDataSource:
@@ -43,13 +43,10 @@ class Dataset(DatasetInfo):
 
     def layers(self) -> List[str]:
         layers = []
-        path = str(self.path())
-        for filename in listdir(path):
-            filepath = Path(filename)
+        for filepath in self.path.iterdir():
             if filepath.suffix == ".tif":
                 layers.append(filepath.stem)
-        if len(layers) == 0:
-            logger.info(f"No valid layers found for tif dataset at {path}")
+        assert len(layers) > 0, f"No valid layers found for tif dataset at {self.path}"
         return layers
 
     def layer_to_webknossos(self, layer_name: str) -> WkDataLayer:
@@ -104,11 +101,8 @@ class Dataset(DatasetInfo):
         bucket[0 : cropout.shape[0], 0 : cropout.shape[1], 0] = cropout
         return bucket
 
-    def path(self) -> Path:
-        return Path("data", "binary", self.organization_name, self.dataset_name)
-
     def layer_filepath(self, layer_name: str) -> Path:
-        return self.path() / f"{layer_name}.tif"
+        return self.path / f"{layer_name}.tif"
 
     def clear_cache(self) -> None:
         self.read_properties.cache_clear()  # pylint: disable=no-member
@@ -211,9 +205,10 @@ class Dataset(DatasetInfo):
             (target_offset[0] + target_shape[0] - 1) // tile_shape[0],
             (target_offset[1] + target_shape[1] - 1) // tile_shape[1],
         )
-        assert (
-            target_tile == target_tile_bottomright
-        ), f"Requested tif data at {target_offset} from page {page} of {str(self.path())} that cannot be served by loading a single tile."
+        assert target_tile == target_tile_bottomright, (
+            f"Requested tif data at {target_offset} from page {page} of {str(self.path)} "
+            + "that cannot be served by loading a single tile."
+        )
 
         tile_coordinate_offset = (
             target_tile[0] * tile_shape[0],
