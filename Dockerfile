@@ -12,6 +12,9 @@ RUN apt-get update && \
 COPY pyproject.toml .
 COPY poetry.lock .
 COPY poetry.toml .
+RUN poetry install
+
+# Run install again for installing wkconnect globally
 COPY wkconnect wkconnect
 RUN poetry install
 
