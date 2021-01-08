@@ -44,7 +44,7 @@ class Vec3D(NamedTuple):
         return Vec3Df(*map(float, self))
 
     def to_int(self) -> Vec3D:
-        return Vec3Df(*map(int, self))
+        return Vec3D(*map(int, self))
 
     @classmethod
     def zeros(cls) -> Vec3D:
@@ -155,5 +155,5 @@ JSON = Any
 
 
 class HashableDict(dict):
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore  # signature incompatible with supertype
         return hash(tuple(sorted(self.items())))
