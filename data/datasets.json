@@ -2,35 +2,129 @@
     "boss": {},
     "neuroglancer": {
         "sample_organization": {
-            "fafb_v14": {
+            "acardona_0111_8": {
                 "layers": {
                     "image": {
-                        "source": "gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_clahe",
+                        "source": "s3://open-neurodata/cardona/acardona_0111_8__12_03_2017/image",
+                        "type": "image"
+                    }
+                }
+            },
+            "acardona_abd1_5": {
+                "layers": {
+                    "image": {
+                        "source": "s3://open-neurodata/cardona/acardona_abd1_5/image",
+                        "type": "image"
+                    }
+                }
+            },
+            "bloss16": {
+                "layers": {
+                    "channel0": {
+                        "source": "s3://open-neurodata/bloss/bloss16/channel0",
+                        "type": "image"
+                    },
+                    "channel1": {
+                        "source": "s3://open-neurodata/bloss/bloss16/channel1",
+                        "type": "image"
+                    },
+                    "channel2": {
+                        "source": "s3://open-neurodata/bloss/bloss16/channel2",
+                        "type": "image"
+                    },
+                    "channel3": {
+                        "source": "s3://open-neurodata/bloss/bloss16/channel3",
+                        "type": "image"
+                    }
+                }
+            },
+            "bloss18": {
+                "layers": {
+                    "image": {
+                        "source": "s3://open-neurodata/bloss/bloss18/image",
+                        "type": "image"
+                    }
+                }
+            },
+            "bumbarger13": {
+                "layers": {
+                    "image": {
+                        "source": "s3://open-neurodata/bumbarger/bumbarger13/image",
+                        "type": "image"
+                    }
+                }
+            },
+            "hildebrand17": {
+                "layers": {
+                    "image": {
+                        "source": "s3://open-neurodata/hildebrand/130201zf142/160515_SWiFT_60nmpx",
+                        "type": "image"
+                    }
+                }
+            },
+            "hildebrand17_7dpf": {
+                "layers": {
+                    "image": {
+                        "source": "s3://open-neurodata/hildebrand/120809zf104/151009",
+                        "type": "image"
+                    }
+                }
+            },
+            "kharris15_apical": {
+                "layers": {
+                    "ground_truth": {
+                        "source": "s3://open-neurodata/kharris15/apical/anno",
+                        "type": "segmentation"
+                    },
+                    "image": {
+                        "source": "s3://open-neurodata/kharris15/apical/em",
+                        "type": "image"
+                    }
+                }
+            },
+            "kharris15_oblique": {
+                "layers": {
+                    "ground_truth": {
+                        "source": "s3://open-neurodata/kharris15/oblique/anno",
+                        "type": "segmentation"
+                    },
+                    "image": {
+                        "source": "s3://open-neurodata/kharris15/oblique/em",
+                        "type": "image"
+                    }
+                }
+            },
+            "kharris15_spine": {
+                "layers": {
+                    "ground_truth": {
+                        "source": "s3://open-neurodata/kharris15/spine/anno",
+                        "type": "segmentation"
+                    },
+                    "image": {
+                        "source": "s3://open-neurodata/kharris15/spine/em",
                         "type": "image"
                     }
                 }
             },
             "kasthuri2011": {
                 "layers": {
-                    "corrected_image": {
-                        "source": "gs://neuroglancer-public-data/kasthuri2011/image_color_corrected",
-                        "type": "image"
-                    },
                     "ground_truth": {
                         "source": "gs://neuroglancer-public-data/kasthuri2011/ground_truth",
                         "type": "segmentation"
+                    },
+                    "image": {
+                        "source": "gs://neuroglancer-public-data/kasthuri2011/image_color_corrected",
+                        "type": "image"
                     }
                 }
-            },
-            "harris2015": {
+            }
+        },
+        "janelia": {
+            "fafb_v14": {
                 "layers": {
-                    "em": {
-                        "source": "s3://open-neurodata/kharris15/apical/em",
+                    "image": {
+                        "source": "gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_clahe",
                         "type": "image"
-                    },
-                    "anno": {
-                        "source": "s3://open-neurodata/kharris15/apical/anno",
-                        "type": "segmentation"
                     }
                 }
             }
