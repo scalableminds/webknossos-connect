@@ -1,7 +1,9 @@
 import asyncio
 import json
+import logging
 import os
 import tempfile
+import time
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast
 
 import compressed_segmentation
@@ -19,6 +21,8 @@ from .models import Dataset, Layer
 
 DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
+
+logger = logging.getLogger(__name__)
 
 
 class NeuroglancerAuthenticationError(RuntimeError):
@@ -68,8 +72,9 @@ class Neuroglancer(Backend):
         return token
 
     async def __handle_layer(
-        self, layer_name: str, layer: Dict[str, Any], token: Optional[Token]
+        self, layer_name: str, layer: Dict[str, Any], token: Optional[Token], label: str
     ) -> Tuple[str, Layer]:
+        before_all = time.time()
         layer["source"] = (
             layer["source"]
             .replace("gs://", "https://storage.googleapis.com/")
@@ -78,10 +83,12 @@ class Neuroglancer(Backend):
         info_url = layer["source"] + "/info"
 
         try:
+            before_get = time.time()
             async with await self.http_client.get(
                 info_url, headers=await get_header(token)
             ) as r:
                 response = await r.json(content_type=None)
+            after_get = time.time()
         except ClientResponseError as e:
             if e.status == 403:
                 raise NeuroglancerAuthenticationMissingError(
@@ -99,22 +106,32 @@ class Neuroglancer(Backend):
             scale["resolution"] = (resolution // min_resolution).to_int()
             scale["voxel_offset"] = Vec3D(*scale["voxel_offset"]).to_int()
         layer["relative_scale"] = min_resolution.to_int()
+        after_all = time.time()
+        logger.info(
+            f"Handling layer {layer_name} of {label} took {after_all - before_all:.2}s (get was {after_get - before_get:.2}s)"
+        )
         return (layer_name, from_json(layer, Layer))
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
+        before_token = time.time()
         try:
             token = self.create_token(dataset_info.get("credentials", None))
         except Exception as e:
             NeuroglancerAuthenticationError(*e.args)
+        after_token = time.time()
         layers = dict(
             await asyncio.gather(
                 *(
-                    self.__handle_layer(layer_name, layer, token)
+                    self.__handle_layer(layer_name, layer, token, label=dataset_name)
                     for layer_name, layer in dataset_info["layers"].items()
                 )
             )
+        )
+        after_layers = time.time()
+        logger.info(
+            f"Fetching dataset {dataset_name} took {after_layers - before_token:.2}s (token {after_token - before_token:.2}s, layers {after_layers - after_token:.2}s)"
         )
         dataset = Dataset(organization_name, dataset_name, layers, token)
         return dataset

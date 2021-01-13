@@ -67,7 +67,6 @@ class Server(Sanic):
         dataset_name: str,
         report_to_wk: bool = True,
     ) -> DataSource:
-        before = time.time()
         backend = self.backends[backend_name]
         dataset = await backend.handle_new_dataset(
             organization_name, dataset_name, deepcopy(dataset_config)
@@ -76,10 +75,6 @@ class Server(Sanic):
         wk_dataset = dataset.to_webknossos()
         if report_to_wk:
             await self.webknossos.report_dataset(wk_dataset)
-        after = time.time()
-        logger.info(
-            f"Adding dataset {organization_name}/{dataset_name} took {after - before:.2f} s"
-        )
         return wk_dataset
 
     async def load_persisted_datasets(self) -> None:
