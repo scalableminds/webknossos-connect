@@ -9,7 +9,7 @@ from ...utils.types import JSON, Vec3D, Vec3Df
 from ..backend import Backend, DatasetInfo
 from .models import Dataset
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class Tiff(Backend):

@@ -15,7 +15,7 @@ from .client import Client
 from .models import Channel, Dataset, Experiment
 from .token_repository import TokenKey, TokenRepository
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class Boss(Backend):

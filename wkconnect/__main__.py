@@ -2,6 +2,8 @@ import asyncio
 import json
 import logging
 import os
+import sys
+import time
 from copy import deepcopy
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Type
 
@@ -27,17 +29,35 @@ from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataSource, DataSourceId, UnusableDataSource
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class Server(Sanic):
     def __init__(self) -> None:
         super().__init__()
+        self.setup_logging()
         self.http_client: ClientSession
         self.repository: Repository
         self.webknossos: WebKnossos
         self.backends: Dict[str, Backend]
         self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Tiff, Wkw]
+
+    def setup_logging(self) -> None:
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)-8s %(name)s  %(message)s")
+        )
+        root_logger.addHandler(handler)
+
+        sanic_logger = logging.getLogger("sanic.root")
+        sanic_error_logger = logging.getLogger("sanic.error")
+        sanic_access_logger = logging.getLogger("sanic.access")
+        sanic_logger.handlers = []
+        sanic_error_logger.handlers = []
+        sanic_access_logger.handlers = []
 
     async def add_dataset(
         self,
@@ -47,6 +67,7 @@ class Server(Sanic):
         dataset_name: str,
         report_to_wk: bool = True,
     ) -> DataSource:
+        before = time.time()
         backend = self.backends[backend_name]
         dataset = await backend.handle_new_dataset(
             organization_name, dataset_name, deepcopy(dataset_config)
@@ -55,9 +76,15 @@ class Server(Sanic):
         wk_dataset = dataset.to_webknossos()
         if report_to_wk:
             await self.webknossos.report_dataset(wk_dataset)
+        after = time.time()
+        logger.info(
+            f"Adding dataset {organization_name}/{dataset_name} took {after - before:.2f} s"
+        )
         return wk_dataset
 
     async def load_persisted_datasets(self) -> None:
+        before_all = time.time()
+
         def expandvars_hook(dict: Dict[str, Any]) -> Dict[str, Any]:
             for key, val in dict.items():
                 if isinstance(val, str):
@@ -75,6 +102,7 @@ class Server(Sanic):
             for organization, organization_details in backend_details.items()
             for dataset, dataset_details in organization_details.items()
         ]
+        before_adding = time.time()
         results = await asyncio.gather(
             *(
                 self.add_dataset(
@@ -88,6 +116,7 @@ class Server(Sanic):
             ),
             return_exceptions=True,
         )
+        after_adding = time.time()
         for result in results:
             if isinstance(result, Exception):
                 logger.error(exception_traceback(result))
@@ -100,7 +129,13 @@ class Server(Sanic):
             for result, (_, organization, dataset, _) in zip(results, dataset_tuples)
             if isinstance(result, Exception)
         ]
+        after_sorting = time.time()
         await self.webknossos.report_all_datasets(usable + unusable)
+        after_all = time.time()
+
+        logger.info(
+            f"Refresh took {after_all - before_all:.2f} s (loading json {before_adding - before_all:.2f}s, fetching {after_adding - before_adding:.2f} s, sorting {after_sorting - after_adding:.2f}s, reporting {after_all - after_sorting:.2f}s)"
+        )
 
 
 app = Server()

@@ -10,7 +10,7 @@ from ...utils.types import JSON, Vec3D
 from ..backend import Backend, DatasetInfo
 from .models import Dataset
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class Wkw(Backend):

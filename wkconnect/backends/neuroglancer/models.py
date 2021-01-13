@@ -51,12 +51,18 @@ class Layer:
             "image": ["uint8", "uint16", "uint32", "uint64"],
             "segmentation": ["uint32", "uint64"],
         }
-        assert self.type in supported_data_types
-        assert self.data_type in supported_data_types[self.type]
-        assert self.num_channels == 1
+        assert (
+            self.type in supported_data_types
+        ), f"Layer {self.source} has unsupported type {self.type}"
+        assert (
+            self.data_type in supported_data_types[self.type]
+        ), f"Unsupported data type for layer {self.source}"
+        assert (
+            self.num_channels == 1
+        ), f"Layer {self.source} has {self.num_channels} channels, should be 1"
         assert all(
             max(scale.resolution) == 2 ** i for i, scale in enumerate(self.scales)
-        )
+        ), f"Resolutions are not consecutive powers of two for layer {self.source}"
 
     def wk_data_type(self) -> str:
         if self.type == "segmentation":
