@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from operator import add, floordiv, mod, mul, sub, truediv
-from typing import Any, Callable, Iterator, NamedTuple, Union
+from typing import Any, Callable, Iterator, NamedTuple, Union, Hashable
 
 import numpy as np
 
@@ -154,6 +154,6 @@ class Box3D(NamedTuple):
 JSON = Any
 
 
-class HashableDict(dict):
-    def __hash__(self) -> int:  # type: ignore  # signature incompatible with supertype
+class HashableDict(dict, Hashable):
+    def __hash__(self) -> int:
         return hash(tuple(sorted(self.items())))
