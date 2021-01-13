@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 from wkcuber.api.Dataset import WKDataset
-from wkcuber.api.Properties import LayerProperties
+from wkcuber.api.Properties.LayerProperties import LayerProperties
 from wkcuber.mag import Mag
 
 from wkconnect.utils.types import Vec3D, Vec3Df
