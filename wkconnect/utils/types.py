@@ -155,5 +155,7 @@ JSON = Any
 
 
 class HashableDict(dict):
-    def __hash__(self) -> int:  # type: ignore  # supertype dict sets return type to None, we need to return int
+    def __hash__(
+        self
+    ) -> int:  # type: ignore  # supertype dict sets return type to None, we need to return int
         return hash(tuple(sorted(self.items())))
