@@ -8,6 +8,8 @@ webKnossos-connect serves as an adapter between the webKnossos data store interf
 Available Adapaters / Supported Data Formats:
 - [BossDB](https://bossdb.org/)
 - [Neuroglancer Precomputed](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed)
+- [WKW](https://github.com/scalableminds/webknossos-wrap)
+- Tiled TIFF
 
 ## Usage
 ### 1. Installation / Docker
