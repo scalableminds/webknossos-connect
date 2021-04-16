@@ -2,7 +2,7 @@ version: 2
 jobs:
   static_checks_push:
     docker:
-      - image: circleci/python:3.7.2
+      - image: circleci/python:3.8
     steps:
       - checkout
 
