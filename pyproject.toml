@@ -7,7 +7,7 @@ license = "AGPL-3.0"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-aiohttp = "^3.6"
+aiohttp = "^3.7"
 async-lru = "^1.0"
 blosc = "^1.10"
 brotlipy = "^0.7.0"
