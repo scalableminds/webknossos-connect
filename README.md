@@ -93,7 +93,7 @@ By default, some public datasets are added to webKnossos-connect to get you star
 ### Native
 #### Installation
 
-You need Python 3.7 or 3.8 with `poetry` installed.
+You need Python 3.8 with `poetry` installed.
 
 ```bash
 pip install poetry
