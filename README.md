@@ -3,11 +3,13 @@ A [webKnossos](https://github.com/scalableminds/webknossos) compatible data conn
 
 webKnossos-connect serves as an adapter between the webKnossos data store interface and other alternative data storage servers (e.g BossDB) or static files hosted on Cloud Storage (e.g. Neuroglancer Precomputed)
 
-[![CircleCI](https://circleci.com/gh/scalableminds/webknossos-connect.svg?style=svg&circle-token=1d7b55b40a5733c7563033064cee0ed0beef36b6)](https://circleci.com/gh/scalableminds/webknossos-connect)
+[![Github Actions](https://github.com/scalableminds/webknossos-connect/actions/workflows/main.yml/badge.svg)](https://github.com/scalableminds/webknossos-connect/actions)
 
 Available Adapaters / Supported Data Formats:
 - [BossDB](https://bossdb.org/)
 - [Neuroglancer Precomputed](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed)
+- [WKW](https://github.com/scalableminds/webknossos-wrap)
+- Tiled TIFF
 
 ## Usage
 ### 1. Installation / Docker
@@ -93,10 +95,10 @@ By default, some public datasets are added to webKnossos-connect to get you star
 ### Native
 #### Installation
 
-You need Python 3.7 with `poetry` installed.
+You need Python 3.8 with `poetry` installed.
 
 ```bash
-pip install poetry==1.0.0b4
+pip install poetry
 poetry install
 ```
 

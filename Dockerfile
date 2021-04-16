@@ -1,6 +1,6 @@
-FROM python:3.7.2 as prod
+FROM python:3.8.8 as prod
 
-RUN pip install poetry==1.0.0
+RUN pip install poetry==1.1.6
 
 RUN mkdir /app
 WORKDIR /app
