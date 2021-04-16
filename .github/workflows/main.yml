@@ -1,0 +1,87 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: 'x64'
+
+    - name: Install dependencies
+      run: |
+        pip install poetry
+        poetry install
+
+    - name: Check formatting
+      run: scripts/pretty-check.sh
+
+    - name: Lint code
+      run: scripts/lint.sh
+
+    - name: Check typing
+      run: scripts/type-check.sh
+      
+    - name: Build docker image
+      run: |
+        export DOCKER_TAG=${GITHUB_RUN_ID}
+        docker-compose build webknossos-connect
+      
+    - name: Smoke test
+      run: |
+        export DOCKER_TAG=${GITHUB_RUN_ID}
+        docker-compose up -d webknossos-connect
+        name="$(docker-compose ps -q webknossos-connect)"
+        sleep 20
+        status="$(docker inspect --format='{{.State.Health.Status}}' $name)"
+        [ "$status" = "healthy" ]
+        docker-compose down
+  
+    - name: Login to docker
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
+      run: |
+        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+
+    - name: Push docker images
+      run: |
+        docker push scalableminds/webknossos-connect:$GITHUB_RUN_ID
+
+    - name: Push docker image (for branch)
+      if: startsWith(github.event.ref, 'refs/heads')
+      run: |
+        CI_BRANCH=${GITHUB_REF##*/}
+        NORMALIZED_CI_BRANCH=${CI_BRANCH//[\/-]/_}
+        docker tag \
+          scalableminds/webknossos-connect:$GITHUB_RUN_ID \
+          scalableminds/webknossos-connect:$NORMALIZED_CI_BRANCH
+        docker push scalableminds/webknossos-connect:$NORMALIZED_CI_BRANCH
+        if [ "${CI_BRANCH}" == "master" ]; then
+          docker tag \
+            scalableminds/webknossos-connect:$GITHUB_RUN_ID \
+            scalableminds/webknossos-connect:latest
+          docker push scalableminds/webknossos-connect:latest
+        fi
+
+    # - name: Check if git is dirty
+    #   run: |
+    #     git diff --no-ext-diff --quiet --exit-code
+    #     [[ -z $(git status -s) ]]
+
+    # - name: Publish python package
+    #   if: startsWith(github.event.ref, 'refs/tags') && matrix.python-version == '3.7'
+    #   env:
+    #     PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+    #     PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+    #   run: ./publish.sh
