@@ -25,6 +25,7 @@ jobs:
     
     - name: Install fast_wkw
       run: |
+        apt install liblz4-devel
         cd fast_wkw
         cargo build --release
         cp target/release/libfast_wkw*.so ../wkconnect/fast_wkw.so
