@@ -14,6 +14,7 @@ from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
 from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
+from ...fast_wkw import DatasetHandle
 
 
 @dataclass(frozen=True)
@@ -51,24 +52,33 @@ class Dataset(DatasetInfo):
             layer_properties._element_class,
         )
 
-    @lru_cache(maxsize=2 ** 12)
-    def read_data(
-        self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
-    ) -> Optional[np.ndarray]:
+    @lru_cache(maxsize=100)
+    def get_data_handle(self, layer_name: str, zoom_step: int) -> DatasetHandle:
         layer = self.dataset_handle.get_layer(layer_name)
         available_mags = sorted([Mag(mag).mag for mag in layer.mags.keys()])
         mag = available_mags[zoom_step]
         mag_dataset = layer.get_mag(mag)
-        offset = (
-            np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / np.array(Mag(mag).mag)
-        ).astype(np.uint32)
-        if not mag_dataset.view._is_opened:
-            mag_dataset.open()
+        data_handle = DatasetHandle(str(mag_dataset.view.path))
+        data_handle.mag = mag
+        return data_handle
 
-        return mag_dataset.read(tuple(offset), shape)
+    @lru_cache(maxsize=2 ** 12)
+    def read_data(
+        self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
+    ) -> Optional[np.ndarray]:
+        assert shape == Vec3D(
+            32, 32, 32
+        ), "Only buckets of 32 edge length are supported"
+        data_handle = self.get_data_handle(layer_name, zoom_step)
+        offset = (
+            np.array([wk_offset.x, wk_offset.y, wk_offset.z])
+            / np.array(data_handle.mag)
+        ).astype(np.uint32)
+        return data_handle.read_block(tuple(offset))
 
     def clear_cache(self) -> None:
         self.read_data.cache_clear()  # pylint: disable=no-member
+        self.get_data_handle.cache_clear()  # pylint: disable=no-member
         for layer_handle in self.dataset_handle.layers.values():
             for mag in layer_handle.mags.values():
                 if mag.view._is_opened:
