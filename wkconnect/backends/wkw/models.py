@@ -9,12 +9,12 @@ from wkcuber.mag import Mag
 
 from wkconnect.utils.types import Vec3D, Vec3Df
 
+from ...fast_wkw import DatasetHandle
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
 from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
-from ...fast_wkw import DatasetHandle
 
 
 @dataclass(frozen=True)
