@@ -9,7 +9,7 @@ from wkcuber.mag import Mag
 
 from wkconnect.utils.types import Vec3D, Vec3Df
 
-from ...fast_wkw import DatasetHandle
+from ...fast_wkw import DatasetHandle  # pylint: disable=no-name-in-module
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
