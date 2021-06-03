@@ -25,11 +25,12 @@ jobs:
     
     - name: Install fast_wkw
       run: |
-        wget -O wkw.zip https://github.com/scalableminds/webknossos-wrap/archive/refs/heads/lz4-crate.zip
+        curl --output wkw.zip https://codeload.github.com/scalableminds/webknossos-wrap/zip/refs/heads/lz4-crate
         unzip wkw.zip
         cd fast_wkw
         cargo build --release
         cp target/release/libfast_wkw*.so ../wkconnect/fast_wkw.so
+        rm -r wkw.zip webknossos-wrap-lz4-crate
 
     - name: Check formatting
       run: scripts/pretty-check.sh
