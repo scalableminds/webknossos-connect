@@ -1,15 +1,13 @@
 import asyncio
 import json
 import os
-from typing import Any, Iterable, Tuple, cast
+from typing import TYPE_CHECKING, Any, Iterable, Tuple, cast
 
 from sanic import Blueprint, response
 from sanic.request import Request
 
 from ...utils.types import JSON
 from ...webknossos.access import AccessRequest, authorized
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ...__main__ import Server

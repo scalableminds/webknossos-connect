@@ -1,4 +1,4 @@
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from sanic import Blueprint, response
 from sanic.request import Request
