@@ -20,7 +20,7 @@ COPY wkconnect wkconnect
 RUN poetry install
 
 COPY fast_wkw .
-RUN curl --output wkw.zip https://github.com/scalableminds/webknossos-wrap/archive/refs/heads/lz4-crate.zip && \
+RUN curl --output wkw.zip https://codeload.github.com/scalableminds/webknossos-wrap/zip/refs/heads/lz4-crate && \
     unzip wkw.zip && \
     cd fast_wkw && \
     cargo build --release && \
