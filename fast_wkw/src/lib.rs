@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
+use pyo3::wrap_pyfunction;
 use std::path::Path;
 
 mod wkw_dataset;
@@ -85,11 +86,17 @@ impl DatasetHandle {
   }
 }
 
+#[pyfunction]
+fn get_event_loop(py: Python) -> PyResult<PyObject> {
+  Ok(pyo3_asyncio::get_event_loop(py).into())
+}
+
 #[pymodule]
 fn fast_wkw(py: Python, m: &PyModule) -> PyResult<()> {
   pyo3_asyncio::try_init(py)?;
   pyo3_asyncio::tokio::init_multi_thread_once();
 
+  m.add_function(wrap_pyfunction!(get_event_loop, m)?)?;
   m.add_class::<DatasetHandle>()?;
 
   Ok(())

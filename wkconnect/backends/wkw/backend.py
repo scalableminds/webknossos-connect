@@ -33,7 +33,7 @@ class Wkw(Backend):
         shape: Vec3D,
     ) -> Optional[np.ndarray]:
         dataset = cast(Dataset, abstract_dataset)
-        return dataset.read_data(layer_name, zoom_step, wk_offset, shape)
+        return await dataset.read_data(layer_name, zoom_step, wk_offset, shape)
 
     def clear_dataset_cache(self, abstract_dataset: DatasetInfo) -> None:
         dataset = cast(Dataset, abstract_dataset)

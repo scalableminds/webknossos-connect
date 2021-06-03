@@ -6,8 +6,9 @@ RUN mkdir /app
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y libturbojpeg0 && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y libturbojpeg0 liblz4-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl https://sh.rustup.rs -sSf | sh
 
 COPY pyproject.toml .
 COPY poetry.lock .
@@ -17,6 +18,13 @@ RUN poetry install
 # Run install again for installing wkconnect globally
 COPY wkconnect wkconnect
 RUN poetry install
+
+COPY fast_wkw .
+RUN cd fast_wkw && \
+    cargo build --release && \
+    cp target/release/libfast_wkw*.so ../wkconnect/fast_wkw.so && \
+    cd .. && \
+    rm -r fast_wkw
 
 COPY data data
 VOLUME /app/data

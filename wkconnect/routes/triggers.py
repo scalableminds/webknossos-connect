@@ -30,9 +30,9 @@ async def reload_dataset(
     request: Request, organization_name: str, dataset_name: str
 ) -> response.HTTPResponse:
     await request.app.load_persisted_datasets()
-    (backend_name, dataset) = request.app.repository.get_dataset(
+    (backend_name, dataset) = request.app.ctx.repository.get_dataset(
         organization_name, dataset_name
     )
-    backend = request.app.backends[backend_name]
+    backend = request.app.ctx.backends[backend_name]
     backend.clear_dataset_cache(dataset)
     return response.text("Ok")

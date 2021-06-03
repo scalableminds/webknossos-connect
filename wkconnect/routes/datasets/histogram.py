@@ -23,10 +23,10 @@ histogram = Blueprint(__name__)
 async def histogram_post(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:
-    (backend_name, dataset) = request.app.repository.get_dataset(
+    (backend_name, dataset) = request.app.ctx.repository.get_dataset(
         organization_name, dataset_name
     )
-    backend = request.app.backends[backend_name]
+    backend = request.app.ctx.backends[backend_name]
 
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
 

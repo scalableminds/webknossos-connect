@@ -1,6 +1,7 @@
+from async_lru import alru_cache
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 from wkcuber.api.Dataset import WKDataset
@@ -40,7 +41,7 @@ class Dataset(DatasetInfo):
             layer_name,
             layer_properties._category,
             WkBoundingBox(
-                topLeft=layer_properties._bounding_box["topLeft"],
+                topLeft=Vec3D(*layer_properties._bounding_box["topLeft"]),
                 width=layer_properties._bounding_box["width"],
                 height=layer_properties._bounding_box["height"],
                 depth=layer_properties._bounding_box["depth"],
@@ -52,29 +53,33 @@ class Dataset(DatasetInfo):
             layer_properties._element_class,
         )
 
-    @lru_cache(maxsize=100)
-    def get_data_handle(self, layer_name: str, zoom_step: int) -> DatasetHandle:
+    @lru_cache(maxsize=1000)
+    def get_data_handle(
+        self, layer_name: str, zoom_step: int
+    ) -> Tuple[DatasetHandle, Mag]:
         layer = self.dataset_handle.get_layer(layer_name)
-        available_mags = sorted([Mag(mag).mag for mag in layer.mags.keys()])
+        available_mags = sorted([Mag(mag) for mag in layer.mags.keys()])
         mag = available_mags[zoom_step]
         mag_dataset = layer.get_mag(mag)
         data_handle = DatasetHandle(str(mag_dataset.view.path))
-        data_handle.mag = mag
-        return data_handle
+        return (data_handle, mag)
 
-    @lru_cache(maxsize=2 ** 12)
-    def read_data(
+    @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
+    async def read_data(
         self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
     ) -> Optional[np.ndarray]:
         assert shape == Vec3D(
             32, 32, 32
         ), "Only buckets of 32 edge length are supported"
-        data_handle = self.get_data_handle(layer_name, zoom_step)
+        assert shape % 32 == Vec3D(0, 0, 0), "Only 32-aligned buckets are supported"
+        data_handle, mag = self.get_data_handle(layer_name, zoom_step)
         offset = (
-            np.array([wk_offset.x, wk_offset.y, wk_offset.z])
-            / np.array(data_handle.mag)
+            np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / mag.as_np()
         ).astype(np.uint32)
-        return data_handle.read_block(tuple(offset))
+        data_response = await data_handle.read_block(tuple(offset))
+        return np.frombuffer(
+            data_response.buf, dtype=np.dtype(data_response.dtype)
+        ).reshape((data_response.num_channels, 32, 32, 32), order="F")
 
     def clear_cache(self) -> None:
         self.read_data.cache_clear()  # pylint: disable=no-member

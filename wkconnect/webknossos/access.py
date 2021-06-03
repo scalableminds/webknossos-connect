@@ -48,10 +48,12 @@ def authorized(fn_access_request: Callable[..., AccessRequest]) -> Callable[[T],
             request: Request, *args: Any, **kwargs: Any
         ) -> HTTPResponse:
             token = request.args.get("token", default="")
-            parameters = request.app.router.get(request)[2]
+            parameters = request.app.router.get(
+                request.path, request.method, request.host
+            )[2]
             access_request = fn_access_request(**parameters)
 
-            access_answer = await request.app.webknossos.request_access(
+            access_answer = await request.app.ctx.webknossos.request_access(
                 token=token, access_request=access_request
             )
 

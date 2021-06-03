@@ -1,4 +1,11 @@
 {
+    "wkw": {
+        "sample_organization": {
+            "l4_sample": {
+                "path": "/Users/norman/scalableminds/webknossos/_binaryData/sample_organization/l4_sample"
+            }
+        }
+    },
     "boss": {},
     "neuroglancer": {
         "sample_organization": {

@@ -13,12 +13,10 @@ async def test():
         )
     )
     response = await dataset.read_block((3072, 3072, 512))
-    print(
-        np.frombuffer(
-            response.buf,
-            dtype=np.dtype(response.dtype),
-        ).reshape((response.num_channels, 32, 32, 32))
+    array = np.frombuffer(response.buf, dtype=np.dtype(response.dtype)).reshape(
+        (response.num_channels, 32, 32, 32), order="F"
     )
+    print(array, np.isfortran(array))
 
 
 print("Hello")

@@ -1,22 +1,7 @@
 use lz4_flex::decompress_into;
 use memmap::{Mmap, MmapOptions};
 use std::{fs, path};
-use wkwrap::{BlockType, Header, Result, Vec3};
-
-fn morton_encode(vec: &Vec3) -> u64 {
-  let x = vec.x as u64;
-  let y = vec.y as u64;
-  let z = vec.z as u64;
-  let mut morton = 0u64;
-  let bit_length = 64 - (std::cmp::max(x, std::cmp::max(y, z)) + 1).leading_zeros();
-
-  for i in 0..bit_length {
-    morton |= ((x & (1 << i)) << (2 * i))
-      | ((y & (1 << i)) << (2 * i + 1))
-      | ((z & (1 << i)) << (2 * i + 2))
-  }
-  morton
-}
+use wkwrap::{BlockType, Header, Morton, Result, Vec3};
 
 #[derive(Debug)]
 pub struct File {
@@ -49,7 +34,7 @@ impl File {
     assert!(src_pos < file_len_vx_vec);
 
     let block_id = src_pos >> block_len_log2;
-    let block_idx = morton_encode(&block_id);
+    let block_idx = u64::from(Morton::from(&block_id));
 
     if buf.len() != self.header.block_size() {
       return Err(String::from("Buffer has invalid size"));
