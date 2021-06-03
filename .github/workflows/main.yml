@@ -25,7 +25,8 @@ jobs:
     
     - name: Install fast_wkw
       run: |
-        sudo apt install liblz4-dev -y
+        wget -O wkw.zip https://github.com/scalableminds/webknossos-wrap/archive/refs/heads/lz4-crate.zip
+        unzip wkw.zip
         cd fast_wkw
         cargo build --release
         cp target/release/libfast_wkw*.so ../wkconnect/fast_wkw.so

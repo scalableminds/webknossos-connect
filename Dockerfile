@@ -6,7 +6,7 @@ RUN mkdir /app
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y libturbojpeg0 liblz4-dev && \
+    apt-get install -y libturbojpeg0 liblz4-dev curl && \
     rm -rf /var/lib/apt/lists/* && \
     curl https://sh.rustup.rs -sSf | sh
 
@@ -20,7 +20,9 @@ COPY wkconnect wkconnect
 RUN poetry install
 
 COPY fast_wkw .
-RUN cd fast_wkw && \
+RUN curl --output wkw.zip https://github.com/scalableminds/webknossos-wrap/archive/refs/heads/lz4-crate.zip && \
+    unzip wkw.zip && \
+    cd fast_wkw && \
     cargo build --release && \
     cp target/release/libfast_wkw*.so ../wkconnect/fast_wkw.so && \
     cd .. && \
