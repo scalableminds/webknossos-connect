@@ -26,4 +26,4 @@ asyncio.run(setup())
 
 
 def timeit() -> None:
-    neuroglancer.decoders["jpeg"](data, "uint8", Vec3D(64, 64, 64), None)
+    neuroglancer.decoders["jpeg"](data, "uint8", Vec3D(64, 64, 64), None)  # noqa: F821

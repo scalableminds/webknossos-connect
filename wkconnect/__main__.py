@@ -19,6 +19,7 @@ from .backends.boss.backend import Boss
 from .backends.neuroglancer.backend import Neuroglancer
 from .backends.tiff.backend import Tiff
 from .backends.wkw.backend import Wkw
+from .fast_wkw import get_event_loop  # pylint: disable=no-name-in-module
 from .repository import Repository
 from .routes import routes
 from .utils.exceptions import exception_traceback, format_exception
@@ -26,7 +27,6 @@ from .utils.scheduler import repeat_every_seconds
 from .utils.types import JSON
 from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataSource, DataSourceId, UnusableDataSource
-from .fast_wkw import get_event_loop
 
 logger = logging.getLogger()
 
@@ -238,4 +238,3 @@ if __name__ == "__main__":
         loop.stop()
     finally:
         server.after_stop()
-

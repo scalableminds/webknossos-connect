@@ -1,9 +1,9 @@
-from async_lru import alru_cache
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Optional, Tuple
 
 import numpy as np
+from async_lru import alru_cache
 from wkcuber.api.Dataset import WKDataset
 from wkcuber.api.Properties.LayerProperties import LayerProperties
 from wkcuber.mag import Mag

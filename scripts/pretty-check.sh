@@ -3,4 +3,4 @@
 set -eEuo pipefail
 
 black --check wkconnect benchmarks stubs
-isort --check-only --recursive wkconnect benchmarks
+isort --check-only wkconnect benchmarks
