@@ -62,7 +62,7 @@ async def histogram_post(
         histogram = Histogram(
             [int(c) for c in counts], len(data), int(minimum), int(maximum)
         )
-    elif np.issubdtype(data.dtype, np.float):
+    elif np.issubdtype(data.dtype, np.floating):
         minimum, maximum = np.min(data), np.max(data)
         bucket_size = (maximum - minimum) / 255
         bucket_size = 1.0 if np.isclose(bucket_size, 0.0) else bucket_size

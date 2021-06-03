@@ -1,6 +1,9 @@
+from typing import cast
+
 from sanic import Blueprint, response
 from sanic.request import Request
 
+from ..__main__ import Server
 from ..webknossos.access import AccessRequest, authorized
 
 triggers = Blueprint(__name__, url_prefix="/triggers")
@@ -9,7 +12,8 @@ triggers = Blueprint(__name__, url_prefix="/triggers")
 @triggers.route("/checkInboxBlocking")
 @authorized(AccessRequest.administrate_datasets)
 async def check_inbox_blocking(request: Request) -> response.HTTPResponse:
-    await request.app.load_persisted_datasets()
+    app = cast(Server, request.app)
+    await app.load_persisted_datasets()
     return response.text("Ok")
 
 
@@ -29,10 +33,11 @@ async def check_new_organization_folder(request: Request) -> response.HTTPRespon
 async def reload_dataset(
     request: Request, organization_name: str, dataset_name: str
 ) -> response.HTTPResponse:
-    await request.app.load_persisted_datasets()
+    app = cast(Server, request.app)
+    await app.load_persisted_datasets()
     (backend_name, dataset) = request.app.ctx.repository.get_dataset(
         organization_name, dataset_name
     )
-    backend = request.app.ctx.backends[backend_name]
+    backend = app.ctx.backends[backend_name]
     backend.clear_dataset_cache(dataset)
     return response.text("Ok")

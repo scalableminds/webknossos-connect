@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from copy import deepcopy
+from types import SimpleNamespace
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
@@ -31,19 +32,18 @@ from .webknossos.models import DataSource, DataSourceId, UnusableDataSource
 logger = logging.getLogger()
 
 
+class ServerContext(SimpleNamespace):
+    http_client: ClientSession
+    repository: Repository
+    webknossos: WebKnossos
+    backends: Dict[str, Backend]
+    available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Tiff, Wkw]
+
+
 class Server(Sanic):
     def __init__(self) -> None:
         super().__init__(name="wkconnect")
-        self.ctx.http_client: ClientSession
-        self.ctx.repository: Repository
-        self.ctx.webknossos: WebKnossos
-        self.ctx.backends: Dict[str, Backend]
-        self.ctx.available_backends: List[Type[Backend]] = [
-            Boss,
-            Neuroglancer,
-            Tiff,
-            Wkw,
-        ]
+        self.ctx: ServerContext
 
     async def add_dataset(
         self,
@@ -228,8 +228,8 @@ if __name__ == "__main__":
         return_asyncio_server=True,
         asyncio_server_kwargs=None,
     )
-    create_server_coro = asyncio.ensure_future(create_server_coro, loop=loop)
-    server = loop.run_until_complete(create_server_coro)
+    create_server_task = asyncio.ensure_future(create_server_coro, loop=loop)
+    server = loop.run_until_complete(create_server_task)
     server.after_start()
     try:
         loop.run_forever()
