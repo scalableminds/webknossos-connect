@@ -30,6 +30,7 @@ jobs:
         cd fast_wkw
         cargo build --release
         cp target/release/libfast_wkw*.so ../wkconnect/fast_wkw.so
+        cd ..
         rm -r wkw.zip webknossos-wrap-lz4-crate
 
     - name: Check formatting
