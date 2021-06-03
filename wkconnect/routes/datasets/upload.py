@@ -6,9 +6,13 @@ from typing import Any, Iterable, Tuple, cast
 from sanic import Blueprint, response
 from sanic.request import Request
 
-from ...__main__ import Server
 from ...utils.types import JSON
 from ...webknossos.access import AccessRequest, authorized
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...__main__ import Server
 
 upload = Blueprint(__name__)
 
@@ -23,7 +27,7 @@ def iterate_datasets(datasets: JSON) -> Iterable[Tuple[Any, str, str, str]]:
 @upload.route("", methods=["POST"])
 @authorized(AccessRequest.administrate_datasets)
 async def add_dataset(request: Request) -> response.HTTPResponse:
-    app = cast(Server, request.app)
+    app = cast("Server", request.app)
     await asyncio.gather(
         *(
             app.add_dataset(*dataset_args)

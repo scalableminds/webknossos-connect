@@ -30,6 +30,7 @@ from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataSource, DataSourceId, UnusableDataSource
 
 logger = logging.getLogger()
+available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Tiff, Wkw]
 
 
 class ServerContext(SimpleNamespace):
@@ -37,13 +38,13 @@ class ServerContext(SimpleNamespace):
     repository: Repository
     webknossos: WebKnossos
     backends: Dict[str, Backend]
-    available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Tiff, Wkw]
 
 
 class Server(Sanic):
+    ctx: ServerContext
+
     def __init__(self) -> None:
-        super().__init__(name="wkconnect")
-        self.ctx: ServerContext
+        super().__init__("wkconnect")
 
     async def add_dataset(
         self,
@@ -148,7 +149,7 @@ async def setup(app: Server, loop: Loop) -> None:
     app.ctx.http_client = await ClientSession(raise_for_status=True).__aenter__()
     app.ctx.repository = Repository()
     app.ctx.webknossos = WebKnossos(app.config, app.ctx.http_client)
-    app.ctx.backends = dict(map(instanciate_backend, app.ctx.available_backends))
+    app.ctx.backends = dict(map(instanciate_backend, available_backends))
 
 
 @app.listener("before_server_stop")
