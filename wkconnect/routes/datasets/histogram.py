@@ -31,6 +31,8 @@ async def histogram_post(
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
 
     sample_positions = generate_sample_positions(2, layer.boundingBox, 32)
+    # For the WKW backend, the bucket requests need to be 32-aligned
+    sample_positions = [(position // 32) * 32 for position in sample_positions]
     sample_positions_distinct = list(OrderedDict.fromkeys(sample_positions))
 
     bucket_requests = [
