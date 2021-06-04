@@ -20,7 +20,6 @@ from .backends.boss.backend import Boss
 from .backends.neuroglancer.backend import Neuroglancer
 from .backends.tiff.backend import Tiff
 from .backends.wkw.backend import Wkw
-from .fast_wkw import get_event_loop  # pylint: disable=no-name-in-module
 from .repository import Repository
 from .routes import routes
 from .utils.exceptions import exception_traceback, format_exception
@@ -221,21 +220,8 @@ if __name__ == "__main__":
         "report datasets to webknossos", lambda app: app.load_persisted_datasets()
     )
 
-    loop = get_event_loop()
-    create_server_coro = app.create_server(
+    app.run(
         host=app.config["server"]["host"],
         port=app.config["server"]["port"],
         access_log=False,
-        return_asyncio_server=True,
-        asyncio_server_kwargs=None,
     )
-    create_server_task = asyncio.ensure_future(create_server_coro, loop=loop)
-    server = loop.run_until_complete(create_server_task)
-    server.after_start()
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        server.before_stop()
-        loop.stop()
-    finally:
-        server.after_stop()
