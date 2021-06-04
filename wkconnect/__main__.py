@@ -39,7 +39,7 @@ class ServerContext(NamedTuple):
 
 
 class Server(Sanic):
-    ctx: ServerContext
+    ctx: ServerContext  # type: ignore
 
     def __init__(self) -> None:
         super().__init__("wkconnect")
