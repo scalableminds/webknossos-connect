@@ -3,7 +3,8 @@ import json
 import logging
 import os
 from copy import deepcopy
-from typing import Any, Awaitable, Callable, Dict, List, NamedTuple, Tuple, Type
+from types import SimpleNamespace
+from typing import Any, Awaitable, Callable, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientConnectorError, ClientResponseError
@@ -31,7 +32,7 @@ logger = logging.getLogger()
 available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Tiff, Wkw]
 
 
-class ServerContext(NamedTuple):
+class ServerContext(SimpleNamespace):
     http_client: ClientSession
     repository: Repository
     webknossos: WebKnossos
@@ -144,12 +145,10 @@ async def setup(app: Server, loop: Loop) -> None:
         config = app.config["backends"].get(backend_name, {})
         return (backend_name, backend_class(config, app.ctx.http_client))
 
-    app.ctx = ServerContext(
-        http_client=await ClientSession(raise_for_status=True).__aenter__(),
-        repository=Repository(),
-        webknossos=WebKnossos(app.config, app.ctx.http_client),
-        backends=dict(map(instanciate_backend, available_backends)),
-    )
+    app.ctx.http_client = await ClientSession(raise_for_status=True).__aenter__()
+    app.ctx.repository = Repository()
+    app.ctx.webknossos = WebKnossos(app.config, app.ctx.http_client)
+    app.ctx.backends = dict(map(instanciate_backend, available_backends))
 
 
 @app.listener("before_server_stop")
