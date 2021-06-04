@@ -1,10 +1,10 @@
 import asyncio
-from collections import OrderedDict
 from typing import List
 
 import numpy as np
 from sanic import Blueprint, response
 from sanic.request import Request
+from wkcuber.mag import Mag
 
 from ...utils.json import to_json
 from ...utils.types import Vec3D
@@ -31,12 +31,20 @@ async def histogram_post(
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
 
     sample_positions = generate_sample_positions(2, layer.boundingBox, 32)
-    # For the WKW backend, the bucket requests need to be 32-aligned
-    sample_positions = [(position // 32) * 32 for position in sample_positions]
-    sample_positions_distinct = list(OrderedDict.fromkeys(sample_positions))
+
+    # For the WKW backend, the bucket requests need to be bucket-aligned in the target mag
+    available_mags = sorted([Mag(mag["resolution"]) for mag in layer.wkwResolutions])
+    zoom_step = min(1, len(available_mags) - 1)
+    mag = available_mags[zoom_step]
+    align = Vec3D(*(mag.as_np() * 32))
+    sample_positions = [
+        Vec3D(*((position // align) * align)) for position in sample_positions
+    ]
+
+    sample_positions_distinct = sorted(set(sample_positions))
 
     bucket_requests = [
-        WKDataRequest(position, zoomStep=1, cubeSize=32, fourBit=False)
+        WKDataRequest(position, zoomStep=zoom_step, cubeSize=32, fourBit=False)
         for position in sample_positions_distinct
     ]
 
