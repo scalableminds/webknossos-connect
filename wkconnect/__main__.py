@@ -40,7 +40,7 @@ class ServerContext(SimpleNamespace):
 
 
 class Server(Sanic):
-    ctx: ServerContext  # type: ignore
+    ctx: ServerContext
 
     def __init__(self) -> None:
         super().__init__("wkconnect")
