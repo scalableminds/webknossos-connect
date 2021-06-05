@@ -34,7 +34,7 @@ class Channel:
         if not all(max(res) == 2 ** i for i, res in enumerate(self.resolutions)):
             error_msg = "\n".join(
                 [
-                    f"Boss resolutions do not follow power of two factors:",
+                    "Boss resolutions do not follow power of two factors:",
                     str(self.resolutions),
                     f"Maximum dimensions should be {[2 ** i for i in range(len(self.resolutions))]}.",
                 ]

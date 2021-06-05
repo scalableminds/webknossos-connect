@@ -1,13 +1,12 @@
 import asyncio
 
-import numpy as np
 from aiohttp import ClientSession
 
 from wkconnect.backends.neuroglancer.backend import Neuroglancer
 from wkconnect.utils.types import Vec3D
 
 neuroglancer: Neuroglancer
-data: np.ndarray
+data: bytes
 
 
 async def setup() -> None:
@@ -26,4 +25,4 @@ asyncio.run(setup())
 
 
 def timeit() -> None:
-    neuroglancer.decoders["jpeg"](data, "uint8", Vec3D(64, 64, 64), None)
+    neuroglancer.decoders["jpeg"](data, "uint8", Vec3D(64, 64, 64), None)  # noqa: F821

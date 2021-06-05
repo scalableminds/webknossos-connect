@@ -12,7 +12,9 @@ datasource_properties = Blueprint(__name__)
 async def datasource_properties_get(
     request: Request, organization_name: str, dataset_name: str
 ) -> response.HTTPResponse:
-    (_, dataset) = request.app.repository.get_dataset(organization_name, dataset_name)
+    (_, dataset) = request.app.ctx.repository.get_dataset(
+        organization_name, dataset_name
+    )
     return response.json(
         {"dataSource": to_json(dataset.to_webknossos()), "messages": []}
     )

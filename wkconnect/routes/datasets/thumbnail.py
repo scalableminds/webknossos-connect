@@ -22,10 +22,10 @@ async def get_thumbnail(
     width = int(request.args.get("width"))
     height = int(request.args.get("height"))
 
-    (backend_name, dataset) = request.app.repository.get_dataset(
+    (backend_name, dataset) = request.app.ctx.repository.get_dataset(
         organization_name, dataset_name
     )
-    backend = request.app.backends[backend_name]
+    backend = request.app.ctx.backends[backend_name]
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
     scale = min(3, len(layer.resolutions) - 1)
     center = layer.boundingBox.box().center()

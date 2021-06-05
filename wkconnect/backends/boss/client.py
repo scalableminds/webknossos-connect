@@ -134,7 +134,7 @@ class Client:
                 experiment,
                 channel,
                 str(resolution),
-                *(f"{l}:{r}" for l, r in zip(*range_box)),
+                *(f"{left}:{right}" for left, right in zip(*range_box)),
             ]
         )
         async with await self.auth_get(url, token_key) as r:

@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from copy import deepcopy
+from types import SimpleNamespace
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Type
 
 from aiohttp import ClientSession
@@ -28,16 +29,21 @@ from .webknossos.client import WebKnossosClient as WebKnossos
 from .webknossos.models import DataSource, DataSourceId, UnusableDataSource
 
 logger = logging.getLogger()
+available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Tiff, Wkw]
+
+
+class ServerContext(SimpleNamespace):
+    http_client: ClientSession
+    repository: Repository
+    webknossos: WebKnossos
+    backends: Dict[str, Backend]
 
 
 class Server(Sanic):
+    ctx: ServerContext
+
     def __init__(self) -> None:
-        super().__init__()
-        self.http_client: ClientSession
-        self.repository: Repository
-        self.webknossos: WebKnossos
-        self.backends: Dict[str, Backend]
-        self.available_backends: List[Type[Backend]] = [Boss, Neuroglancer, Tiff, Wkw]
+        super().__init__("wkconnect")
 
     async def add_dataset(
         self,
@@ -47,14 +53,14 @@ class Server(Sanic):
         dataset_name: str,
         report_to_wk: bool = True,
     ) -> DataSource:
-        backend = self.backends[backend_name]
+        backend = self.ctx.backends[backend_name]
         dataset = await backend.handle_new_dataset(
             organization_name, dataset_name, deepcopy(dataset_config)
         )
-        self.repository.add_dataset(backend_name, dataset)
+        self.ctx.repository.add_dataset(backend_name, dataset)
         wk_dataset = dataset.to_webknossos()
         if report_to_wk:
-            await self.webknossos.report_dataset(wk_dataset)
+            await self.ctx.webknossos.report_dataset(wk_dataset)
         return wk_dataset
 
     async def load_persisted_datasets(self) -> None:
@@ -100,7 +106,7 @@ class Server(Sanic):
             for result, (_, organization, dataset, _) in zip(results, dataset_tuples)
             if isinstance(result, Exception)
         ]
-        await self.webknossos.report_all_datasets(usable + unusable)
+        await self.ctx.webknossos.report_all_datasets(usable + unusable)
 
 
 app = Server()
@@ -137,12 +143,12 @@ async def setup(app: Server, loop: Loop) -> None:
     def instanciate_backend(backend_class: Type[Backend]) -> Tuple[str, Backend]:
         backend_name = backend_class.name()
         config = app.config["backends"].get(backend_name, {})
-        return (backend_name, backend_class(config, app.http_client))
+        return (backend_name, backend_class(config, app.ctx.http_client))
 
-    app.http_client = await ClientSession(raise_for_status=True).__aenter__()
-    app.repository = Repository()
-    app.webknossos = WebKnossos(app.config, app.http_client)
-    app.backends = dict(map(instanciate_backend, app.available_backends))
+    app.ctx.http_client = await ClientSession(raise_for_status=True).__aenter__()
+    app.ctx.repository = Repository()
+    app.ctx.webknossos = WebKnossos(app.config, app.ctx.http_client)
+    app.ctx.backends = dict(map(instanciate_backend, available_backends))
 
 
 @app.listener("before_server_stop")
@@ -154,8 +160,10 @@ async def stop_tasks(app: Server, loop: Loop) -> None:
 
 @app.listener("after_server_stop")
 async def shutdown(app: Server, loop: Loop) -> None:
-    await asyncio.gather(*(backend.on_shutdown() for backend in app.backends.values()))
-    await app.http_client.__aexit__(None, None, None)
+    await asyncio.gather(
+        *(backend.on_shutdown() for backend in app.ctx.backends.values())
+    )
+    await app.ctx.http_client.__aexit__(None, None, None)
 
 
 ## ROUTES ##
@@ -206,7 +214,7 @@ if __name__ == "__main__":
         app.add_task(repeat_every_seconds(10 * 60)(do_interaction))
 
     add_regular_interaction(
-        "ping webknossos", lambda app: app.webknossos.report_status()
+        "ping webknossos", lambda app: app.ctx.webknossos.report_status()
     )
     add_regular_interaction(
         "report datasets to webknossos", lambda app: app.load_persisted_datasets()

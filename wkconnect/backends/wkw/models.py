@@ -39,7 +39,7 @@ class Dataset(DatasetInfo):
             layer_name,
             layer_properties._category,
             WkBoundingBox(
-                topLeft=layer_properties._bounding_box["topLeft"],
+                topLeft=Vec3D(*layer_properties._bounding_box["topLeft"]),
                 width=layer_properties._bounding_box["width"],
                 height=layer_properties._bounding_box["height"],
                 depth=layer_properties._bounding_box["depth"],

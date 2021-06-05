@@ -8,4 +8,4 @@ autoflake \
   wkconnect benchmarks stubs
 
 black wkconnect benchmarks stubs
-isort --recursive wkconnect benchmarks
+isort wkconnect benchmarks
