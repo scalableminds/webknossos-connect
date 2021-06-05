@@ -23,13 +23,13 @@ fn convert_dtype(voxel_type: &wkwrap::VoxelType) -> String {
 }
 
 #[pyclass]
-struct DataResponse {
+struct Block {
   #[pyo3(get)]
   buf: PyObject,
   #[pyo3(get)]
   dtype: String,
   #[pyo3(get)]
-  num_channels: usize,
+  shape: (usize, usize, usize, usize),
 }
 
 #[pyclass]
@@ -63,7 +63,7 @@ impl DatasetHandle {
   fn read_block(&self, py: Python, src_pos: (u32, u32, u32)) -> PyResult<PyObject> {
     let dataset = self.dataset.clone();
     pyo3_asyncio::tokio::into_coroutine(py, async move {
-      let (buf, dtype, num_channels) = tokio::task::spawn_blocking(move || {
+      let (buf, dtype, shape) = tokio::task::spawn_blocking(move || {
         let offset = wkwrap::Vec3 {
           x: src_pos.0,
           y: src_pos.1,
@@ -74,7 +74,12 @@ impl DatasetHandle {
         (
           buf,
           convert_dtype(&dataset.header().voxel_type),
-          dataset.header().num_channels(),
+          (
+            dataset.header().num_channels(),
+            dataset.header().block_len() as usize,
+            dataset.header().block_len() as usize,
+            dataset.header().block_len() as usize,
+          ),
         )
       })
       .await
@@ -85,10 +90,10 @@ impl DatasetHandle {
         Ok(
           Py::new(
             py,
-            DataResponse {
+            Block {
               buf: py_bytes,
               dtype,
-              num_channels,
+              shape,
             },
           )
           .unwrap()

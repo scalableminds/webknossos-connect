@@ -80,10 +80,10 @@ class Dataset(DatasetInfo):
         offset = (
             np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / mag.as_np()
         ).astype(np.uint32)
-        data_response = await data_handle.read_block(tuple(offset))
-        return np.frombuffer(
-            data_response.buf, dtype=np.dtype(data_response.dtype)
-        ).reshape((data_response.num_channels, 32, 32, 32), order="F")
+        block = await data_handle.read_block(tuple(offset))
+        return np.frombuffer(block.buf, dtype=np.dtype(block.dtype)).reshape(
+            block.shape, order="F"
+        )
 
     def clear_cache(self) -> None:
         self.read_data.cache_clear()  # pylint: disable=no-member
