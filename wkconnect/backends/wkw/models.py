@@ -10,7 +10,10 @@ from wkcuber.mag import Mag
 
 from wkconnect.utils.types import Vec3D, Vec3Df
 
-from ...fast_wkw import DatasetHandle  # pylint: disable=no-name-in-module
+from ...fast_wkw import (  # pylint: disable=no-name-in-module
+    DatasetHandle,
+    DatasetRepository,
+)
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
@@ -22,7 +25,8 @@ from ..backend import DatasetInfo
 class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
-    dataset_handle: WKDataset = None
+    dataset_handle: WKDataset
+    repo: DatasetRepository
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
@@ -61,7 +65,7 @@ class Dataset(DatasetInfo):
         available_mags = sorted([Mag(mag) for mag in layer.mags.keys()])
         mag = available_mags[zoom_step]
         mag_dataset = layer.get_mag(mag)
-        data_handle = DatasetHandle(str(mag_dataset.view.path))
+        data_handle = self.repo.get_dataset(str(mag_dataset.view.path))
         return (data_handle, mag)
 
     @alru_cache(maxsize=2 ** 12, cache_exceptions=False)

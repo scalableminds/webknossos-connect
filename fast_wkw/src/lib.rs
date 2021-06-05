@@ -1,6 +1,5 @@
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
-use pyo3::wrap_pyfunction;
 use std::path::Path;
 
 mod wkw_dataset;
@@ -34,19 +33,33 @@ struct DataResponse {
 }
 
 #[pyclass]
+struct DatasetRepository {
+  file_cache: wkw_dataset::FileCache,
+}
+
+#[pymethods]
+impl DatasetRepository {
+  #[new]
+  fn new(cap: usize) -> Self {
+    DatasetRepository {
+      file_cache: wkw_dataset::FileCache::new(cap),
+    }
+  }
+
+  fn get_dataset(&self, path: String) -> DatasetHandle {
+    DatasetHandle {
+      dataset: CachedDataset::new(Path::new(&path), self.file_cache.clone()).unwrap(),
+    }
+  }
+}
+
+#[pyclass]
 struct DatasetHandle {
   dataset: CachedDataset,
 }
 
 #[pymethods]
 impl DatasetHandle {
-  #[new]
-  fn new(path: String) -> Self {
-    DatasetHandle {
-      dataset: CachedDataset::new(Path::new(&path)).unwrap(),
-    }
-  }
-
   fn read_block(&self, py: Python, src_pos: (u32, u32, u32)) -> PyResult<PyObject> {
     let dataset = self.dataset.clone();
     pyo3_asyncio::tokio::into_coroutine(py, async move {
@@ -86,17 +99,12 @@ impl DatasetHandle {
   }
 }
 
-#[pyfunction]
-fn get_event_loop(py: Python) -> PyResult<PyObject> {
-  Ok(pyo3_asyncio::get_event_loop(py).into())
-}
-
 #[pymodule]
 fn fast_wkw(py: Python, m: &PyModule) -> PyResult<()> {
   pyo3_asyncio::try_init(py)?;
   pyo3_asyncio::tokio::init_multi_thread_once();
 
-  m.add_function(wrap_pyfunction!(get_event_loop, m)?)?;
+  m.add_class::<DatasetRepository>()?;
   m.add_class::<DatasetHandle>()?;
 
   Ok(())

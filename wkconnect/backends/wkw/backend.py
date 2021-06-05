@@ -6,6 +6,7 @@ import numpy as np
 from aiohttp import ClientSession
 from wkcuber.api.Dataset import WKDataset
 
+from ...fast_wkw import DatasetRepository  # pylint: disable=no-name-in-module
 from ...utils.types import JSON, Vec3D
 from ..backend import Backend, DatasetInfo
 from .models import Dataset
@@ -14,15 +15,18 @@ logger = logging.getLogger()
 
 
 class Wkw(Backend):
+    repo: DatasetRepository
+
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
         super().__init__(config, http_client)
+        self.repo = DatasetRepository(1000)
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
 
         path = Wkw.path(dataset_info, organization_name, dataset_name)
-        return Dataset(organization_name, dataset_name, WKDataset(str(path)))
+        return Dataset(organization_name, dataset_name, WKDataset(str(path)), self.repo)
 
     async def read_data(
         self,

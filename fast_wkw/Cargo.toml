@@ -17,3 +17,4 @@ tokio = "1.4"
 wkwrap = { path = "../webknossos-wrap-lz4-crate/rust" }
 lz4_flex = "0.8"
 memmap = "0.7"
+lru = "0.6"
