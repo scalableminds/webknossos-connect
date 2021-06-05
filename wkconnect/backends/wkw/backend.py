@@ -19,7 +19,8 @@ class Wkw(Backend):
 
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
         super().__init__(config, http_client)
-        self.repo = DatasetRepository(1000)
+        cache_size = config.get("dataCacheSize", 1000)
+        self.repo = DatasetRepository(cache_size)
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
