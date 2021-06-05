@@ -6,9 +6,8 @@ RUN mkdir /app
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y libturbojpeg0 liblz4-dev curl && \
-    rm -rf /var/lib/apt/lists/* && \
-    curl https://sh.rustup.rs -sSf | bash -s -- -y
+    apt-get install -y libturbojpeg0 && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml .
 COPY poetry.lock .
