@@ -51,6 +51,11 @@ impl DatasetRepository {
       dataset: CachedDataset::new(Path::new(&path), self.file_cache.clone()).unwrap(),
     }
   }
+
+  fn clear_cache_prefix(&self, path_prefix: String) -> PyResult<()> {
+    self.file_cache.clear_prefix(Path::new(&path_prefix));
+    Ok(())
+  }
 }
 
 #[pyclass]

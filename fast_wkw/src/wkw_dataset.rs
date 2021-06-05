@@ -32,6 +32,24 @@ impl FileCache {
       Err(_) => None,
     }
   }
+
+  pub fn clear_prefix(&self, path_prefix: &Path) {
+    let mut cache = self.inner.lock().unwrap();
+    let paths_to_delete = cache
+      .iter()
+      .filter_map(|(path, _)| {
+        if path.starts_with(path_prefix) {
+          Some(path)
+        } else {
+          None
+        }
+      })
+      .cloned()
+      .collect::<Vec<_>>();
+    for path in paths_to_delete.into_iter() {
+      cache.pop(&path);
+    }
+  }
 }
 
 #[derive(Clone, Debug)]

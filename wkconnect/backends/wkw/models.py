@@ -88,7 +88,4 @@ class Dataset(DatasetInfo):
     def clear_cache(self) -> None:
         self.read_data.cache_clear()  # pylint: disable=no-member
         self.get_data_handle.cache_clear()  # pylint: disable=no-member
-        for layer_handle in self.dataset_handle.layers.values():
-            for mag in layer_handle.mags.values():
-                if mag.view._is_opened:
-                    mag.close()
+        self.repo.clear_cache_prefix(str(self.dataset_handle.path))
