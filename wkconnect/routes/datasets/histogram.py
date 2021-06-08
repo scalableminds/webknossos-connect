@@ -10,8 +10,8 @@ from ...utils.json import to_json
 from ...utils.types import Vec3D
 from ...webknossos.access import AccessRequest, authorized
 from ...webknossos.models import BoundingBox as WkBoundingBox
-from ...webknossos.models import DataRequest as WKDataRequest
 from ...webknossos.models import DataLayer as WKDataLayer
+from ...webknossos.models import DataRequest as WKDataRequest
 from ...webknossos.models import Histogram
 
 histogram = Blueprint(__name__)
