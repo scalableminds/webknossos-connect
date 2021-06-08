@@ -33,15 +33,15 @@ struct Block {
 }
 
 #[pyclass]
-struct DatasetRepository {
+struct DatasetCache {
   file_cache: wkw_dataset::FileCache,
 }
 
 #[pymethods]
-impl DatasetRepository {
+impl DatasetCache {
   #[new]
   fn new(cap: usize) -> Self {
-    DatasetRepository {
+    DatasetCache {
       file_cache: wkw_dataset::FileCache::new(cap),
     }
   }
@@ -114,7 +114,7 @@ fn fast_wkw(py: Python, m: &PyModule) -> PyResult<()> {
   pyo3_asyncio::try_init(py)?;
   pyo3_asyncio::tokio::init_multi_thread_once();
 
-  m.add_class::<DatasetRepository>()?;
+  m.add_class::<DatasetCache>()?;
   m.add_class::<DatasetHandle>()?;
 
   Ok(())

@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 from sanic import Blueprint, response
@@ -11,6 +11,7 @@ from ...utils.types import Vec3D
 from ...webknossos.access import AccessRequest, authorized
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataRequest as WKDataRequest
+from ...webknossos.models import DataLayer as WKDataLayer
 from ...webknossos.models import Histogram
 
 histogram = Blueprint(__name__)
@@ -33,16 +34,7 @@ async def histogram_post(
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
 
     sample_positions = generate_sample_positions(2, layer.boundingBox, BUCKET_SIZE)
-
-    # For the WKW backend, the bucket requests need to be bucket-aligned in the target mag
-    available_mags = sorted([Mag(mag["resolution"]) for mag in layer.wkwResolutions])
-    zoom_step = min(1, len(available_mags) - 1)
-    mag = available_mags[zoom_step]
-    align = Vec3D(*(mag.as_np() * BUCKET_SIZE))
-    sample_positions = [
-        Vec3D(*((position // align) * align)) for position in sample_positions
-    ]
-
+    sample_positions, zoom_step = align_positions_with_mag(sample_positions, layer)
     sample_positions_distinct = sorted(set(sample_positions))
 
     bucket_requests = [
@@ -86,6 +78,20 @@ async def histogram_post(
         raise Exception("Histogram for data type {data.dtype} is not supported.")
 
     return response.json(to_json([histogram]))
+
+
+def align_positions_with_mag(
+    sample_positions: List[Vec3D], layer: WKDataLayer
+) -> Tuple[List[Vec3D], int]:
+    # For the WKW backend, the bucket requests need to be bucket-aligned in the target mag
+    available_mags = sorted([Mag(mag["resolution"]) for mag in layer.wkwResolutions])
+    zoom_step = min(1, len(available_mags) - 1)
+    mag = available_mags[zoom_step]
+    align = Vec3D(*(mag.as_np() * BUCKET_SIZE))
+    sample_positions = [
+        Vec3D(*((position // align) * align)) for position in sample_positions
+    ]
+    return sample_positions, zoom_step
 
 
 def generate_sample_positions(

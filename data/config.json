@@ -14,7 +14,7 @@
     "backends": {
         "neuroglancer": {},
         "wkw": {
-            "dataCacheSize": 100
+            "fileCacheMaxEntries": 1000
         }
     },
     "datasets_path": "data/datasets.json"

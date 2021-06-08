@@ -10,10 +10,7 @@ from wkcuber.mag import Mag
 
 from wkconnect.utils.types import Vec3D, Vec3Df
 
-from ...fast_wkw import (  # pylint: disable=no-name-in-module
-    DatasetHandle,
-    DatasetRepository,
-)
+from ...fast_wkw import DatasetHandle, DatasetCache  # pylint: disable=no-name-in-module
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
@@ -26,7 +23,7 @@ class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     dataset_handle: WKDataset
-    repo: DatasetRepository
+    wkw_cache: DatasetCache
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
@@ -65,7 +62,7 @@ class Dataset(DatasetInfo):
         available_mags = sorted([Mag(mag) for mag in layer.mags.keys()])
         mag = available_mags[zoom_step]
         mag_dataset = layer.get_mag(mag)
-        data_handle = self.repo.get_dataset(str(mag_dataset.view.path))
+        data_handle = self.wkw_cache.get_dataset(str(mag_dataset.view.path))
         return (data_handle, mag)
 
     @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
@@ -88,4 +85,4 @@ class Dataset(DatasetInfo):
     def clear_cache(self) -> None:
         self.read_data.cache_clear()  # pylint: disable=no-member
         self.get_data_handle.cache_clear()  # pylint: disable=no-member
-        self.repo.clear_cache_prefix(str(self.dataset_handle.path))
+        self.wkw_cache.clear_cache_prefix(str(self.dataset_handle.path))
