@@ -14,7 +14,7 @@ crate-type = ["cdylib"]
 pyo3 = { version = "0.13", features = ["extension-module"] }
 pyo3-asyncio = { version = "0.13", features = ["tokio-runtime"] }
 tokio = "1.4"
-wkwrap = { path = "../webknossos-wrap-lz4-crate/rust" }
+wkwrap = "1.6.0"
 lz4_flex = "0.8"
 memmap = "0.7"
 lru = "0.6"
