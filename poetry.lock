@@ -839,6 +839,26 @@ python-versions = ">=3.7"
 numpy = ">=1.16.5"
 
 [[package]]
+name = "semantic-version"
+version = "2.8.5"
+description = "A library implementing the 'SemVer' scheme."
+category = "dev"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+
+[[package]]
+name = "setuptools-rust"
+version = "0.12.1"
+description = "Setuptools Rust extension plugin"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+semantic-version = ">=2.6.0"
+toml = ">=0.9.0"
+
+[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -993,7 +1013,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "5fa078a3df40b453e532b2ab0703cf027297163ae7a51cacf26fc4e8a0c16b66"
+content-hash = "18936774f2c567032a2b77d55b38e10d5309472970aa4a11e164989193bd4f46"
 
 [metadata.files]
 aiofiles = [
@@ -1764,6 +1784,14 @@ scipy = [
     {file = "scipy-1.6.1-cp39-cp39-win32.whl", hash = "sha256:8e403a337749ed40af60e537cc4d4c03febddcc56cd26e774c9b1b600a70d3e4"},
     {file = "scipy-1.6.1-cp39-cp39-win_amd64.whl", hash = "sha256:a5193a098ae9f29af283dcf0041f762601faf2e595c0db1da929875b7570353f"},
     {file = "scipy-1.6.1.tar.gz", hash = "sha256:c4fceb864890b6168e79b0e714c585dbe2fd4222768ee90bc1aa0f8218691b11"},
+]
+semantic-version = [
+    {file = "semantic_version-2.8.5-py2.py3-none-any.whl", hash = "sha256:45e4b32ee9d6d70ba5f440ec8cc5221074c7f4b0e8918bdab748cc37912440a9"},
+    {file = "semantic_version-2.8.5.tar.gz", hash = "sha256:d2cb2de0558762934679b9a104e82eca7af448c9f4974d1f3eeccff651df8a54"},
+]
+setuptools-rust = [
+    {file = "setuptools-rust-0.12.1.tar.gz", hash = "sha256:647009e924f0ae439c7f3e0141a184a69ad247ecb9044c511dabde232d3d570e"},
+    {file = "setuptools_rust-0.12.1-py3-none-any.whl", hash = "sha256:60c9bf1423a725e472c4a2a6274598251f959f3ed5ffe7698526e78bb431b9b7"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},

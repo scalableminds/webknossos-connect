@@ -18,7 +18,7 @@ RUN poetry install
 # Run install again for installing wkconnect globally
 COPY fast_wkw fast_wkw
 COPY wkconnect wkconnect
-RUN poetry install && poetry build
+RUN poetry install
 
 COPY data data
 VOLUME /app/data
