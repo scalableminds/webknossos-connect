@@ -16,15 +16,9 @@ COPY poetry.toml .
 RUN poetry install
 
 # Run install again for installing wkconnect globally
-COPY wkconnect wkconnect
-RUN poetry install
-
 COPY fast_wkw fast_wkw
-RUN cd fast_wkw && \
-    $HOME/.cargo/bin/cargo build --release && \
-    cp target/release/libfast_wkw*.so ../wkconnect/fast_wkw.so && \
-    cd .. && \
-    rm -r fast_wkw
+COPY wkconnect wkconnect
+RUN poetry install && poetry build
 
 COPY data data
 VOLUME /app/data
