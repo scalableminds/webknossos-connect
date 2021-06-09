@@ -10,6 +10,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
 
+ENV PATH="$HOME/.cargo/bin:${PATH}"
+
 COPY pyproject.toml .
 COPY poetry.lock .
 COPY poetry.toml .
