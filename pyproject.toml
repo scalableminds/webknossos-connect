@@ -5,7 +5,12 @@ description = ""
 authors = ["scalable minds <hello@scalableminds.com>"]
 license = "AGPL-3.0"
 build = "build.py"
-include = ["wkconnect/fast_wkw.so", "wkconnect/fast_wkw.pyd"]
+readme = "README.md"
+include = [
+  { path = "fast_wkw/src/*.rs", format = "sdist" },
+  { path = "fast_wkw/Cargo.*", format = "sdist" },
+  { path = "fast_wkw/.cargo/*", format = "sdist" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -35,5 +40,5 @@ pylint = "2.8.3"
 setuptools-rust = "^0.12.1"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=0.12", "wheel", "setuptools-rust"]
 build-backend = "poetry.masonry.api"

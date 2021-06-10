@@ -12,7 +12,9 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
         {
             "rust_extensions": [
                 RustExtension(
-                    "wkconnect.fast_wkw", path=(Path("fast_wkw") / "Cargo.toml")
+                    "wkconnect.fast_wkw",
+                    path=(Path("fast_wkw") / "Cargo.toml"),
+                    quiet=False,
                 )
             ],
             "zip_safe": False,
