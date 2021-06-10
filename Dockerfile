@@ -14,6 +14,7 @@ COPY pyproject.toml .
 COPY poetry.lock .
 COPY poetry.toml .
 COPY build.py .
+COPY README.md .
 COPY fast_wkw fast_wkw
 COPY wkconnect wkconnect
 
