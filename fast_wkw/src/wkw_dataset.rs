@@ -1,36 +1,31 @@
 use lru::LruCache;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use wkwrap::{Dataset, Header, Result, Vec3};
 
-use crate::wkw_file::File;
+use crate::wkw_file::WkwFile;
 
 #[derive(Clone, Debug)]
-pub struct FileCache {
-  inner: Arc<Mutex<LruCache<PathBuf, Arc<RwLock<File>>>>>,
+pub struct WkwFileCache {
+  inner: Arc<Mutex<LruCache<PathBuf, Arc<WkwFile>>>>,
 }
 
-impl FileCache {
+impl WkwFileCache {
   pub fn new(cap: usize) -> Self {
     Self {
       inner: Arc::new(Mutex::new(LruCache::new(cap))),
     }
   }
 
-  pub fn get_file(&self, path: &Path) -> Option<Arc<RwLock<File>>> {
+  pub fn get_file(&self, path: &Path) -> Result<Arc<WkwFile>> {
     let mut cache = self.inner.lock().unwrap();
     let cached_file = cache.get(&PathBuf::from(path)).cloned();
     if let Some(cached_file) = cached_file {
-      return Some(cached_file);
+      return Ok(cached_file);
     }
-    match File::open(&path) {
-      Ok(file) => {
-        let file = Arc::new(RwLock::new(file));
-        cache.put(PathBuf::from(path), file.clone());
-        Some(file)
-      }
-      Err(_) => None,
-    }
+    let file = Arc::new(WkwFile::open(&path)?);
+    cache.put(PathBuf::from(path), file.clone());
+    Ok(file)
   }
 
   pub fn clear_prefix(&self, path_prefix: &Path) {
@@ -53,14 +48,14 @@ impl FileCache {
 }
 
 #[derive(Clone, Debug)]
-pub struct CachedDataset {
+pub struct WkwDataset {
   root: PathBuf,
   header: Header,
-  file_cache: FileCache,
+  file_cache: WkwFileCache,
 }
 
-impl CachedDataset {
-  pub fn new(root: &Path, file_cache: FileCache) -> Result<Self> {
+impl WkwDataset {
+  pub fn new(root: &Path, file_cache: WkwFileCache) -> Result<Self> {
     if !root.is_dir() {
       return Err(format!("Dataset root {:?} is not a directory", &root));
     }
@@ -95,9 +90,9 @@ impl CachedDataset {
 
     let file_src_pos = src_pos - (file_ids << file_len_vx_log2);
 
-    // try to open file
-    if let Some(file) = self.file_cache.get_file(&file_path) {
-      file.read().unwrap().read_block(file_src_pos, buf)?;
+    // try to open file, it is fine to return an empty bucket if the file is not present
+    if let Ok(file) = self.file_cache.get_file(&file_path) {
+      file.read_block(file_src_pos, buf)?;
     }
     Ok(())
   }

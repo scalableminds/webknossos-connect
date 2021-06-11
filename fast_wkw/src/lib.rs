@@ -5,7 +5,7 @@ use std::path::Path;
 mod wkw_dataset;
 mod wkw_file;
 
-use crate::wkw_dataset::CachedDataset;
+use crate::wkw_dataset::WkwDataset;
 
 fn convert_dtype(voxel_type: &wkwrap::VoxelType) -> String {
   String::from(match voxel_type {
@@ -34,7 +34,7 @@ struct Block {
 
 #[pyclass]
 struct DatasetCache {
-  file_cache: wkw_dataset::FileCache,
+  file_cache: wkw_dataset::WkwFileCache,
 }
 
 #[pymethods]
@@ -42,13 +42,13 @@ impl DatasetCache {
   #[new]
   fn new(cap: usize) -> Self {
     DatasetCache {
-      file_cache: wkw_dataset::FileCache::new(cap),
+      file_cache: wkw_dataset::WkwFileCache::new(cap),
     }
   }
 
   fn get_dataset(&self, path: String) -> DatasetHandle {
     DatasetHandle {
-      dataset: CachedDataset::new(Path::new(&path), self.file_cache.clone()).unwrap(),
+      dataset: WkwDataset::new(Path::new(&path), self.file_cache.clone()).unwrap(),
     }
   }
 
@@ -60,7 +60,7 @@ impl DatasetCache {
 
 #[pyclass]
 struct DatasetHandle {
-  dataset: CachedDataset,
+  dataset: WkwDataset,
 }
 
 #[pymethods]

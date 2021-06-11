@@ -4,14 +4,14 @@ use std::{fs, path};
 use wkwrap::{BlockType, Header, Morton, Result, Vec3};
 
 #[derive(Debug)]
-pub struct File {
+pub struct WkwFile {
   file_mmap: Mmap,
   header: Header,
 }
 
-impl File {
-  fn new(file: fs::File, header: Header) -> Result<File> {
-    Ok(File {
+impl WkwFile {
+  fn new(file: fs::File, header: Header) -> Result<Self> {
+    Ok(Self {
       file_mmap: unsafe {
         MmapOptions::new().map(&file).or(Err(String::from(
           "Could not open WKW file as memory-mapped file",
@@ -21,7 +21,7 @@ impl File {
     })
   }
 
-  pub fn open(path: &path::Path) -> Result<File> {
+  pub fn open(path: &path::Path) -> Result<Self> {
     let mut file = fs::File::open(path).or(Err(format!("Could not open WKW file {:?}", path)))?;
     let header = Header::read(&mut file)?;
     Ok(Self::new(file, header)?)
