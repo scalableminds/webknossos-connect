@@ -6,6 +6,7 @@ import numpy as np
 from aiohttp import ClientSession
 from wkcuber.api.Dataset import WKDataset
 
+from ...fast_wkw import DatasetCache  # pylint: disable=no-name-in-module
 from ...utils.types import JSON, Vec3D
 from ..backend import Backend, DatasetInfo
 from .models import Dataset
@@ -14,15 +15,21 @@ logger = logging.getLogger()
 
 
 class Wkw(Backend):
+    wkw_cache: DatasetCache
+
     def __init__(self, config: Dict, http_client: ClientSession) -> None:
         super().__init__(config, http_client)
+        cache_size = config.get("fileCacheMaxEntries", 1000)
+        self.wkw_cache = DatasetCache(cache_size)
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
     ) -> DatasetInfo:
 
         path = Wkw.path(dataset_info, organization_name, dataset_name)
-        return Dataset(organization_name, dataset_name, WKDataset(str(path)))
+        return Dataset(
+            organization_name, dataset_name, WKDataset(str(path)), self.wkw_cache
+        )
 
     async def read_data(
         self,
@@ -33,7 +40,7 @@ class Wkw(Backend):
         shape: Vec3D,
     ) -> Optional[np.ndarray]:
         dataset = cast(Dataset, abstract_dataset)
-        return dataset.read_data(layer_name, zoom_step, wk_offset, shape)
+        return await dataset.read_data(layer_name, zoom_step, wk_offset, shape)
 
     def clear_dataset_cache(self, abstract_dataset: DatasetInfo) -> None:
         dataset = cast(Dataset, abstract_dataset)

@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
+from async_lru import alru_cache
 from wkcuber.api.Dataset import WKDataset
 from wkcuber.api.Properties.LayerProperties import LayerProperties
 from wkcuber.mag import Mag
 
 from wkconnect.utils.types import Vec3D, Vec3Df
 
+from ...fast_wkw import DatasetCache, DatasetHandle  # pylint: disable=no-name-in-module
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
@@ -20,7 +22,8 @@ from ..backend import DatasetInfo
 class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
-    dataset_handle: WKDataset = None
+    dataset_handle: WKDataset
+    wkw_cache: DatasetCache
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
@@ -51,25 +54,35 @@ class Dataset(DatasetInfo):
             layer_properties._element_class,
         )
 
-    @lru_cache(maxsize=2 ** 12)
-    def read_data(
-        self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
-    ) -> Optional[np.ndarray]:
+    @lru_cache(maxsize=1000)
+    def get_data_handle(
+        self, layer_name: str, zoom_step: int
+    ) -> Tuple[DatasetHandle, Mag]:
         layer = self.dataset_handle.get_layer(layer_name)
-        available_mags = sorted([Mag(mag).mag for mag in layer.mags.keys()])
+        available_mags = sorted([Mag(mag) for mag in layer.mags.keys()])
         mag = available_mags[zoom_step]
         mag_dataset = layer.get_mag(mag)
-        offset = (
-            np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / np.array(Mag(mag).mag)
-        ).astype(np.uint32)
-        if not mag_dataset.view._is_opened:
-            mag_dataset.open()
+        data_handle = self.wkw_cache.get_dataset(str(mag_dataset.view.path))
+        return (data_handle, mag)
 
-        return mag_dataset.read(tuple(offset), shape)
+    @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
+    async def read_data(
+        self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
+    ) -> Optional[np.ndarray]:
+        assert shape == Vec3D(
+            32, 32, 32
+        ), "Only buckets of 32 edge length are supported"
+        assert shape % 32 == Vec3D(0, 0, 0), "Only 32-aligned buckets are supported"
+        data_handle, mag = self.get_data_handle(layer_name, zoom_step)
+        offset = (
+            np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / mag.as_np()
+        ).astype(np.uint32)
+        block = await data_handle.read_block(tuple(offset))
+        return np.frombuffer(block.buf, dtype=np.dtype(block.dtype)).reshape(
+            block.shape, order="F"
+        )
 
     def clear_cache(self) -> None:
         self.read_data.cache_clear()  # pylint: disable=no-member
-        for layer_handle in self.dataset_handle.layers.values():
-            for mag in layer_handle.mags.values():
-                if mag.view._is_opened:
-                    mag.close()
+        self.get_data_handle.cache_clear()  # pylint: disable=no-member
+        self.wkw_cache.clear_cache_prefix(str(self.dataset_handle.path))

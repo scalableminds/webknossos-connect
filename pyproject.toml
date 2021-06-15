@@ -4,6 +4,13 @@ version = "0.1.0"
 description = ""
 authors = ["scalable minds <hello@scalableminds.com>"]
 license = "AGPL-3.0"
+build = "build.py"
+readme = "README.md"
+include = [
+  { path = "fast_wkw/src/*.rs", format = "sdist" },
+  { path = "fast_wkw/Cargo.*", format = "sdist" },
+  { path = "fast_wkw/.cargo/*", format = "sdist" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -30,7 +37,8 @@ mypy = "==0.770"
 pep8-naming = "*"
 py-spy = "*"
 pylint = "2.8.3"
+setuptools-rust = "^0.12.1"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=0.12", "wheel", "setuptools-rust"]
 build-backend = "poetry.masonry.api"

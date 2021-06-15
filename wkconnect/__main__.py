@@ -220,8 +220,23 @@ if __name__ == "__main__":
         "report datasets to webknossos", lambda app: app.load_persisted_datasets()
     )
 
-    app.run(
+    # We need to run sanic in the regular asyncio event loop
+    loop = asyncio.get_event_loop()
+    server_coroutine = app.create_server(
         host=app.config["server"]["host"],
         port=app.config["server"]["port"],
         access_log=False,
+        return_asyncio_server=True,
+        asyncio_server_kwargs=None,
     )
+    server_task = asyncio.ensure_future(server_coroutine, loop=loop)
+    server = loop.run_until_complete(server_task)
+    if server:
+        server.after_start()
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            server.before_stop()
+            loop.stop()
+        finally:
+            server.after_stop()

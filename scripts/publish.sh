@@ -16,7 +16,9 @@ cp pyproject.toml pyproject.toml.bak
 sed -i "0,/version = \".*\"/{s/version = \".*\"/version = \"$PKG_VERSION\"/}" pyproject.toml
 echo "__version__ = '$PKG_VERSION'" > wkconnect/version.py
 
-poetry publish --build -u $PYPI_USERNAME -p $PYPI_PASSWORD
+# Only sdist is supported at the moment. See https://github.com/PyO3/setuptools-rust/issues/146
+poetry build -f sdist
+poetry publish -u $PYPI_USERNAME -p $PYPI_PASSWORD
 
 # Restore files
 mv pyproject.toml.bak pyproject.toml

@@ -1,0 +1,20 @@
+[package]
+name = "fast_wkw"
+version = "0.1.0"
+authors = ["scalable minds <hello@scalableminds.com>"]
+edition = "2018"
+
+[lib]
+name = "fast_wkw"
+crate-type = ["cdylib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pyo3 = { version = "0.13", features = ["extension-module"] }
+pyo3-asyncio = { version = "0.13", features = ["tokio-runtime"] }
+tokio = "1.4"
+wkwrap = "1.6.0"
+lz4_flex = "0.8"
+memmap = "0.7"
+lru = "0.6"
