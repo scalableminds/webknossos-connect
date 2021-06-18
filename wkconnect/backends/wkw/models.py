@@ -57,9 +57,11 @@ class Dataset(DatasetInfo):
     @lru_cache(maxsize=1000)
     def get_data_handle(
         self, layer_name: str, zoom_step: int
-    ) -> Tuple[DatasetHandle, Mag]:
+    ) -> Optional[Tuple[DatasetHandle, Mag]]:
         layer = self.dataset_handle.get_layer(layer_name)
         available_mags = sorted([Mag(mag) for mag in layer.mags.keys()])
+        if zoom_step < 0 or zoom_step >= len(available_mags):
+            return None
         mag = available_mags[zoom_step]
         mag_dataset = layer.get_mag(mag)
         data_handle = self.wkw_cache.get_dataset(str(mag_dataset.view.path))
@@ -73,7 +75,10 @@ class Dataset(DatasetInfo):
             32, 32, 32
         ), "Only buckets of 32 edge length are supported"
         assert shape % 32 == Vec3D(0, 0, 0), "Only 32-aligned buckets are supported"
-        data_handle, mag = self.get_data_handle(layer_name, zoom_step)
+        data_handle_info = self.get_data_handle(layer_name, zoom_step)
+        if data_handle_info is None:
+            return None
+        data_handle, mag = data_handle_info
         offset = (
             np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / mag.as_np()
         ).astype(np.uint32)
