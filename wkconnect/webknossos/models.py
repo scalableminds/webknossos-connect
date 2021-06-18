@@ -60,7 +60,7 @@ class DataLayer:
 
     def __post_init__(self) -> None:
         assert self.category in ["color", "segmentation"]
-        assert self.elementClass in ["uint8", "uint16", "uint32", "uint64"]
+        assert self.elementClass in ["uint8", "uint16", "uint24", "uint32", "uint64"]
         if self.category == "segmentation":
             if self.largestSegmentId is None:
                 self.largestSegmentId = cast(int, np.iinfo(self.elementClass).max)
