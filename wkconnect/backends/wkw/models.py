@@ -59,8 +59,9 @@ class Dataset(DatasetInfo):
         self, layer_name: str, zoom_step: int
     ) -> Tuple[DatasetHandle, Mag]:
         layer = self.dataset_handle.get_layer(layer_name)
-        available_mags = {max(mag.to_array()): mag for mag in layer.mags.keys()}
-        mag = available_mags[2 ** zoom_step]
+        mag = next(
+            mag for mag in layer.mags.keys() if 2 ** zoom_step == max(mag.to_array())
+        )
         mag_dataset = layer.get_mag(mag)
         data_handle = self.wkw_cache.get_dataset(str(mag_dataset.view.path))
         return (data_handle, mag)
