@@ -62,7 +62,9 @@ class Dataset(DatasetInfo):
         # Finding the right mag for the zoom_step:
         # 2 ** zoomStep = max(mag.x, mag.y, mag.z)
         mag = next(
-            mag for mag in layer.mags.keys() if 2 ** zoom_step == max(mag.to_array())
+            mag
+            for mag in layer.mags.keys()
+            if 2 ** zoom_step == max(Mag(mag.to_array()))
         )
         mag_dataset = layer.get_mag(mag)
         data_handle = self.wkw_cache.get_dataset(str(mag_dataset.view.path))
