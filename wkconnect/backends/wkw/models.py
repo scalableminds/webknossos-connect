@@ -62,16 +62,16 @@ class Dataset(DatasetInfo):
         # Finding the right mag for the zoom_step:
         # 2 ** zoomStep = max(mag.x, mag.y, mag.z)
         mag_datasets = [
-            mag
-            for mag in layer.mags.values()
-            if (2 ** zoom_step) == max(Mag(mag.name).to_array())
+            mag_dataset
+            for mag_dataset in layer.mags.values()
+            if (2 ** zoom_step) == Mag(mag_dataset.name).as_np().max()
         ]
         if len(mag_datasets) < 1:
             return None
         mag_dataset = mag_datasets[0]
 
         data_handle = self.wkw_cache.get_dataset(str(mag_dataset.view.path))
-        return (data_handle, mag_dataset.name)
+        return (data_handle, Mag(mag_dataset.name))
 
     @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
     async def read_data(
