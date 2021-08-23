@@ -46,6 +46,9 @@ class Vec3D(NamedTuple):
     def to_int(self) -> Vec3D:
         return Vec3D(*map(int, self))
 
+    def as_np(self) -> np.ndarray:
+        return np.array([self.x, self.y, self.z], dtype=np.uint64)
+
     @classmethod
     def zeros(cls) -> Vec3D:
         return cls(0, 0, 0)
@@ -85,6 +88,9 @@ class Vec3Df(NamedTuple):
 
     def to_int(self) -> Vec3D:
         return Vec3D(*map(int, self))
+
+    def as_np(self) -> np.ndarray:
+        return np.array([self.x, self.y, self.z], dtype=np.float64)
 
     @classmethod
     def zeros(cls) -> Vec3Df:
