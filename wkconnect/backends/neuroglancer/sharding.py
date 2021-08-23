@@ -1,13 +1,18 @@
 import gzip
 import math
-import numpy as np
 from dataclasses import dataclass, field
 from typing import Callable, Tuple, cast
+
+import numpy as np
 
 from ...utils.types import Vec3D
 
 
 def compressed_morton_code(pos: Vec3D, grid_size_vec: Vec3D) -> np.uint64:
+    """
+    Computes the compressed morton code as per
+    https://github.com/google/neuroglancer/blob/master/src/neuroglancer/datasource/precomputed/volume.md#compressed-morton-code
+    """
     pos_np = np.atleast_2d(pos.as_np()).astype(np.uint32)
     grid_size = grid_size_vec.as_np()
 
@@ -28,7 +33,11 @@ def compressed_morton_code(pos: Vec3D, grid_size_vec: Vec3D) -> np.uint64:
 
 # flake8: noqa: C901
 def mmh3_128(key: bytes, seed: int = 0x0) -> int:
-    """ Implements 128bit murmur3 hash for x86. """
+    """
+    Implements 128bit murmur3 hash for x86.
+    pymmh3 was written by Fredrik Kihlander and enhanced by Swapnil Gusani.
+    Public domain code. https://code.google.com/p/smhasher/wiki/MurmurHash3
+    """
 
     def fmix(h: int) -> int:
         h ^= h >> 16
@@ -236,11 +245,8 @@ def identity(a: np.uint64) -> np.uint64:
 
 
 def compute_minishard_mask(minishard_bits: int) -> np.uint64:
-    if minishard_bits < 0:
-        raise ValueError(
-            str(minishard_bits) + " must be greater or equal to than zero."
-        )
-    elif minishard_bits == 0:
+    assert minishard_bits >= 0, "minishard_bits must be ≥ 0"
+    if minishard_bits == 0:
         return np.uint64(0)
 
     minishard_mask = np.uint64(1)
@@ -265,7 +271,14 @@ class MinishardInfo:
 
 
 @dataclass(frozen=True)
-class ShardingSpec:
+class ShardingInfo:
+    """
+    Stores all necessary information for implementing the shared precomputed 
+    format of Neuroglancer. The actual downloading of the indices and chunk 
+    data needs to happen in the backend, because of the availability of the 
+    http client and controllable caching. 
+    """
+
     dataset_size: Vec3D
     chunk_size: Vec3D
     preshift_bits: int

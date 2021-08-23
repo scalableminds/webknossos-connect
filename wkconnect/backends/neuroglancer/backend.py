@@ -16,7 +16,7 @@ from ...utils.json import from_json
 from ...utils.types import JSON, Box3D, Vec3D, Vec3Df
 from ..backend import Backend, DatasetInfo
 from .models import Dataset, Layer, Scale
-from .sharding import MinishardInfo, ShardingSpec
+from .sharding import MinishardInfo, ShardingInfo
 
 DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
@@ -104,7 +104,7 @@ class Neuroglancer(Backend):
                 "sharding" in scale
                 and scale["sharding"]["@type"] == "neuroglancer_uint64_sharded_v1"
             ):
-                scale["sharding"] = ShardingSpec(
+                scale["sharding"] = ShardingInfo(
                     dataset_size=Vec3D(*scale["size"]),
                     chunk_size=Vec3D(*scale["chunk_sizes"][0]),
                     preshift_bits=int(scale["sharding"]["preshift_bits"]),
@@ -196,10 +196,10 @@ class Neuroglancer(Backend):
 
     @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
     async def __read_shard_index(
-        self, shard_url: str, shard_spec: ShardingSpec, token: Optional[Token]
+        self, shard_url: str, sharding_info: ShardingInfo, token: Optional[Token]
     ) -> np.ndarray:
-        shard_index_range = shard_spec.get_shard_index_range()
-        return shard_spec.parse_shard_index(
+        shard_index_range = sharding_info.get_shard_index_range()
+        return sharding_info.parse_shard_index(
             await self.__read_ranged_data(shard_url, shard_index_range, token)
         )
 
@@ -207,33 +207,33 @@ class Neuroglancer(Backend):
     async def __read_minishard_index(
         self,
         shard_url: str,
-        shard_spec: ShardingSpec,
+        sharding_info: ShardingInfo,
         minishard_info: MinishardInfo,
         token: Optional[Token],
     ) -> np.ndarray:
-        minishard_index_range = shard_spec.get_minishard_index_range(
+        minishard_index_range = sharding_info.get_minishard_index_range(
             minishard_info.minishard_number,
-            await self.__read_shard_index(shard_url, shard_spec, token),
+            await self.__read_shard_index(shard_url, sharding_info, token),
         )
-        return shard_spec.parse_minishard_index(
+        return sharding_info.parse_minishard_index(
             await self.__read_ranged_data(shard_url, minishard_index_range, token)
         )
 
     async def __read_sharded_chunk(
         self,
         source_url: str,
-        shard_spec: ShardingSpec,
+        sharding_info: ShardingInfo,
         position: Vec3D,
         token: Optional[Token],
     ) -> bytes:
-        chunk_id = shard_spec.get_chunk_key(position)
-        minishard_info = shard_spec.get_minishard_info(chunk_id)
+        chunk_id = sharding_info.get_chunk_key(position)
+        minishard_info = sharding_info.get_minishard_info(chunk_id)
         shard_url = (
-            f"{source_url}/{shard_spec.format_shard_for_url(minishard_info)}.shard"
+            f"{source_url}/{sharding_info.format_shard_for_url(minishard_info)}.shard"
         )
         print(minishard_info)
         minishard_index = await self.__read_minishard_index(
-            shard_url, shard_spec, minishard_info, token
+            shard_url, sharding_info, minishard_info, token
         )
         print(minishard_index)
         chunk_entry = minishard_index[minishard_index[:, 0] == chunk_id][0]
