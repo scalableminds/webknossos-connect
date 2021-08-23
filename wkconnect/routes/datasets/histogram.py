@@ -2,6 +2,7 @@ import asyncio
 from typing import List, Tuple
 
 import numpy as np
+import math
 from sanic import Blueprint, response
 from sanic.request import Request
 from wkcuber.mag import Mag
@@ -85,8 +86,8 @@ def align_positions_with_mag(
 ) -> Tuple[List[Vec3D], int]:
     # For the WKW backend, the bucket requests need to be bucket-aligned in the target mag
     available_mags = sorted([Mag(mag["resolution"]) for mag in layer.wkwResolutions])
-    zoom_step = min(1, len(available_mags) - 1)
-    mag = available_mags[zoom_step]
+    mag = available_mags[0]
+    zoom_step = math.log2(mag.as_np().max())
     align = Vec3D(*(mag.as_np() * BUCKET_SIZE))
     sample_positions = [
         Vec3D(*((position // align) * align)) for position in sample_positions
