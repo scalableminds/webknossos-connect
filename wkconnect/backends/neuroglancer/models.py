@@ -9,7 +9,7 @@ from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
 from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
-from .sharding import ShardingSpec
+from .sharding import ShardingInfo
 
 
 @dataclass(frozen=True)
@@ -20,7 +20,7 @@ class Scale:
     resolution: Vec3D
     size: Vec3D
     voxel_offset: Vec3D
-    sharding: Optional[ShardingSpec]
+    sharding: Optional[ShardingInfo]
     compressed_segmentation_block_size: Optional[Vec3D] = None
 
     def __post_init__(self) -> None:
