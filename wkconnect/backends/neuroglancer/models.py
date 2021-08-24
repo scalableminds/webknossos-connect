@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from gcloud.aio.auth import Token
 
-from ...utils.types import Box3D, Vec3D
+from ...utils.types import Box3D, Vec3D, Vec3Df
 from ...webknossos.models import BoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
@@ -17,7 +17,7 @@ class Scale:
     chunk_size: Vec3D
     encoding: str
     key: str
-    resolution: Vec3D
+    mag: Vec3D
     size: Vec3D
     voxel_offset: Vec3D
     sharding: Optional[ShardingInfo]
@@ -41,7 +41,7 @@ class Layer:
     data_type: str
     num_channels: int
     scales: Tuple[Scale, ...]
-    relative_scale: Vec3D
+    resolution: Vec3Df
     type: str
     largestSegmentId: Optional[int] = None
     # InitVar allows to consume mesh argument in init without storing it
@@ -55,9 +55,7 @@ class Layer:
         assert self.type in supported_data_types
         assert self.data_type in supported_data_types[self.type]
         assert self.num_channels == 1
-        assert all(
-            max(scale.resolution) == 2 ** i for i, scale in enumerate(self.scales)
-        )
+        assert all(max(scale.mag) == 2 ** i for i, scale in enumerate(self.scales))
 
     def wk_data_type(self) -> str:
         if self.type == "segmentation":
@@ -69,7 +67,7 @@ class Layer:
             layer_name,
             {"image": "color", "segmentation": "segmentation"}[self.type],
             self.scales[0].bounding_box(),
-            [scale.resolution for scale in self.scales],
+            [scale.mag for scale in self.scales],
             self.wk_data_type(),
             largestSegmentId=self.largestSegmentId,
         )
@@ -80,13 +78,8 @@ class Dataset(DatasetInfo):
     organization_name: str
     dataset_name: str
     layers: Dict[str, Layer]
+    scale: Vec3Df
     token: Optional[Token] = None
-    scale: Vec3D = field(init=False)
-
-    def __post_init__(self) -> None:
-        relative_scale = set(layer.relative_scale for layer in self.layers.values())
-        assert len(relative_scale) == 1
-        self.scale = relative_scale.pop()
 
     def to_webknossos(self) -> WkDataSource:
         return WkDataSource(
@@ -95,5 +88,21 @@ class Dataset(DatasetInfo):
                 layer.to_webknossos(layer_name)
                 for layer_name, layer in self.layers.items()
             ],
-            self.scale.to_float(),
+            self.scale,
         )
+
+    def fix_scale(layers: Dict[str, Layer]) -> Tuple[Dict[str, Layer], Vec3Df]:
+        layer_resolution_map = {
+            layer_name: layer.resolution for layer_name, layer in layers.items()
+        }
+        min_resolution = sorted(list(layer_resolution_map.values()))[0]
+        for layer in layers.values():
+            assert layer.resolution % min_resolution == Vec3Df.zeros()
+            factor_vec = layer.resolution / min_resolution
+            object.__setattr__(layer, "resolution", min_resolution)
+            for scale in layer.scales:
+                object.__setattr__(
+                    scale, "mag", (scale.mag.to_float() * factor_vec).to_int()
+                )
+        return layers, min_resolution
+

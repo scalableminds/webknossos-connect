@@ -97,13 +97,13 @@ class Neuroglancer(Backend):
         new_scales: List[Scale] = []
         for scale in layer["scales"]:
             resolution = Vec3Df(*scale["resolution"])
-            assert resolution % min_resolution == Vec3D.zeros()
+            assert resolution % min_resolution == Vec3Df.zeros()
             new_scales.append(
                 Scale(
                     chunk_size=Vec3D(*scale["chunk_sizes"][0]),
                     encoding=scale["encoding"],
                     key=scale["key"],
-                    resolution=(resolution // min_resolution).to_int(),
+                    mag=(resolution // min_resolution).to_int(),
                     size=Vec3D(*scale["size"]),
                     voxel_offset=(
                         Vec3D(*scale["voxel_offset"]).to_int()
@@ -140,7 +140,7 @@ class Neuroglancer(Backend):
                 data_type=layer["data_type"],
                 num_channels=int(layer["num_channels"]),
                 scales=tuple(new_scales),
-                relative_scale=min_resolution.to_int(),
+                resolution=min_resolution,
                 type=layer["type"],
             ),
         )
@@ -160,7 +160,8 @@ class Neuroglancer(Backend):
                 )
             )
         )
-        dataset = Dataset(organization_name, dataset_name, layers, token)
+        layers, scale = Dataset.fix_scale(layers)
+        dataset = Dataset(organization_name, dataset_name, layers, scale, token)
         return dataset
 
     def __decode_raw(
@@ -222,7 +223,6 @@ class Neuroglancer(Backend):
         }
         async with await self.http_client.get(url, headers=headers) as r:
             r.raise_for_status()
-            # print(url, range, range[1] - range[0], r.status)
             response_buffer = await r.read()
         return response_buffer
 
@@ -249,7 +249,8 @@ class Neuroglancer(Backend):
             minishard_info.minishard_number, shard_index
         )
         buf = await self.__read_ranged_data(shard_url, minishard_index_range, token)
-        return sharding_info.parse_minishard_index(buf)
+        index = sharding_info.parse_minishard_index(buf)
+        return index
 
     async def __read_sharded_chunk(
         self,
@@ -334,11 +335,13 @@ class Neuroglancer(Backend):
         layer = dataset.layers[layer_name]
         # we can use zoom_step as the index, as the scales are sorted
         # see assertion in the Layer initialization
-        scale = layer.scales[zoom_step]
+        scale = [
+            scale for scale in layer.scales if 2 ** zoom_step == scale.mag.as_np().max()
+        ][0]
         decoder = self.decoders[scale.encoding]
 
         # convert to coordinate system of current scale
-        offset = wk_offset // scale.resolution
+        offset = wk_offset // scale.mag
         box = Box3D.from_size(offset, shape)
 
         chunk_boxes = self.__chunks(box, scale.box(), scale.chunk_size)

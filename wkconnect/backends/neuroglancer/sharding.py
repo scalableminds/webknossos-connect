@@ -12,21 +12,29 @@ def compressed_morton_code(pos: Vec3D, grid_size: Vec3D) -> np.uint64:
     """
     Computes the compressed morton code as per
     https://github.com/google/neuroglancer/blob/master/src/neuroglancer/datasource/precomputed/volume.md#compressed-morton-code
+    https://github.com/google/neuroglancer/blob/162b698f703c86e0b3e92b8d8e0cacb0d3b098df/src/neuroglancer/util/zorder.ts#L72
     """
-    pos_np = pos.as_np().astype(np.uint32)
-    grid_size_np = grid_size.as_np()
+    bits = Vec3D(
+        math.ceil(math.log2(grid_size.x)),
+        math.ceil(math.log2(grid_size.y)),
+        math.ceil(math.log2(grid_size.z)),
+    )
 
-    num_bits = max((math.ceil(math.log2(s)) for s in grid_size_np))
-    j = np.uint64(0)
+    max_bits = bits.as_np().max()
+    output_bit = np.uint64(0)
     one = np.uint64(1)
 
     output = np.uint64(0)
-    for i in range(num_bits):
-        for dim in range(3):
-            if 2 ** i <= grid_size_np[dim]:
-                bit = ((np.uint64(pos_np[dim]) >> np.uint64(i)) & one) << j
-                output |= bit
-                j += one
+    for bit in range(max_bits):
+        if bit < bits.x:
+            output |= ((np.uint64(pos.x) >> np.uint64(bit)) & one) << output_bit
+            output_bit += one
+        if bit < bits.y:
+            output |= ((np.uint64(pos.y) >> np.uint64(bit)) & one) << output_bit
+            output_bit += one
+        if bit < bits.z:
+            output |= ((np.uint64(pos.z) >> np.uint64(bit)) & one) << output_bit
+            output_bit += one
 
     return output
 
