@@ -14,7 +14,7 @@ from .sharding import ShardingInfo
 
 @dataclass(frozen=True)
 class Scale:
-    chunk_sizes: Tuple[Vec3D, ...]
+    chunk_size: Vec3D
     encoding: str
     key: str
     resolution: Vec3D
@@ -24,7 +24,6 @@ class Scale:
     compressed_segmentation_block_size: Optional[Vec3D] = None
 
     def __post_init__(self) -> None:
-        assert len(self.chunk_sizes) > 0
         assert self.encoding in ["raw", "jpeg", "compressed_segmentation"]
         if self.encoding == "compressed_segmentation":
             assert self.compressed_segmentation_block_size is not None

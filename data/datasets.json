@@ -10,6 +10,18 @@
                     }
                 }
             },
+            "janelia_flyem_hemibrain": {
+                "layers": {
+                    "emdata": {
+                        "source": "gs://neuroglancer-janelia-flyem-hemibrain/emdata/clahe_yz/jpeg",
+                        "type": "image"
+                    },
+                    "segmentation_v1_2": {
+                        "source": "gs://neuroglancer-janelia-flyem-hemibrain/v1.2/segmentation",
+                        "type": "segmentation"
+                    }
+                }
+            },
             "kasthuri2011": {
                 "layers": {
                     "corrected_image": {
