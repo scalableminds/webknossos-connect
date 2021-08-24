@@ -85,8 +85,11 @@ def align_positions_with_mag(
 ) -> Tuple[List[Vec3D], int]:
     # For the WKW backend, the bucket requests need to be bucket-aligned in the target mag
     available_mags = sorted([Mag(mag["resolution"]) for mag in layer.wkwResolutions])
-    zoom_step = min(1, len(available_mags) - 1)
-    mag = available_mags[zoom_step]
+    mag = available_mags[0]
+
+    # This is equivalent to `int(log2(mag.as_np().max()))`, but avoids intermediate floats
+    zoom_step = int(mag.as_np().max()).bit_length() - 1
+
     align = Vec3D(*(mag.as_np() * BUCKET_SIZE))
     sample_positions = [
         Vec3D(*((position // align) * align)) for position in sample_positions

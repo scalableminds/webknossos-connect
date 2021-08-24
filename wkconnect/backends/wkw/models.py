@@ -57,13 +57,21 @@ class Dataset(DatasetInfo):
     @lru_cache(maxsize=1000)
     def get_data_handle(
         self, layer_name: str, zoom_step: int
-    ) -> Tuple[DatasetHandle, Mag]:
+    ) -> Optional[Tuple[DatasetHandle, Mag]]:
         layer = self.dataset_handle.get_layer(layer_name)
-        available_mags = sorted([Mag(mag) for mag in layer.mags.keys()])
-        mag = available_mags[zoom_step]
-        mag_dataset = layer.get_mag(mag)
+        # Finding the right mag for the zoom_step:
+        # 2 ** zoomStep = max(mag.x, mag.y, mag.z)
+        mag_datasets = [
+            mag_dataset
+            for mag_dataset in layer.mags.values()
+            if (2 ** zoom_step) == Mag(mag_dataset.name).as_np().max()
+        ]
+        if len(mag_datasets) < 1:
+            return None
+        mag_dataset = mag_datasets[0]
+
         data_handle = self.wkw_cache.get_dataset(str(mag_dataset.view.path))
-        return (data_handle, mag)
+        return (data_handle, Mag(mag_dataset.name))
 
     @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
     async def read_data(
@@ -73,7 +81,10 @@ class Dataset(DatasetInfo):
             32, 32, 32
         ), "Only buckets of 32 edge length are supported"
         assert shape % 32 == Vec3D(0, 0, 0), "Only 32-aligned buckets are supported"
-        data_handle, mag = self.get_data_handle(layer_name, zoom_step)
+        data_handle_opt = self.get_data_handle(layer_name, zoom_step)
+        if data_handle_opt is None:
+            return None
+        data_handle, mag = data_handle_opt
         offset = (
             np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / mag.as_np()
         ).astype(np.uint32)
