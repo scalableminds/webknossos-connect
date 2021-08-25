@@ -1,4 +1,4 @@
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, dataclass
 from typing import Any, Dict, Optional, Tuple
 
 from gcloud.aio.auth import Token
@@ -34,6 +34,9 @@ class Scale:
     def bounding_box(self) -> BoundingBox:
         return BoundingBox(self.voxel_offset, *self.size)
 
+    def mag1_bounding_box(self) -> BoundingBox:
+        return BoundingBox(self.voxel_offset * self.mag, *(self.size * self.mag))
+
 
 @dataclass(frozen=True)
 class Layer:
@@ -58,15 +61,13 @@ class Layer:
         assert all(max(scale.mag) == 2 ** i for i, scale in enumerate(self.scales))
 
     def wk_data_type(self) -> str:
-        if self.type == "segmentation":
-            return "uint32"
         return self.data_type
 
     def to_webknossos(self, layer_name: str) -> WkDataLayer:
         return WkDataLayer(
             layer_name,
             {"image": "color", "segmentation": "segmentation"}[self.type],
-            self.scales[0].bounding_box(),
+            self.scales[0].mag1_bounding_box(),
             [scale.mag for scale in self.scales],
             self.wk_data_type(),
             largestSegmentId=self.largestSegmentId,
@@ -91,6 +92,7 @@ class Dataset(DatasetInfo):
             self.scale,
         )
 
+    @staticmethod
     def fix_scale(layers: Dict[str, Layer]) -> Tuple[Dict[str, Layer], Vec3Df]:
         layer_resolution_map = {
             layer_name: layer.resolution for layer_name, layer in layers.items()
@@ -105,4 +107,3 @@ class Dataset(DatasetInfo):
                     scale, "mag", (scale.mag.to_float() * factor_vec).to_int()
                 )
         return layers, min_resolution
-
