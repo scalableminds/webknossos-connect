@@ -72,10 +72,10 @@ class MinishardInfo:
 @dataclass(frozen=True)
 class ShardingInfo:
     """
-    Stores all necessary information for implementing the shared precomputed 
-    format of Neuroglancer. The actual downloading of the indices and chunk 
-    data needs to happen in the backend, because of the availability of the 
-    http client and controllable caching. 
+    Stores all necessary information for implementing the shared precomputed
+    format of Neuroglancer. The actual downloading of the indices and chunk
+    data needs to happen in the backend, because of the availability of the
+    http client and controllable caching.
     """
 
     dataset_size: Vec3D
