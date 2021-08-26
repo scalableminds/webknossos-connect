@@ -1,5 +1,5 @@
-from dataclasses import InitVar, dataclass
-from typing import Any, Dict, Optional, Tuple
+from dataclasses import dataclass, replace
+from typing import Dict, Optional, Tuple
 
 from gcloud.aio.auth import Token
 
@@ -47,10 +47,8 @@ class Layer:
     resolution: Vec3Df
     type: str
     largestSegmentId: Optional[int] = None
-    # InitVar allows to consume mesh argument in init without storing it
-    mesh: InitVar[Any] = None
 
-    def __post_init__(self, mesh: Any) -> None:
+    def __post_init__(self) -> None:
         supported_data_types = {
             "image": ["uint8", "uint16", "uint32", "uint64"],
             "segmentation": ["uint32", "uint64"],
@@ -58,7 +56,8 @@ class Layer:
         assert self.type in supported_data_types
         assert self.data_type in supported_data_types[self.type]
         assert self.num_channels == 1
-        assert all(max(scale.mag) == 2 ** i for i, scale in enumerate(self.scales))
+        min_mag = sorted([scale.mag for scale in self.scales])[0]
+        assert all(scale.mag % min_mag == Vec3D.zeros() for scale in self.scales)
 
     def wk_data_type(self) -> str:
         return self.data_type
@@ -93,17 +92,27 @@ class Dataset(DatasetInfo):
         )
 
     @staticmethod
-    def fix_scale(layers: Dict[str, Layer]) -> Tuple[Dict[str, Layer], Vec3Df]:
+    def fix_scales(layers: Dict[str, Layer]) -> Tuple[Dict[str, Layer], Vec3Df]:
+        """
+        This function adapts the scale specification from neuroglancer to the
+        webKnossos scheme. In neuroglancer, each `Scale` has an attached
+        `resolution` (in nm), whereas webKnossos uses a single `scale` for all
+        layers and differentiates through `Mag`s, which are power-of-two
+        factors on the dataset's scale. In this function, the dataset's `scale`
+        is determined and the `mag`s in the layers are computed and fixed.
+        """
         layer_resolution_map = {
             layer_name: layer.resolution for layer_name, layer in layers.items()
         }
         min_resolution = sorted(list(layer_resolution_map.values()))[0]
-        for layer in layers.values():
+        new_layers = {}
+        for layer_name, layer in layers.items():
             assert layer.resolution % min_resolution == Vec3Df.zeros()
             factor_vec = layer.resolution / min_resolution
-            object.__setattr__(layer, "resolution", min_resolution)
-            for scale in layer.scales:
-                object.__setattr__(
-                    scale, "mag", (scale.mag.to_float() * factor_vec).to_int()
-                )
-        return layers, min_resolution
+            new_scales = tuple(
+                replace(scale, mag=(scale.mag.to_float() * factor_vec).to_int())
+                for scale in layer.scales
+            )
+            new_layer = replace(layer, scales=new_scales, resolution=min_resolution)
+            new_layers[layer_name] = new_layer
+        return new_layers, min_resolution

@@ -160,7 +160,7 @@ class Neuroglancer(Backend):
                 )
             )
         )
-        layers, scale = Dataset.fix_scale(layers)
+        layers, scale = Dataset.fix_scales(layers)
         dataset = Dataset(organization_name, dataset_name, layers, scale, token)
         return dataset
 

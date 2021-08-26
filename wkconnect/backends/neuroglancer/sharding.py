@@ -93,6 +93,7 @@ class ShardingInfo:
         assert (
             self.hashfn == "identity"
         ), "Only `identity` is currently supported and not `murmurhash3_x86_128`"
+        # object.__setattr__ must be used to circumvent errors since the dataclass is frozen
         object.__setattr__(
             self,
             "_shard_mask",

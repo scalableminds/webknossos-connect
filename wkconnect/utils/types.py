@@ -47,7 +47,7 @@ class Vec3D(NamedTuple):
         return Vec3D(*map(int, self))
 
     def as_np(self) -> np.ndarray:
-        return np.array([self.x, self.y, self.z], dtype=np.uint64)
+        return np.array([self.x, self.y, self.z], dtype=np.int64)
 
     def as_tuple(self) -> Tuple[int, int, int]:
         return (self.x, self.y, self.z)
