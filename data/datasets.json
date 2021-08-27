@@ -5,8 +5,52 @@
             "fafb_v14": {
                 "layers": {
                     "image": {
+                        "source": "gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_orig",
+                        "type": "image"
+                    },
+                    "clahe": {
                         "source": "gs://neuroglancer-fafb-data/fafb_v14/fafb_v14_clahe",
                         "type": "image"
+                    },
+                    "fafb-ffn1-20200412":{
+                        "source":"gs://fafb-ffn1-20200412/segmentation",
+                        "type":"segmentation"
+                    }
+                }
+            },
+            "janelia_flyem_hemibrain": {
+                "layers": {
+                    "emdata": {
+                        "source": "gs://neuroglancer-janelia-flyem-hemibrain/emdata/clahe_yz/jpeg",
+                        "type": "image"
+                    },
+                    "segmentation_v1_2": {
+                        "source": "gs://neuroglancer-janelia-flyem-hemibrain/v1.2/segmentation",
+                        "type": "segmentation"
+                    }
+                }
+            },
+            "h01_20210601": {
+                "layers": {
+                    "4nm_raw": {
+                        "source": "gs://h01-release/data/20210601/4nm_raw",
+                        "type": "image"
+                    },
+                    "c3": {
+                        "source": "gs://h01-release/data/20210601/c3",
+                        "type": "segmentation"
+                    }
+                }
+            },
+            "microns_mm3_broken": {
+                "layers": {
+                    "img65": {
+                        "source": "s3://bossdb-open-data/iarpa_microns/minnie/minnie65/em",
+                        "type": "image"
+                    },
+                    "seg65": {
+                        "source": "gs://iarpa_microns/minnie/minnie65/seg",
+                        "type": "segmentation"
                     }
                 }
             },

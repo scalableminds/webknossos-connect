@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from operator import add, floordiv, mod, mul, sub, truediv
-from typing import Any, Callable, Iterator, NamedTuple, Union
+from typing import Any, Callable, Iterator, NamedTuple, Tuple, Union
 
 import numpy as np
 
@@ -46,6 +46,12 @@ class Vec3D(NamedTuple):
     def to_int(self) -> Vec3D:
         return Vec3D(*map(int, self))
 
+    def as_np(self) -> np.ndarray:
+        return np.array([self.x, self.y, self.z], dtype=np.int64)
+
+    def as_tuple(self) -> Tuple[int, int, int]:
+        return (self.x, self.y, self.z)
+
     @classmethod
     def zeros(cls) -> Vec3D:
         return cls(0, 0, 0)
@@ -85,6 +91,12 @@ class Vec3Df(NamedTuple):
 
     def to_int(self) -> Vec3D:
         return Vec3D(*map(int, self))
+
+    def as_np(self) -> np.ndarray:
+        return np.array([self.x, self.y, self.z], dtype=np.float64)
+
+    def as_tuple(self) -> Tuple[float, float, float]:
+        return (self.x, self.y, self.z)
 
     @classmethod
     def zeros(cls) -> Vec3Df:

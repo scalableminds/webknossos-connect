@@ -12,10 +12,10 @@ from async_lru import alru_cache
 from gcloud.aio.auth import Token
 
 from ...utils.exceptions import RuntimeErrorWithUserMessage
-from ...utils.json import from_json
 from ...utils.types import JSON, Box3D, Vec3D, Vec3Df
 from ..backend import Backend, DatasetInfo
-from .models import Dataset, Layer
+from .models import Dataset, Layer, Scale
+from .sharding import MinishardInfo, ShardingInfo
 
 DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
@@ -93,13 +93,57 @@ class Neuroglancer(Backend):
         layer.update(response)
         layer["scales"] = sorted(layer["scales"], key=lambda scale: scale["resolution"])
         min_resolution = Vec3Df(*layer["scales"][0]["resolution"])
+
+        new_scales: List[Scale] = []
         for scale in layer["scales"]:
             resolution = Vec3Df(*scale["resolution"])
-            assert resolution % min_resolution == Vec3D.zeros()
-            scale["resolution"] = (resolution // min_resolution).to_int()
-            scale["voxel_offset"] = Vec3D(*scale["voxel_offset"]).to_int()
-        layer["relative_scale"] = min_resolution.to_int()
-        return (layer_name, from_json(layer, Layer))
+            assert resolution % min_resolution == Vec3Df.zeros()
+            new_scales.append(
+                Scale(
+                    chunk_size=Vec3D(*scale["chunk_sizes"][0]),
+                    encoding=scale["encoding"],
+                    key=scale["key"],
+                    mag=(resolution // min_resolution).to_int(),
+                    size=Vec3D(*scale["size"]),
+                    voxel_offset=(
+                        Vec3D(*scale["voxel_offset"]).to_int()
+                        if "voxel_offset" in scale
+                        else Vec3D.zeros()
+                    ),
+                    sharding=ShardingInfo(
+                        dataset_size=Vec3D(*scale["size"]),
+                        chunk_size=Vec3D(*scale["chunk_sizes"][0]),
+                        preshift_bits=int(scale["sharding"]["preshift_bits"]),
+                        shard_bits=int(scale["sharding"]["shard_bits"]),
+                        minishard_bits=int(scale["sharding"]["minishard_bits"]),
+                        hashfn=scale["sharding"]["hash"],
+                        minishard_index_encoding=scale["sharding"].get(
+                            "minishard_index_encoding"
+                        ),
+                        data_encoding=scale["sharding"].get("data_encoding"),
+                    )
+                    if "sharding" in scale
+                    and scale["sharding"]["@type"] == "neuroglancer_uint64_sharded_v1"
+                    else None,
+                    compressed_segmentation_block_size=Vec3D(
+                        *scale["compressed_segmentation_block_size"]
+                    )
+                    if "compressed_segmentation_block_size" in scale
+                    else None,
+                )
+            )
+
+        return (
+            layer_name,
+            Layer(
+                source=layer["source"],
+                data_type=layer["data_type"],
+                num_channels=int(layer["num_channels"]),
+                scales=tuple(new_scales),
+                resolution=min_resolution,
+                type=layer["type"],
+            ),
+        )
 
     async def handle_new_dataset(
         self, organization_name: str, dataset_name: str, dataset_info: JSON
@@ -116,7 +160,8 @@ class Neuroglancer(Backend):
                 )
             )
         )
-        dataset = Dataset(organization_name, dataset_name, layers, token)
+        layers, scale = Dataset.fix_scales(layers)
+        dataset = Dataset(organization_name, dataset_name, layers, scale, token)
         return dataset
 
     def __decode_raw(
@@ -144,7 +189,11 @@ class Neuroglancer(Backend):
     ) -> np.ndarray:
         assert block_size is not None
         return compressed_segmentation.decompress(
-            buffer, chunk_size, data_type, block_size, order="F"
+            buffer,
+            chunk_size.as_tuple(),
+            dtype=data_type,
+            block_size=block_size,
+            order="F",
         )
 
     def __chunks(
@@ -163,30 +212,105 @@ class Neuroglancer(Backend):
             # chunk is capped to fit the dataset:
             yield chunk.intersect(ds_frame)
 
+    async def __read_ranged_data(
+        self, url: str, range: Tuple[int, int], token: Optional[Token]
+    ) -> bytes:
+        if range[0] == range[1]:
+            return b""
+        headers = {
+            **await get_header(token),
+            "Range": f"bytes={int(range[0])}-{int(range[1]-1)}",
+        }
+        async with await self.http_client.get(url, headers=headers) as r:
+            r.raise_for_status()
+            response_buffer = await r.read()
+        return response_buffer
+
+    @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
+    async def __read_shard_index(
+        self, shard_url: str, sharding_info: ShardingInfo, token: Optional[Token]
+    ) -> np.ndarray:
+        shard_index_range = sharding_info.get_shard_index_range()
+        index = sharding_info.parse_shard_index(
+            await self.__read_ranged_data(shard_url, shard_index_range, token)
+        )
+        return index
+
+    @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
+    async def __read_minishard_index(
+        self,
+        shard_url: str,
+        sharding_info: ShardingInfo,
+        minishard_info: MinishardInfo,
+        token: Optional[Token],
+    ) -> np.ndarray:
+        shard_index = await self.__read_shard_index(shard_url, sharding_info, token)
+        minishard_index_range = sharding_info.get_minishard_index_range(
+            minishard_info.minishard_number, shard_index
+        )
+        buf = await self.__read_ranged_data(shard_url, minishard_index_range, token)
+        index = sharding_info.parse_minishard_index(buf)
+        return index
+
+    async def __read_sharded_chunk(
+        self,
+        source_url: str,
+        sharding_info: ShardingInfo,
+        position: Vec3D,
+        token: Optional[Token],
+    ) -> Optional[bytes]:
+        chunk_id = sharding_info.get_chunk_key(position)
+        minishard_info = sharding_info.get_minishard_info(chunk_id)
+        shard_url = (
+            f"{source_url}/{sharding_info.format_shard_for_url(minishard_info)}.shard"
+        )
+        minishard_index = await self.__read_minishard_index(
+            shard_url, sharding_info, minishard_info, token
+        )
+        chunk_range = sharding_info.get_chunk_range(chunk_id, minishard_index)
+        if chunk_range is None:
+            return None
+        buf = sharding_info.parse_chunk(
+            await self.__read_ranged_data(shard_url, chunk_range, token)
+        )
+
+        return buf
+
     @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
     async def __read_chunk(
         self,
         layer: Layer,
-        scale_key: str,
+        scale: Scale,
         chunk_box: Box3D,
         decoder_fn: DecoderFn,
-        compressed_segmentation_block_size: Optional[Vec3D],
         token: Optional[Token],
     ) -> Chunk:
-        url_coords = "_".join(
-            f"{left_dim}-{right_dim}" for left_dim, right_dim in zip(*chunk_box)
-        )
-        data_url = f"{layer.source}/{scale_key}/{url_coords}"
+        response_buffer = None
+        if scale.sharding is not None:
+            response_buffer = await self.__read_sharded_chunk(
+                f"{layer.source}/{scale.key}", scale.sharding, chunk_box.left, token
+            )
+            if response_buffer is None:
+                return (
+                    chunk_box,
+                    np.zeros(chunk_box.size().as_tuple(), dtype=layer.wk_data_type()),
+                )
+        else:
+            url_coords = "_".join(
+                f"{left_dim}-{right_dim}" for left_dim, right_dim in zip(*chunk_box)
+            )
+            data_url = f"{layer.source}/{scale.key}/{url_coords}"
 
-        async with await self.http_client.get(
-            data_url, headers=await get_header(token)
-        ) as r:
-            response_buffer = await r.read()
+            async with await self.http_client.get(
+                data_url, headers=await get_header(token)
+            ) as r:
+                response_buffer = await r.read()
+
         chunk_data = decoder_fn(
             response_buffer,
             layer.data_type,
             chunk_box.size(),
-            compressed_segmentation_block_size,
+            scale.compressed_segmentation_block_size,
         ).astype(layer.wk_data_type())
         return (chunk_box, chunk_data)
 
@@ -211,25 +335,20 @@ class Neuroglancer(Backend):
         layer = dataset.layers[layer_name]
         # we can use zoom_step as the index, as the scales are sorted
         # see assertion in the Layer initialization
-        scale = layer.scales[zoom_step]
+        scale = [
+            scale for scale in layer.scales if 2 ** zoom_step == scale.mag.as_np().max()
+        ][0]
         decoder = self.decoders[scale.encoding]
 
         # convert to coordinate system of current scale
-        offset = wk_offset // scale.resolution
+        offset = wk_offset // scale.mag
         box = Box3D.from_size(offset, shape)
 
-        chunk_boxes = self.__chunks(box, scale.box(), scale.chunk_sizes[0])
+        chunk_boxes = self.__chunks(box, scale.box(), scale.chunk_size)
         try:
             chunks = await asyncio.gather(
                 *(
-                    self.__read_chunk(
-                        layer,
-                        scale.key,
-                        chunk_box,
-                        decoder,
-                        scale.compressed_segmentation_block_size,
-                        dataset.token,
-                    )
+                    self.__read_chunk(layer, scale, chunk_box, decoder, dataset.token)
                     for chunk_box in chunk_boxes
                 )
             )
@@ -241,3 +360,5 @@ class Neuroglancer(Backend):
 
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         self.__read_chunk.cache_clear()  # pylint: disable=no-member
+        self.__read_shard_index.cache_clear()  # pylint: disable=no-member
+        self.__read_minishard_index.cache_clear()  # pylint: disable=no-member

@@ -205,7 +205,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "compressed-segmentation"
-version = "1.0.1"
+version = "2.0.1"
 description = "Neuroglancer compressed_segmentation codec."
 category = "main"
 optional = false
@@ -1013,7 +1013,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "18936774f2c567032a2b77d55b38e10d5309472970aa4a11e164989193bd4f46"
+content-hash = "927025c28ed21e88c0d9d5113321029ffbb2377acc260eaae405ee037ca76e26"
 
 [metadata.files]
 aiofiles = [
@@ -1231,29 +1231,32 @@ colorama = [
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
 compressed-segmentation = [
-    {file = "compressed_segmentation-1.0.1-cp27-cp27m-macosx_10_15_x86_64.whl", hash = "sha256:4d921487ba31777a6714a87930d5c7728ff0398874c9e7cf492a8c13bfa7d107"},
-    {file = "compressed_segmentation-1.0.1-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:ab0db7f7ef28938f37ad9269510cc037943b38c7ebb3c14f1952b3b79f673c99"},
-    {file = "compressed_segmentation-1.0.1-cp35-cp35m-manylinux2010_x86_64.whl", hash = "sha256:4e112ff4807cf9b134bde317418aad0ad9c92b9e64f9819b837dc3d5ac5dc3f7"},
-    {file = "compressed_segmentation-1.0.1-cp35-cp35m-manylinux2014_x86_64.whl", hash = "sha256:3033466e34b4e22568091732c112da39dd4b0eefcf262c80c017506c457ba5d1"},
-    {file = "compressed_segmentation-1.0.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:a665f8667d4047df060492ac266e3fa2ed22c022d2cb8dee47900ae459c08e60"},
-    {file = "compressed_segmentation-1.0.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:cdd310b615026c31a67c3b0b458d4223b63e860a8782dc767056c34946fe75be"},
-    {file = "compressed_segmentation-1.0.1-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:2974d3b42a390ff0542dba2a432ca96af9c670ff516b80707e0d84d7a79af3e0"},
-    {file = "compressed_segmentation-1.0.1-cp36-cp36m-manylinux2014_x86_64.whl", hash = "sha256:c8d770fbc28e784dadaf6c8451c42a000120c7e15e8ac80d7c66a37c64afe94c"},
-    {file = "compressed_segmentation-1.0.1-cp36-cp36m-win32.whl", hash = "sha256:695a4441f4af0b21ad91fca1f5d5fe07d8cfbcdd15c1e72eee09499d30d05823"},
-    {file = "compressed_segmentation-1.0.1-cp36-cp36m-win_amd64.whl", hash = "sha256:5c6ae45b159aea46cdcc31d4ed59b57c07c2c1642c8cee85aa6a9a78b4b58899"},
-    {file = "compressed_segmentation-1.0.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:eb3662d758fab845c1c3da553fa2348cba732301a3bf20f575ef3c41c54099f0"},
-    {file = "compressed_segmentation-1.0.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:ef51ea12d7f4f9e3192dd4115a4e3ec11564ce6fbf7c30310ebe6cf41e4ebe88"},
-    {file = "compressed_segmentation-1.0.1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:545299398440541d3948611c83c0e916ab691128975c74c7c46a798dc39a75eb"},
-    {file = "compressed_segmentation-1.0.1-cp37-cp37m-manylinux2014_x86_64.whl", hash = "sha256:48ae559b85fa0ec74a128df4c0d54bad126c57996d5ebf463796ff5b75a1d009"},
-    {file = "compressed_segmentation-1.0.1-cp37-cp37m-win32.whl", hash = "sha256:11b0834bee6c248426c0e84ce83aa1ac6682ae4040bccb8d8f86488256d3a02c"},
-    {file = "compressed_segmentation-1.0.1-cp37-cp37m-win_amd64.whl", hash = "sha256:f6b08d5141a3939dd62516692975c27a5e2b72e4b4c1fdf32100aaaafb8f43f9"},
-    {file = "compressed_segmentation-1.0.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:fa206776b57adc784ad93110b30b1f0a1d40168259ec09ecafe388b5c8dab98f"},
-    {file = "compressed_segmentation-1.0.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:a2dec052636484da04d41c2fec3aa58f70fc64528a447ead902bb70f47487f46"},
-    {file = "compressed_segmentation-1.0.1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:352868d670a84b5c44a9f8d346536e92120c455749f2e68c6c9ae1c3fb84750d"},
-    {file = "compressed_segmentation-1.0.1-cp38-cp38-manylinux2014_x86_64.whl", hash = "sha256:4dc2df8b714c9e3c78fadaa4403acf1438c072822f2c4790291d45eac94c8385"},
-    {file = "compressed_segmentation-1.0.1-cp38-cp38-win32.whl", hash = "sha256:d75e007f1d844f6e165ea0037338b4fd2b50ba052226708de8e61ddb591d6ffb"},
-    {file = "compressed_segmentation-1.0.1-cp38-cp38-win_amd64.whl", hash = "sha256:9ea3b91cd0b62f6788d2e69242a4ff69372ba6add348fc739dbd493b28928599"},
-    {file = "compressed_segmentation-1.0.1.tar.gz", hash = "sha256:8b80664a665f5596c684cc2531a7270860ee60dab299af94ffea2154c2b6eed1"},
+    {file = "compressed_segmentation-2.0.1-cp27-cp27m-macosx_10_15_x86_64.whl", hash = "sha256:b1aecf290c7c260a4e6d3ac2be4f1dc96c0bc9f283e6f3c4fc1acf9acf74e62b"},
+    {file = "compressed_segmentation-2.0.1-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:648dab5ea03c468abe4142d0fa750154058f7c79e4a1ffd35d20589effb3c576"},
+    {file = "compressed_segmentation-2.0.1-cp35-cp35m-manylinux2010_x86_64.whl", hash = "sha256:898948b1dff43b8f718cfc95e817dd76708c35e4d7ba0f4960ea94e47540632f"},
+    {file = "compressed_segmentation-2.0.1-cp35-cp35m-manylinux2014_x86_64.whl", hash = "sha256:5021714837cea9367989ede4cb4b1a33177fb325275e8a270172d0f839032deb"},
+    {file = "compressed_segmentation-2.0.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:64e4632ba3e9f49b9b1ce1d14a426530a9098062da6fdbb6132597819588689f"},
+    {file = "compressed_segmentation-2.0.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:95b364a4af47e731d050e84fa7056e833fa7dbcad1a564c20b3b4912467e36a0"},
+    {file = "compressed_segmentation-2.0.1-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:5b01ee26244980acee2542a2051aa5abdd07bc14b8546852207d429cca3b83a6"},
+    {file = "compressed_segmentation-2.0.1-cp36-cp36m-manylinux2014_x86_64.whl", hash = "sha256:2e0ccfe05c66d6eca98e76d6870d0c3e0a40091d23345f3e1abd18fcd93214ed"},
+    {file = "compressed_segmentation-2.0.1-cp36-cp36m-win32.whl", hash = "sha256:98ce01073d82399b1d705ca17f91cd3a347ead4b7b39402ff3a48f62085a0f97"},
+    {file = "compressed_segmentation-2.0.1-cp36-cp36m-win_amd64.whl", hash = "sha256:e575ae55127b71fdef43c2c918083d9893bb4378181848ba84e3566793410034"},
+    {file = "compressed_segmentation-2.0.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:6c0d15126a98ce3f28316ce587942b5f2987a7152eb1c4f1cbf1367284f3cd37"},
+    {file = "compressed_segmentation-2.0.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:9b12e2e9894d810f62fa4fa93cfc1900fcc54fdf8ba4c3688a192e2f5af14b93"},
+    {file = "compressed_segmentation-2.0.1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:3e7332e5c92ae641933172db99fc4872aa58aed4ccf6981f85dd65d224b10bfa"},
+    {file = "compressed_segmentation-2.0.1-cp37-cp37m-manylinux2014_x86_64.whl", hash = "sha256:95b93c7def7ed2d8a48a67ccf18f1d7531aad78231d33416f31e347d552dd2ad"},
+    {file = "compressed_segmentation-2.0.1-cp37-cp37m-win32.whl", hash = "sha256:f7a521d03884da2a7ab61023fe4442841131b09111f9da8c40cb6e1b0c304c76"},
+    {file = "compressed_segmentation-2.0.1-cp37-cp37m-win_amd64.whl", hash = "sha256:65e99aa4efa07b8f7ab6ab2988414a2eee424a81272f214b207a21f67ba19837"},
+    {file = "compressed_segmentation-2.0.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:fc8c5f43a3f2c622924d7ad3d1e783d05cfc11f0fdbabc7b2c546f69535a5166"},
+    {file = "compressed_segmentation-2.0.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:0552466956c5c02e5f21dd0fed16834eda26e0e92edebcd304471a42f7e7960e"},
+    {file = "compressed_segmentation-2.0.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:554e95f39ece72203c0c958e9c80bcb5c9d5e88ab34052b9e5801a7f164f2eaf"},
+    {file = "compressed_segmentation-2.0.1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:aaa5fc054cbc8c0c4acbe99bd0e0be14c6caa1219aae3bc1acc097996f70eeed"},
+    {file = "compressed_segmentation-2.0.1-cp38-cp38-manylinux2014_x86_64.whl", hash = "sha256:bd22265af72502eb110a58606f52ac9cfb3f6b1d748ccad4e4c0d7f887b9d472"},
+    {file = "compressed_segmentation-2.0.1-cp38-cp38-win32.whl", hash = "sha256:9783f632451ed1a5763e7bc5862ef1d8e7db0ccc3ea75b1e18b982a7f56eecd5"},
+    {file = "compressed_segmentation-2.0.1-cp38-cp38-win_amd64.whl", hash = "sha256:b844d66a61efc65d45b5748866d161f54e0558b5d7b3902dc93840fed8b09105"},
+    {file = "compressed_segmentation-2.0.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:0b8989535e7f147ebf2ddb4b89ab652dcc3880781bcd5b31ee2f0dbace2ad51d"},
+    {file = "compressed_segmentation-2.0.1-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:ee3d04cf5f2159421fae4d1ab7ac5c7a261a454201011a2bd630003f9345c2b0"},
+    {file = "compressed_segmentation-2.0.1.tar.gz", hash = "sha256:ff8b9c4d2a36a15b14aa951a6101562b275c1ea4b038f2a14b119880e252d36c"},
 ]
 cryptography = [
     {file = "cryptography-3.4.7-cp36-abi3-macosx_10_10_x86_64.whl", hash = "sha256:3d8427734c781ea5f1b41d6589c293089704d4759e34597dce91014ac125aad1"},
