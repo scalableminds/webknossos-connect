@@ -35,18 +35,24 @@ async def get_thumbnail(
     )[:, :, 0]
     if layer.category == "segmentation":
         data = data.astype("uint8")
-        thumbnail = Image.fromarray(data, mode="P")
+        thumbnail = Image.fromarray(data.T, mode="P")
         color_list = list(color_bytes.values())[: 2 ** 8]
         thumbnail.putpalette(b"".join(color_list))
         with BytesIO() as output:
             thumbnail.save(output, "PNG", transparency=0)
             return response.json(
-                {"mimeType": "image/png", "value": base64.b64encode(output.getvalue())}
+                {
+                    "mimeType": "image/png",
+                    "value": base64.b64encode(output.getvalue()).decode("utf-8"),
+                }
             )
     else:
-        thumbnail = Image.fromarray(data)
+        thumbnail = Image.fromarray(data.T)
         with BytesIO() as output:
             thumbnail.save(output, "JPEG")
             return response.json(
-                {"mimeType": "image/jpeg", "value": base64.b64encode(output.getvalue())}
+                {
+                    "mimeType": "image/jpeg",
+                    "value": base64.b64encode(output.getvalue()).decode("utf-8"),
+                }
             )
