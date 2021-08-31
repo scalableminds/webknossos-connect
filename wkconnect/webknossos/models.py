@@ -63,7 +63,12 @@ class DataLayer:
         assert self.elementClass in ["uint8", "uint16", "uint24", "uint32", "uint64"]
         if self.category == "segmentation":
             if self.largestSegmentId is None:
-                self.largestSegmentId = cast(int, np.iinfo(self.elementClass).max)
+                if self.elementClass == "uint64":
+                    # See max safe integer in JS
+                    # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+                    self.largestSegmentId = cast(int, 2 ** 53 - 1)
+                else:
+                    self.largestSegmentId = cast(int, np.iinfo(self.elementClass).max)
             self.mappings = []
         self.wkwResolutions = [
             {"resolution": i, "cubeLength": 1024} for i in self.resolutions
