@@ -5,6 +5,7 @@ from .histogram import histogram
 from .read_data import read_data
 from .thumbnail import thumbnail
 from .upload import upload
+from .meshes import meshes
 
 datasets = Blueprint.group(
     datasource_properties,
