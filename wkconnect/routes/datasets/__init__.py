@@ -13,5 +13,6 @@ datasets = Blueprint.group(
     thumbnail,
     histogram,
     upload,
+    meshes,
     url_prefix="/datasets",
 )
