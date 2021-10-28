@@ -2,10 +2,10 @@ from sanic import Blueprint
 
 from .datasource_properties import datasource_properties
 from .histogram import histogram
+from .meshes import meshes
 from .read_data import read_data
 from .thumbnail import thumbnail
 from .upload import upload
-from .meshes import meshes
 
 datasets = Blueprint.group(
     datasource_properties,
