@@ -27,6 +27,8 @@ sanic = "21.3.4"
 sanic_cors = "^1.0.0"
 tifffile = "^2020.9.3"
 wkcuber = "^0.5"
+DracoPy = "^0.0.19"
+numpy-stl = "^2.16.3"
 
 [tool.poetry.dev-dependencies]
 autoflake = "*"

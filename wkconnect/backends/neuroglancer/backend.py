@@ -11,6 +11,8 @@ from aiohttp import ClientResponseError, ClientSession
 from async_lru import alru_cache
 from gcloud.aio.auth import Token
 
+from wkconnect.backends.neuroglancer.meshes import MeshInfo, Meshfile
+
 from ...utils.exceptions import RuntimeErrorWithUserMessage
 from ...utils.types import JSON, Box3D, Vec3D, Vec3Df
 from ..backend import Backend, DatasetInfo
@@ -91,39 +93,52 @@ class Neuroglancer(Backend):
             else:
                 raise e
         layer.update(response)
+
+        if "mesh" in layer:
+            mesh_info_url = layer["source"] + "/" + layer["mesh"] + "/info"
+            try:
+                async with await self.http_client.get(
+                    mesh_info_url, headers=await get_header(token)
+                ) as r:
+                    mesh_info = await r.json(content_type=None)
+                    layer["mesh"] = MeshInfo.parse(mesh_info)
+                    print(layer["mesh"])
+            except ClientResponseError as e:
+                if e.status == 403:
+                    raise NeuroglancerAuthenticationMissingError(
+                        "Could not authenticate the neuroglancer dataset, "
+                        + "please add authentication"
+                    )
+                elif e.status == 404:
+                    del layer["mesh"]
+                else:
+                    raise e
+
         layer["scales"] = sorted(layer["scales"], key=lambda scale: scale["resolution"])
         min_resolution = Vec3Df(*layer["scales"][0]["resolution"])
 
         new_scales: List[Scale] = []
         for scale in layer["scales"]:
             resolution = Vec3Df(*scale["resolution"])
+            chunk_size = Vec3D(*scale["chunk_sizes"][0])
+            dataset_size = Vec3D(*scale["size"])
             assert resolution % min_resolution == Vec3Df.zeros()
             new_scales.append(
                 Scale(
-                    chunk_size=Vec3D(*scale["chunk_sizes"][0]),
+                    chunk_size=chunk_size,
                     encoding=scale["encoding"],
                     key=scale["key"],
                     mag=(resolution // min_resolution).to_int(),
-                    size=Vec3D(*scale["size"]),
+                    size=dataset_size,
                     voxel_offset=(
                         Vec3D(*scale["voxel_offset"]).to_int()
                         if "voxel_offset" in scale
                         else Vec3D.zeros()
                     ),
-                    sharding=ShardingInfo(
-                        dataset_size=Vec3D(*scale["size"]),
-                        chunk_size=Vec3D(*scale["chunk_sizes"][0]),
-                        preshift_bits=int(scale["sharding"]["preshift_bits"]),
-                        shard_bits=int(scale["sharding"]["shard_bits"]),
-                        minishard_bits=int(scale["sharding"]["minishard_bits"]),
-                        hashfn=scale["sharding"]["hash"],
-                        minishard_index_encoding=scale["sharding"].get(
-                            "minishard_index_encoding"
-                        ),
-                        data_encoding=scale["sharding"].get("data_encoding"),
+                    sharding=ShardingInfo.parse(
+                        scale["sharding"], dataset_size, chunk_size
                     )
                     if "sharding" in scale
-                    and scale["sharding"]["@type"] == "neuroglancer_uint64_sharded_v1"
                     else None,
                     compressed_segmentation_block_size=Vec3D(
                         *scale["compressed_segmentation_block_size"]
@@ -142,6 +157,7 @@ class Neuroglancer(Backend):
                 scales=tuple(new_scales),
                 resolution=min_resolution,
                 type=layer["type"],
+                mesh=layer.get("mesh"),
             ),
         )
 
@@ -358,7 +374,79 @@ class Neuroglancer(Backend):
 
         return self.__cutout(chunks, box)
 
+    @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
+    async def __read_meshfile(
+        self, layer: Layer, segment_id: int, token: Optional[Token]
+    ) -> Optional[Meshfile]:
+        assert layer.mesh is not None
+        mesh_info = layer.mesh
+        sharding_info = mesh_info.sharding
+        chunk_id = np.uint64(segment_id)
+        minishard_info = sharding_info.get_minishard_info(chunk_id)
+        shard_url = f"{layer.source}/mesh/{sharding_info.format_shard_for_url(minishard_info)}.shard"
+        print("shard_url", shard_url)
+        minishard_index = await self.__read_minishard_index(
+            shard_url, sharding_info, minishard_info, token
+        )
+        chunk_range = sharding_info.get_chunk_range(chunk_id, minishard_index)
+        print("chunk_range", chunk_range)
+        if chunk_range is None:
+            return None
+        buf = sharding_info.parse_chunk(
+            await self.__read_ranged_data(shard_url, chunk_range, token)
+        )
+        return mesh_info.parse_meshfile(buf, chunk_range[0])
+
+    async def __read_mesh_data(
+        self,
+        layer: Layer,
+        meshfile: Meshfile,
+        segment_id: int,
+        position: Vec3D,
+        token: Optional[Token],
+    ) -> Optional[bytes]:
+        assert layer.mesh is not None
+        sharding_info = layer.mesh.sharding
+        fragment = next(
+            fragment
+            for fragment in meshfile.lods[0].fragments
+            if fragment.position.to_int() == position
+        )
+        chunk_id = np.uint64(segment_id)
+        minishard_info = sharding_info.get_minishard_info(chunk_id)
+        shard_url = f"{layer.source}/mesh/{sharding_info.format_shard_for_url(minishard_info)}.shard"
+        buf = await self.__read_ranged_data(
+            shard_url,
+            (fragment.byte_offset, fragment.byte_offset + fragment.byte_size),
+            token,
+        )
+        return meshfile.decode_data(buf)
+
+    async def get_chunks_for_mesh(
+        self, dataset: Dataset, layer_name: str, _mesh_name: str, segment_id: int
+    ) -> Optional[List[Vec3D]]:
+        layer = dataset.layers[layer_name]
+        assert layer.mesh is not None
+        meshfile = await self.__read_meshfile(layer, segment_id, dataset.token)
+        return [fragment.position.to_int() for fragment in meshfile.lods[0].fragments]
+
+    async def get_chunk_data_for_mesh(
+        self,
+        dataset: Dataset,
+        layer_name: str,
+        _mesh_name: str,
+        segment_id: int,
+        position: Vec3D,
+    ) -> Optional[bytes]:
+        layer = dataset.layers[layer_name]
+        assert layer.mesh is not None
+        meshfile = await self.__read_meshfile(layer, segment_id, dataset.token)
+        return await self.__read_mesh_data(
+            layer, meshfile, segment_id, position, dataset.token
+        )
+
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:
         self.__read_chunk.cache_clear()  # pylint: disable=no-member
         self.__read_shard_index.cache_clear()  # pylint: disable=no-member
         self.__read_minishard_index.cache_clear()  # pylint: disable=no-member
+        self.__read_meshfile.cache_clear()  # pylint: disable=no-member

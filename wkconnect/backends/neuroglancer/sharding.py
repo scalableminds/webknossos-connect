@@ -1,7 +1,7 @@
 import gzip
 import math
 from dataclasses import dataclass, field
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 
 import numpy as np
 
@@ -101,6 +101,25 @@ class ShardingInfo:
             self, "_minishard_mask", compute_minishard_mask(self.minishard_bits)
         )
 
+    @staticmethod
+    def parse(
+        info_json: Any,
+        dataset_size: Optional[Vec3D] = None,
+        chunk_size: Optional[Vec3D] = None,
+    ) -> "ShardingInfo":
+        assert info_json["@type"] == "neuroglancer_uint64_sharded_v1"
+
+        return ShardingInfo(
+            dataset_size=dataset_size if dataset_size is not None else Vec3D.zeros(),
+            chunk_size=chunk_size if chunk_size is not None else Vec3D.zeros(),
+            preshift_bits=int(info_json["preshift_bits"]),
+            shard_bits=int(info_json["shard_bits"]),
+            minishard_bits=int(info_json["minishard_bits"]),
+            hashfn=info_json["hash"],
+            minishard_index_encoding=info_json.get("minishard_index_encoding"),
+            data_encoding=info_json.get("data_encoding"),
+        )
+
     def get_chunk_key(self, pos: Vec3D) -> np.uint64:
         chunk_addr = pos // self.chunk_size
         grid_size = Vec3D(
@@ -114,9 +133,8 @@ class ShardingInfo:
 
     def hash_chunk_id(self, chunk_id: np.uint64) -> np.uint64:
         if self.hashfn == "murmurhash3_x86_128":
-            return np.uint64(hash64(chunk_id.tobytes(), x64arch=False)[0])
-        elif self.hashfn == "identity":
-            return chunk_id
+            return np.uint64(hash64(chunk_id.tobytes())[0])
+        return chunk_id
 
     def get_minishard_info(self, key: np.uint64) -> MinishardInfo:
         chunk_id = np.uint64(key) >> np.uint64(self.preshift_bits)

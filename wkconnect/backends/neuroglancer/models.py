@@ -3,6 +3,7 @@ from typing import Dict, Optional, Tuple
 
 from gcloud.aio.auth import Token
 
+
 from ...utils.types import Box3D, Vec3D, Vec3Df
 from ...webknossos.models import BoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
@@ -10,6 +11,7 @@ from ...webknossos.models import DataSource as WkDataSource
 from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
 from .sharding import ShardingInfo
+from .meshes import MeshInfo
 
 
 @dataclass(frozen=True)
@@ -46,6 +48,7 @@ class Layer:
     scales: Tuple[Scale, ...]
     resolution: Vec3Df
     type: str
+    mesh: Optional[MeshInfo] = None
     largestSegmentId: Optional[int] = None
 
     def __post_init__(self) -> None:
