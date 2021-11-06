@@ -17,7 +17,7 @@ async def get_meshes(
     )
 
     if backend_name == "neuroglancer":
-        if layer_name in dataset.layers and dataset.layers.mesh:
+        if layer_name in dataset.layers and dataset.layers[layer_name].mesh:
             return response.json(["mesh"])
 
     return response.json([])
@@ -70,4 +70,3 @@ async def get_mesh_chunk_data(
         return response.raw(chunk_data)
 
     return response.text("", 404)
-

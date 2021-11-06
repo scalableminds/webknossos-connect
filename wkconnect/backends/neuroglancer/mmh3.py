@@ -12,27 +12,26 @@ https://pypi.python.org/pypi/mmh3/2.3.1
 """
 
 
-from typing import Tuple
+from typing import Tuple, Union
 
 
-def _xrange(a, b, c):
-    return range(a, b, c)
-
-
-def _xencode(x):
-    if isinstance(x, bytes) or isinstance(x, bytearray):
+def _xencode(x: Union[bytes, bytearray, str]) -> bytearray:
+    if isinstance(x, bytearray):
         return x
+    elif isinstance(x, bytes):
+        return bytearray(x)
     else:
-        return x.encode()
+        return bytearray(x.encode())
 
 
-def hash128(key: int, seed: int = 0x0) -> int:
+# flake8: noqa: C901
+def hash128(key: bytes, seed: int = 0x0) -> int:
     """ Implements 128bit murmur3 hash. """
 
-    def hash128_x86(key: int, seed: int) -> int:
+    def hash128_x86(key: bytes, seed: int) -> int:
         """ Implements 128bit murmur3 hash for x86. """
 
-        def fmix(h):
+        def fmix(h: int) -> int:
             h ^= h >> 16
             h = (h * 0x85EBCA6B) & 0xFFFFFFFF
             h ^= h >> 13
@@ -54,7 +53,7 @@ def hash128(key: int, seed: int = 0x0) -> int:
         c4 = 0xA1E38B93
 
         # body
-        for block_start in _xrange(0, nblocks * 16, 16):
+        for block_start in range(0, nblocks * 16, 16):
             k1 = (
                 key[block_start + 3] << 24
                 | key[block_start + 2] << 16
@@ -212,12 +211,12 @@ def hash128(key: int, seed: int = 0x0) -> int:
 
         return h4 << 96 | h3 << 64 | h2 << 32 | h1
 
-    key = bytearray(_xencode(key))
+    key = _xencode(key)
 
     return hash128_x86(key, seed)
 
 
-def hash64(key: int, seed: int = 0x0) -> Tuple[int, int]:
+def hash64(key: bytes, seed: int = 0x0) -> Tuple[int, int]:
     """ Implements 64bit murmur3 hash. Returns a tuple. """
 
     hash_128 = hash128(key, seed)

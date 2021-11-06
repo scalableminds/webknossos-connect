@@ -1,12 +1,13 @@
 from dataclasses import dataclass, replace
-import numpy as np
-from typing import Any, List, Tuple
-import DracoPy
-from stl import Mesh
 from io import BytesIO
+from typing import Any, List, Tuple
 
-from .sharding import ShardingInfo
+import DracoPy
+import numpy as np
+from stl import Mesh
+
 from ...utils.types import Vec3Df
+from .sharding import ShardingInfo
 
 
 @dataclass(frozen=True)
@@ -46,14 +47,14 @@ class Meshfile:
             self.chunk_shape * self.lods[lod].scale,
         )
 
-    def decode_data(self, buf: bytes) -> bytes:
+    def decode_data(self, fragment: MeshfileFragment, buf: bytes) -> bytes:
         mesh_obj = DracoPy.decode_buffer_to_mesh(buf)
         vertices = np.array(mesh_obj.points, dtype="f4").reshape((-1, 3))
         faces = np.array(mesh_obj.faces, dtype="<u4").reshape((-1, 3))
         stl_mesh = Mesh(np.zeros(faces.shape[0], dtype=Mesh.dtype))
         for i, f in enumerate(faces):
             for j in range(3):
-                stl_mesh.vectors[i][j] = vertices[f[j], :]
+                stl_mesh.vectors[i][j] = fragment.position.as_np() + vertices[f[j], :]
         out_buf = BytesIO()
         stl_mesh.save("mesh.stl", out_buf, update_normals=True)
         return out_buf.getvalue()
@@ -62,20 +63,23 @@ class Meshfile:
 @dataclass(frozen=True)
 class MeshInfo:
     sharding: ShardingInfo
-    transform: np.ndarray
+    _transform: Tuple[float, ...]
     vertex_quantization_bits: int
     lod_scale_multiplier: int = 1
 
     @staticmethod
     def parse(info_json: Any) -> "MeshInfo":
-        print(info_json)
         assert info_json["@type"] == "neuroglancer_multilod_draco"
         return MeshInfo(
             sharding=ShardingInfo.parse(info_json["sharding"]),
-            transform=np.array(info_json["transform"], dtype="f4").reshape((4, 3)),
+            _transform=tuple(info_json["transform"]),
             vertex_quantization_bits=info_json["vertex_quantization_bits"],
             lod_scale_multiplier=info_json["lod_scale_multiplier"],
         )
+
+    @property
+    def transform(self) -> np.ndarray:
+        return np.array(self._transform, dtype="f4").reshape((3, 4))
 
     def parse_meshfile(self, buf: bytes, byte_offset: int) -> Meshfile:
         p = 0

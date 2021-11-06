@@ -11,7 +11,7 @@ from aiohttp import ClientResponseError, ClientSession
 from async_lru import alru_cache
 from gcloud.aio.auth import Token
 
-from wkconnect.backends.neuroglancer.meshes import MeshInfo, Meshfile
+from wkconnect.backends.neuroglancer.meshes import Meshfile, MeshfileLod, MeshInfo
 
 from ...utils.exceptions import RuntimeErrorWithUserMessage
 from ...utils.types import JSON, Box3D, Vec3D, Vec3Df
@@ -21,6 +21,8 @@ from .sharding import MinishardInfo, ShardingInfo
 
 DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
+
+MESH_LOD = 2
 
 
 class NeuroglancerAuthenticationError(RuntimeError):
@@ -42,6 +44,10 @@ async def get_header(token: Optional[Token]) -> Dict[str, str]:
         if token_str is None:
             return {}
         return {"Authorization": "Bearer " + token_str}
+
+
+def select_lod(meshfile: Meshfile) -> MeshfileLod:
+    return meshfile.lods[min(len(meshfile.lods) - 1, MESH_LOD)]
 
 
 class Neuroglancer(Backend):
@@ -102,7 +108,6 @@ class Neuroglancer(Backend):
                 ) as r:
                     mesh_info = await r.json(content_type=None)
                     layer["mesh"] = MeshInfo.parse(mesh_info)
-                    print(layer["mesh"])
             except ClientResponseError as e:
                 if e.status == 403:
                     raise NeuroglancerAuthenticationMissingError(
@@ -384,12 +389,12 @@ class Neuroglancer(Backend):
         chunk_id = np.uint64(segment_id)
         minishard_info = sharding_info.get_minishard_info(chunk_id)
         shard_url = f"{layer.source}/mesh/{sharding_info.format_shard_for_url(minishard_info)}.shard"
-        print("shard_url", shard_url)
+        # print("shard_url", shard_url)
         minishard_index = await self.__read_minishard_index(
             shard_url, sharding_info, minishard_info, token
         )
         chunk_range = sharding_info.get_chunk_range(chunk_id, minishard_index)
-        print("chunk_range", chunk_range)
+        # print("chunk_range", chunk_range)
         if chunk_range is None:
             return None
         buf = sharding_info.parse_chunk(
@@ -409,7 +414,7 @@ class Neuroglancer(Backend):
         sharding_info = layer.mesh.sharding
         fragment = next(
             fragment
-            for fragment in meshfile.lods[0].fragments
+            for fragment in select_lod(meshfile).fragments
             if fragment.position.to_int() == position
         )
         chunk_id = np.uint64(segment_id)
@@ -420,7 +425,7 @@ class Neuroglancer(Backend):
             (fragment.byte_offset, fragment.byte_offset + fragment.byte_size),
             token,
         )
-        return meshfile.decode_data(buf)
+        return meshfile.decode_data(fragment, buf)
 
     async def get_chunks_for_mesh(
         self, dataset: Dataset, layer_name: str, _mesh_name: str, segment_id: int
@@ -428,7 +433,9 @@ class Neuroglancer(Backend):
         layer = dataset.layers[layer_name]
         assert layer.mesh is not None
         meshfile = await self.__read_meshfile(layer, segment_id, dataset.token)
-        return [fragment.position.to_int() for fragment in meshfile.lods[0].fragments]
+        return [
+            fragment.position.to_int() for fragment in select_lod(meshfile).fragments
+        ]
 
     async def get_chunk_data_for_mesh(
         self,
