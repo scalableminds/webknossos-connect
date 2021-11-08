@@ -23,6 +23,7 @@ DecoderFn = Callable[[bytes, str, Vec3D, Optional[Vec3D]], np.ndarray]
 Chunk = Tuple[Box3D, np.ndarray]
 
 MESH_LOD = 2
+MESH_NAME = "mesh"
 
 
 class NeuroglancerAuthenticationError(RuntimeError):
@@ -427,27 +428,47 @@ class Neuroglancer(Backend):
         )
         return meshfile.decode_data(fragment, buf)
 
+    async def get_meshes(
+        self, abstract_dataset: DatasetInfo, layer_name: str
+    ) -> Optional[List[str]]:
+        dataset = cast(Dataset, abstract_dataset)
+        if layer_name in dataset.layers and dataset.layers[layer_name].mesh:
+            return [MESH_NAME]
+        return []
+
     async def get_chunks_for_mesh(
-        self, dataset: Dataset, layer_name: str, _mesh_name: str, segment_id: int
+        self,
+        abstract_dataset: DatasetInfo,
+        layer_name: str,
+        mesh_name: str,
+        segment_id: int,
     ) -> Optional[List[Vec3D]]:
+        dataset = cast(Dataset, abstract_dataset)
         layer = dataset.layers[layer_name]
         assert layer.mesh is not None
+        assert mesh_name == MESH_NAME
         meshfile = await self.__read_meshfile(layer, segment_id, dataset.token)
+        if meshfile is None:
+            return None
         return [
             fragment.position.to_int() for fragment in select_lod(meshfile).fragments
         ]
 
     async def get_chunk_data_for_mesh(
         self,
-        dataset: Dataset,
+        abstract_dataset: DatasetInfo,
         layer_name: str,
-        _mesh_name: str,
+        mesh_name: str,
         segment_id: int,
         position: Vec3D,
     ) -> Optional[bytes]:
+        dataset = cast(Dataset, abstract_dataset)
         layer = dataset.layers[layer_name]
         assert layer.mesh is not None
+        assert mesh_name == MESH_NAME
         meshfile = await self.__read_meshfile(layer, segment_id, dataset.token)
+        if meshfile is None:
+            return None
         return await self.__read_mesh_data(
             layer, meshfile, segment_id, position, dataset.token
         )

@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from aiohttp import ClientSession
@@ -51,6 +51,52 @@ class Backend(metaclass=ABCMeta):
         :param shape: in scale voxels
         :returns: numpy array of shape shape
         """
+
+    async def get_meshes(
+        self, dataset: DatasetInfo, layer_name: str
+    ) -> Optional[List[str]]:
+        """
+        List the available meshfiles of a layer from the backend.
+
+        :param dataset:
+        :param layer_name:
+        :returns: list of meshfile names
+        """
+        raise NotImplementedError()
+
+    async def get_chunks_for_mesh(
+        self, dataset: DatasetInfo, layer_name: str, mesh_name: str, segment_id: int
+    ) -> Optional[List[Vec3D]]:
+        """
+        List the available chunks of a mesh from the backend.
+
+        :param dataset:
+        :param layer_name:
+        :param mesh_name:
+        :param segment_id:
+        :returns: list of tuples with the top-left position of each chunk
+        """
+        raise NotImplementedError()
+
+    async def get_chunk_data_for_mesh(
+        self,
+        dataset: DatasetInfo,
+        layer_name: str,
+        mesh_name: str,
+        segment_id: int,
+        position: Vec3D,
+    ) -> Optional[bytes]:
+        """
+        Read a chunk of a mesh from the backend.
+
+        :param dataset:
+        :param layer_name:
+        :param mesh_name:
+        :param segment_id:
+        :param position:
+        :returns: bytes of a mesh chunk in binary STL format
+        """
+        raise NotImplementedError()
 
     @abstractmethod
     def clear_dataset_cache(self, dataset: DatasetInfo) -> None:

@@ -15,12 +15,12 @@ async def get_meshes(
     (backend_name, dataset) = request.app.ctx.repository.get_dataset(
         organization_name, dataset_name
     )
+    backend = request.app.ctx.backends[backend_name]
 
-    if backend_name == "neuroglancer":
-        if layer_name in dataset.layers and dataset.layers[layer_name].mesh:
-            return response.json(["mesh"])
-
-    return response.json([])
+    try:
+        return response.json(await backend.get_meshes(dataset, layer_name))
+    except NotImplementedError:
+        return response.empty(status=501)
 
 
 @meshes.route(
@@ -37,14 +37,16 @@ async def get_mesh_chunks(
     )
     backend = request.app.ctx.backends[backend_name]
 
-    if backend_name == "neuroglancer":
-        segment_id = request_body["segmentId"]
+    segment_id = request_body["segmentId"]
+    try:
         chunks = await backend.get_chunks_for_mesh(
             dataset, layer_name, "mesh", segment_id
         )
+        if chunks is None:
+            return response.empty(status=404)
         return response.json(chunks)
-
-    return response.json([])
+    except NotImplementedError:
+        return response.empty(status=501)
 
 
 @meshes.route(
@@ -60,13 +62,16 @@ async def get_mesh_chunk_data(
         organization_name, dataset_name
     )
     backend = request.app.ctx.backends[backend_name]
+    segment_id = request_body["segmentId"]
+    position = Vec3D(*request_body["position"])
 
-    if backend_name == "neuroglancer":
-        segment_id = request_body["segmentId"]
-        position = Vec3D(*request_body["position"])
+    try:
         chunk_data = await backend.get_chunk_data_for_mesh(
             dataset, layer_name, "mesh", segment_id, position
         )
-        return response.raw(chunk_data)
+        if chunk_data is None:
+            return response.empty(status=404)
 
-    return response.text("", 404)
+        return response.raw(chunk_data)
+    except NotImplementedError:
+        return response.empty(status=501)
