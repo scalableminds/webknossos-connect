@@ -62,6 +62,11 @@ class Meshfile:
 
 @dataclass(frozen=True)
 class MeshInfo:
+    """
+    Stores the representation of the meshes of a segmentation layer.
+    The format is defined at https://github.com/google/neuroglancer/blob/master/src/neuroglancer/datasource/precomputed/meshes.md.
+    """
+
     sharding: ShardingInfo
     _transform: Tuple[float, ...]
     vertex_quantization_bits: int

@@ -1,7 +1,8 @@
 from sanic import Blueprint, response
 from sanic.request import Request
 
-from wkconnect.utils.types import Vec3D
+from ...utils.types import Vec3D
+from ...webknossos.access import AccessRequest, authorized
 
 meshes = Blueprint(__name__)
 
@@ -9,6 +10,7 @@ meshes = Blueprint(__name__)
 @meshes.route(
     "/<organization_name>/<dataset_name>/layers/<layer_name>/meshes", methods=["GET"]
 )
+@authorized(AccessRequest.read_dataset)
 async def get_meshes(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:
@@ -27,6 +29,7 @@ async def get_meshes(
     "/<organization_name>/<dataset_name>/layers/<layer_name>/meshes/chunks",
     methods=["POST"],
 )
+@authorized(AccessRequest.read_dataset)
 async def get_mesh_chunks(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:
@@ -53,6 +56,7 @@ async def get_mesh_chunks(
     "/<organization_name>/<dataset_name>/layers/<layer_name>/meshes/chunks/data",
     methods=["POST"],
 )
+@authorized(AccessRequest.read_dataset)
 async def get_mesh_chunk_data(
     request: Request, organization_name: str, dataset_name: str, layer_name: str
 ) -> response.HTTPResponse:

@@ -11,11 +11,10 @@ from aiohttp import ClientResponseError, ClientSession
 from async_lru import alru_cache
 from gcloud.aio.auth import Token
 
-from wkconnect.backends.neuroglancer.meshes import Meshfile, MeshfileLod, MeshInfo
-
 from ...utils.exceptions import RuntimeErrorWithUserMessage
 from ...utils.types import JSON, Box3D, Vec3D, Vec3Df
 from ..backend import Backend, DatasetInfo
+from ..neuroglancer.meshes import Meshfile, MeshfileLod, MeshInfo
 from .models import Dataset, Layer, Scale
 from .sharding import MinishardInfo, ShardingInfo
 
@@ -390,7 +389,6 @@ class Neuroglancer(Backend):
         chunk_id = np.uint64(segment_id)
         minishard_info = sharding_info.get_minishard_info(chunk_id)
         shard_url = f"{layer.source}/mesh/{sharding_info.format_shard_for_url(minishard_info)}.shard"
-        # print("shard_url", shard_url)
         minishard_index = await self.__read_minishard_index(
             shard_url, sharding_info, minishard_info, token
         )

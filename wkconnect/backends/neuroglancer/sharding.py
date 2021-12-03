@@ -107,7 +107,9 @@ class ShardingInfo:
         dataset_size: Optional[Vec3D] = None,
         chunk_size: Optional[Vec3D] = None,
     ) -> "ShardingInfo":
-        assert info_json["@type"] == "neuroglancer_uint64_sharded_v1"
+        assert (
+            info_json["@type"] == "neuroglancer_uint64_sharded_v1"
+        ), "Only `neuroglancer_uint64_sharded_v1` sharding type is supported."
 
         return ShardingInfo(
             dataset_size=dataset_size if dataset_size is not None else Vec3D.zeros(),
@@ -132,9 +134,14 @@ class ShardingInfo:
         return format(loc.shard_number, "x").zfill(int(np.ceil(self.shard_bits / 4.0)))
 
     def hash_chunk_id(self, chunk_id: np.uint64) -> np.uint64:
+        assert self.hashfn in (
+            "murmurhash3_x86_128",
+            "identity",
+        ), "Only `identity` or `murmurhash3_x86_128` hash functions are supported."
         if self.hashfn == "murmurhash3_x86_128":
             return np.uint64(hash64(chunk_id.tobytes())[0])
-        return chunk_id
+        else:
+            return chunk_id
 
     def get_minishard_info(self, key: np.uint64) -> MinishardInfo:
         chunk_id = np.uint64(key) >> np.uint64(self.preshift_bits)
