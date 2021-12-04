@@ -8,9 +8,8 @@ import numpy as np
 from aiohttp import ClientSession
 from wkcuber.api.Dataset import WKDataset
 
-from wkconnect.utils.blocking import run_blocking
-
 from ...fast_wkw import DatasetCache  # pylint: disable=no-name-in-module
+from ...utils.blocking import run_blocking
 from ...utils.types import JSON, Vec3D
 from ..backend import Backend, DatasetInfo
 from .models import Dataset
