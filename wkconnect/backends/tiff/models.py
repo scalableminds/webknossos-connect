@@ -8,8 +8,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 from tifffile import TiffFile, imread
 
-from wkconnect.utils.types import Vec3D, Vec3Df
-
+from ...utils.types import Vec3D, Vec3Df
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource

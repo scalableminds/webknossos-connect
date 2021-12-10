@@ -9,6 +9,7 @@ from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
 from ...webknossos.models import DataSourceId as WkDataSourceId
 from ..backend import DatasetInfo
+from .meshes import MeshInfo
 from .sharding import ShardingInfo
 
 
@@ -46,6 +47,7 @@ class Layer:
     scales: Tuple[Scale, ...]
     resolution: Vec3Df
     type: str
+    mesh: Optional[MeshInfo] = None
     largestSegmentId: Optional[int] = None
 
     def __post_init__(self) -> None:

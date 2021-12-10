@@ -1,11 +1,12 @@
 import gzip
 import math
 from dataclasses import dataclass, field
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 
 from ...utils.types import Vec3D
+from .mmh3 import hash64
 
 
 def compressed_morton_code(pos: Vec3D, grid_size: Vec3D) -> np.uint64:
@@ -90,9 +91,6 @@ class ShardingInfo:
     _minishard_mask: np.uint64 = field(init=False)
 
     def __post_init__(self) -> None:
-        assert (
-            self.hashfn == "identity"
-        ), "Only `identity` is currently supported and not `murmurhash3_x86_128`"
         # object.__setattr__ must be used to circumvent errors since the dataclass is frozen
         object.__setattr__(
             self,
@@ -101,6 +99,27 @@ class ShardingInfo:
         )
         object.__setattr__(
             self, "_minishard_mask", compute_minishard_mask(self.minishard_bits)
+        )
+
+    @staticmethod
+    def parse(
+        info_json: Any,
+        dataset_size: Optional[Vec3D] = None,
+        chunk_size: Optional[Vec3D] = None,
+    ) -> "ShardingInfo":
+        assert (
+            info_json["@type"] == "neuroglancer_uint64_sharded_v1"
+        ), "Only `neuroglancer_uint64_sharded_v1` sharding type is supported."
+
+        return ShardingInfo(
+            dataset_size=dataset_size if dataset_size is not None else Vec3D.zeros(),
+            chunk_size=chunk_size if chunk_size is not None else Vec3D.zeros(),
+            preshift_bits=int(info_json["preshift_bits"]),
+            shard_bits=int(info_json["shard_bits"]),
+            minishard_bits=int(info_json["minishard_bits"]),
+            hashfn=info_json["hash"],
+            minishard_index_encoding=info_json.get("minishard_index_encoding"),
+            data_encoding=info_json.get("data_encoding"),
         )
 
     def get_chunk_key(self, pos: Vec3D) -> np.uint64:
@@ -114,10 +133,19 @@ class ShardingInfo:
     def format_shard_for_url(self, loc: MinishardInfo) -> str:
         return format(loc.shard_number, "x").zfill(int(np.ceil(self.shard_bits / 4.0)))
 
+    def hash_chunk_id(self, chunk_id: np.uint64) -> np.uint64:
+        assert self.hashfn in (
+            "murmurhash3_x86_128",
+            "identity",
+        ), "Only `identity` or `murmurhash3_x86_128` hash functions are supported."
+        if self.hashfn == "murmurhash3_x86_128":
+            return np.uint64(hash64(chunk_id.tobytes())[0])
+        else:
+            return chunk_id
+
     def get_minishard_info(self, key: np.uint64) -> MinishardInfo:
         chunk_id = np.uint64(key) >> np.uint64(self.preshift_bits)
-        # Only `identity` hashfn is currently supported, so this is a no-op:
-        # chunk_id = hashfn(chunk_id)
+        chunk_id = self.hash_chunk_id(chunk_id)
         minishard_number = np.uint64(chunk_id & self._minishard_mask)
         shard_number = np.uint64(
             (chunk_id & self._shard_mask) >> np.uint64(self.minishard_bits)

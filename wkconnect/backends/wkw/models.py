@@ -8,9 +8,8 @@ from wkcuber.api.Dataset import WKDataset
 from wkcuber.api.Properties.LayerProperties import LayerProperties
 from wkcuber.mag import Mag
 
-from wkconnect.utils.types import Vec3D, Vec3Df
-
 from ...fast_wkw import DatasetCache, DatasetHandle  # pylint: disable=no-name-in-module
+from ...utils.types import Vec3D, Vec3Df
 from ...webknossos.models import BoundingBox as WkBoundingBox
 from ...webknossos.models import DataLayer as WkDataLayer
 from ...webknossos.models import DataSource as WkDataSource
