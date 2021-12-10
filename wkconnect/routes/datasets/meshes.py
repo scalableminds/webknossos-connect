@@ -41,9 +41,10 @@ async def get_mesh_chunks(
     backend = request.app.ctx.backends[backend_name]
 
     segment_id = request_body["segmentId"]
+    mesh_name = request_body["meshFile"]
     try:
         chunks = await backend.get_chunks_for_mesh(
-            dataset, layer_name, "mesh", segment_id
+            dataset, layer_name, mesh_name, segment_id
         )
         if chunks is None:
             return response.empty(status=404)
@@ -67,11 +68,12 @@ async def get_mesh_chunk_data(
     )
     backend = request.app.ctx.backends[backend_name]
     segment_id = request_body["segmentId"]
+    mesh_name = request_body["meshFile"]
     position = Vec3D(*request_body["position"])
 
     try:
         chunk_data = await backend.get_chunk_data_for_mesh(
-            dataset, layer_name, "mesh", segment_id, position
+            dataset, layer_name, mesh_name, segment_id, position
         )
         if chunk_data is None:
             return response.empty(status=404)
