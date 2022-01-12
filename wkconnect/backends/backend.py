@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List, Optional, NamedTuple
+from typing import Dict, List, NamedTuple, Optional
 
 import numpy as np
 from aiohttp import ClientSession
