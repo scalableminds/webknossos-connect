@@ -11,7 +11,7 @@ from wkcuber.api.Dataset import WKDataset
 from ...fast_wkw import DatasetCache  # pylint: disable=no-name-in-module
 from ...utils.blocking import run_blocking
 from ...utils.types import JSON, Vec3D
-from ..backend import Backend, DatasetInfo
+from ..backend import Backend, DatasetInfo, MeshfileInfo
 from .models import Dataset
 
 logger = logging.getLogger()
@@ -47,15 +47,29 @@ class Wkw(Backend):
 
     async def get_meshes(
         self, abstract_dataset: DatasetInfo, layer_name: str
-    ) -> Optional[List[str]]:
+    ) -> Optional[List[MeshfileInfo]]:
         dataset = cast(Dataset, abstract_dataset)
         assert (
             layer_name in dataset.dataset_handle.layers
         ), f"Layer {layer_name} does not exist"
         meshes_folder = dataset.dataset_handle.path / layer_name / "meshes"
+
+        def read_mesh_mapping_name(mesh_path: Path) -> Optional[str]:
+            with h5py.File(mesh_path, "r") as mesh_file:
+                return mesh_file.attrs.get("metadata/mapping_name", None)
+
         if meshes_folder.exists() and meshes_folder.is_dir:
-            mesh_paths = list(meshes_folder.glob("*.hdf5"))
-            return [mesh_path.name[:-5] for mesh_path in mesh_paths]
+            output = []
+            for mesh_path in meshes_folder.glob("*.hdf5"):
+                output.append(
+                    MeshfileInfo(
+                        mesh_file_name=mesh_path.name[:-5],
+                        mapping_name=await run_blocking(
+                            read_mesh_mapping_name, mesh_path
+                        ),
+                    )
+                )
+            return output
         return []
 
     async def get_chunks_for_mesh(

@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, NamedTuple
 
 import numpy as np
 from aiohttp import ClientSession
@@ -54,7 +54,7 @@ class Backend(metaclass=ABCMeta):
 
     async def get_meshes(
         self, dataset: DatasetInfo, layer_name: str
-    ) -> Optional[List[str]]:
+    ) -> Optional[List["MeshfileInfo"]]:
         """
         List the available meshfiles of a layer from the backend.
 
@@ -104,3 +104,11 @@ class Backend(metaclass=ABCMeta):
 
     async def on_shutdown(self) -> None:
         pass
+
+
+class MeshfileInfo(NamedTuple):
+    mesh_file_name: str
+    mapping_name: Optional[str] = None
+
+    def as_json(self) -> Dict[str, Optional[str]]:
+        return {"meshFileName": self.mesh_file_name, "mappingName": self.mapping_name}
