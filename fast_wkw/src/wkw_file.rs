@@ -73,7 +73,7 @@ impl WkwFile {
       .ok_or(String::from("Could not read block from disk"))?;
 
     // decompress block
-    let byte_written = match decompress_into(&buf_from_disk, buf, 0) {
+    let byte_written = match decompress_into(&buf_from_disk, buf) {
       Ok(byte_written) => byte_written,
       Err(_) => return Err(String::from("Error in LZ4 decompress")),
     };

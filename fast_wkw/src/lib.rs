@@ -67,7 +67,7 @@ struct DatasetHandle {
 impl DatasetHandle {
   fn read_block(&self, py: Python, src_pos: (u32, u32, u32)) -> PyResult<PyObject> {
     let dataset = self.dataset.clone();
-    pyo3_asyncio::tokio::into_coroutine(py, async move {
+    let result = pyo3_asyncio::tokio::future_into_py(py, async move {
       let (buf, dtype, shape) = tokio::task::spawn_blocking(move || {
         let offset = wkwrap::Vec3 {
           x: src_pos.0,
@@ -92,27 +92,24 @@ impl DatasetHandle {
       Python::with_gil(|py| {
         let py_bytes = PyBytes::new(py, &buf);
         let py_bytes: PyObject = py_bytes.into();
-        Ok(
-          Py::new(
-            py,
-            Block {
-              buf: py_bytes,
-              dtype,
-              shape,
-            },
-          )
-          .unwrap()
-          .into_py(py),
-        )
+        let py_block = Py::new(
+          py,
+          Block {
+            buf: py_bytes,
+            dtype,
+            shape,
+          },
+        )?;
+        Ok(py_block)
       })
-    })
+    })?;
+    Ok(Py::from(result))
   }
 }
 
 #[pymodule]
-fn fast_wkw(py: Python, m: &PyModule) -> PyResult<()> {
-  pyo3_asyncio::try_init(py)?;
-  pyo3_asyncio::tokio::init_multi_thread_once();
+fn fast_wkw(_py: Python, m: &PyModule) -> PyResult<()> {
+  pyo3::prepare_freethreaded_python();
 
   m.add_class::<DatasetCache>()?;
   m.add_class::<DatasetHandle>()?;

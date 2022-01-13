@@ -13,7 +13,7 @@ from gcloud.aio.auth import Token
 
 from ...utils.exceptions import RuntimeErrorWithUserMessage
 from ...utils.types import JSON, Box3D, Vec3D, Vec3Df
-from ..backend import Backend, DatasetInfo
+from ..backend import Backend, DatasetInfo, MeshfileInfo
 from ..neuroglancer.meshes import Meshfile, MeshfileLod, MeshInfo
 from .models import Dataset, Layer, Scale
 from .sharding import MinishardInfo, ShardingInfo
@@ -428,10 +428,10 @@ class Neuroglancer(Backend):
 
     async def get_meshes(
         self, abstract_dataset: DatasetInfo, layer_name: str
-    ) -> Optional[List[str]]:
+    ) -> Optional[List[MeshfileInfo]]:
         dataset = cast(Dataset, abstract_dataset)
         if layer_name in dataset.layers and dataset.layers[layer_name].mesh:
-            return [MESH_NAME]
+            return [MeshfileInfo(mesh_file_name=MESH_NAME)]
         return []
 
     async def get_chunks_for_mesh(

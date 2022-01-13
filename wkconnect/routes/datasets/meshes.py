@@ -20,7 +20,12 @@ async def get_meshes(
     backend = request.app.ctx.backends[backend_name]
 
     try:
-        return response.json(await backend.get_meshes(dataset, layer_name))
+        return response.json(
+            [
+                meshfile_info.as_json()
+                for meshfile_info in (await backend.get_meshes(dataset, layer_name))
+            ]
+        )
     except NotImplementedError:
         return response.empty(status=501)
 
