@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 triggers = Blueprint(__name__, url_prefix="/triggers")
 
 
-@triggers.route("/checkInboxBlocking")
+@triggers.route("/checkInboxBlocking", methods=["POST"])
 @authorized(AccessRequest.administrate_datasets)
 async def check_inbox_blocking(request: Request) -> response.HTTPResponse:
     app = cast("Server", request.app)
@@ -19,18 +19,13 @@ async def check_inbox_blocking(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
 
-@triggers.route("/newOrganizationFolder")
+@triggers.route("/newOrganizationFolder", methods=["POST"])
 @authorized(AccessRequest.administrate_datasets)
 async def new_organization_folder(request: Request) -> response.HTTPResponse:
     return response.text("Ok")
 
 
-@triggers.route("/checkNewOrganizationFolder")
-async def check_new_organization_folder(request: Request) -> response.HTTPResponse:
-    return response.text("Ok")
-
-
-@triggers.route("/reload/<organization_name>/<dataset_name>")
+@triggers.route("/reload/<organization_name>/<dataset_name>", methods=["POST"])
 @authorized(AccessRequest.administrate_datasets)
 async def reload_dataset(
     request: Request, organization_name: str, dataset_name: str
