@@ -1,5 +1,6 @@
 from sanic import Blueprint
 
+from .connectomes import connectomes
 from .datasource_properties import datasource_properties
 from .histogram import histogram
 from .meshes import meshes
@@ -14,5 +15,6 @@ datasets = Blueprint.group(
     histogram,
     upload,
     meshes,
+    connectomes,
     url_prefix="/datasets",
 )
