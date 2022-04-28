@@ -182,11 +182,9 @@ async def build_info(request: Request) -> response.HTTPResponse:
     return response.json(
         {
             "webknossosDatastore": {
-                "webknossos-connect": {
-                    "name": "webknossos-connect",
-                    "version": "0.1",
-                    "datastoreApiVersion": "1.0",
-                }
+                "name": "webknossos-connect",
+                "version": "0.1",
+                "datastoreApiVersion": "1.0",
             }
         }
     )
