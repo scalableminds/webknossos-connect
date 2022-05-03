@@ -46,7 +46,7 @@ async def get_data_post(
             backend.read_data(
                 dataset,
                 layer_name,
-                r.zoomStep,
+                Vec3D(*r.mag),
                 Vec3D(*r.position),
                 Vec3D(r.cubeSize, r.cubeSize, r.cubeSize),
             )

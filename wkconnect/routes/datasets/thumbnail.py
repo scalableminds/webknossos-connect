@@ -1,4 +1,3 @@
-import base64
 from io import BytesIO
 
 from PIL import Image
@@ -13,7 +12,7 @@ thumbnail = Blueprint(__name__)
 
 
 @thumbnail.route(
-    "/<organization_name>/<dataset_name>/layers/<layer_name>/thumbnail.json"
+    "/<organization_name>/<dataset_name>/layers/<layer_name>/thumbnail.jpg"
 )
 @authorized(AccessRequest.read_dataset)
 async def get_thumbnail(
@@ -27,11 +26,13 @@ async def get_thumbnail(
     )
     backend = request.app.ctx.backends[backend_name]
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
-    scale = min(3, len(layer.resolutions) - 1)
+    mag: Vec3D = layer.resolutions.sort(key=lambda m: m.max_dim())[
+        min(3, len(layer.resolutions) - 1)
+    ]
     center = layer.boundingBox.box().center()
     size = Vec3D(width, height, 1)
     data = (
-        await backend.read_data(dataset, layer_name, scale, center - size // 2, size)
+        await backend.read_data(dataset, layer_name, mag, center - size // 2, size)
     )[:, :, 0]
     if layer.category == "segmentation":
         data = data.astype("uint8")
@@ -40,19 +41,9 @@ async def get_thumbnail(
         thumbnail.putpalette(b"".join(color_list))
         with BytesIO() as output:
             thumbnail.save(output, "PNG", transparency=0)
-            return response.json(
-                {
-                    "mimeType": "image/png",
-                    "value": base64.b64encode(output.getvalue()).decode("utf-8"),
-                }
-            )
+            return response.raw(output.getvalue(), content_type="image/png")
     else:
         thumbnail = Image.fromarray(data.T)
         with BytesIO() as output:
             thumbnail.save(output, "JPEG")
-            return response.json(
-                {
-                    "mimeType": "image/jpeg",
-                    "value": base64.b64encode(output.getvalue()).decode("utf-8"),
-                }
-            )
+            return response.raw(output.getvalue(), content_type="image/jpeg")

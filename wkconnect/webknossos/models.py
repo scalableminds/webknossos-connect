@@ -15,7 +15,7 @@ class DataStoreStatus(NamedTuple):
 
 class DataRequest(NamedTuple):
     position: Vec3D
-    zoomStep: int
+    mag: Vec3D
     cubeSize: int
     fourBit: bool
 

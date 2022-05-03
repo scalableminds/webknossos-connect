@@ -66,14 +66,16 @@ class Dataset(DatasetInfo):
 
     @lru_cache(maxsize=2 ** 12)
     def read_data(
-        self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
+        self, layer_name: str, mag: Vec3D, wk_offset: Vec3D, shape: Vec3D
     ) -> Optional[np.ndarray]:
-        mag_factor = 2 ** zoom_step
-        wk_offset_scaled = wk_offset // mag_factor
+        wk_offset_scaled = wk_offset // mag.max_dim()
+
+        # This is equivalent to `int(log2(mag.as_np().max()))`, but avoids intermediate floats
+        page_index = int(mag.max_dim()).bit_length() - 1
 
         _, _, _, tile_shapes, _ = self.read_properties(layer_name)
         if tile_shapes is None:
-            page_data = self.read_whole_page(layer_name, zoom_step)
+            page_data = self.read_whole_page(layer_name, page_index)
             cropout = page_data[
                 wk_offset_scaled[0] : wk_offset_scaled[0] + shape.x,
                 wk_offset_scaled[1] : wk_offset_scaled[1] + shape.y,
@@ -83,7 +85,7 @@ class Dataset(DatasetInfo):
         else:
             tile_coordinate_offset, tile_data = self.read_tile(
                 layer_name,
-                zoom_step,
+                page_index,
                 (wk_offset_scaled.x, wk_offset_scaled.y),
                 (shape.x, shape.y),
             )

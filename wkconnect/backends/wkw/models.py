@@ -55,15 +55,13 @@ class Dataset(DatasetInfo):
 
     @lru_cache(maxsize=1000)
     def get_data_handle(
-        self, layer_name: str, zoom_step: int
+        self, layer_name: str, mag: Vec3D
     ) -> Optional[Tuple[DatasetHandle, Mag]]:
         layer = self.dataset_handle.get_layer(layer_name)
-        # Finding the right mag for the zoom_step:
-        # 2 ** zoomStep = max(mag.x, mag.y, mag.z)
         mag_datasets = [
             mag_dataset
             for mag_dataset in layer.mags.values()
-            if (2 ** zoom_step) == Mag(mag_dataset.name).as_np().max()
+            if Mag(mag_dataset.name) == Mag((mag.x, mag.y, mag.z))
         ]
         if len(mag_datasets) < 1:
             return None
@@ -74,18 +72,18 @@ class Dataset(DatasetInfo):
 
     @alru_cache(maxsize=2 ** 12, cache_exceptions=False)
     async def read_data(
-        self, layer_name: str, zoom_step: int, wk_offset: Vec3D, shape: Vec3D
+        self, layer_name: str, mag: Vec3D, wk_offset: Vec3D, shape: Vec3D
     ) -> Optional[np.ndarray]:
         assert shape == Vec3D(
             32, 32, 32
         ), "Only buckets of 32 edge length are supported"
         assert shape % 32 == Vec3D(0, 0, 0), "Only 32-aligned buckets are supported"
-        data_handle_opt = self.get_data_handle(layer_name, zoom_step)
+        data_handle_opt = self.get_data_handle(layer_name, mag)
         if data_handle_opt is None:
             return None
-        data_handle, mag = data_handle_opt
+        data_handle, mag_validated = data_handle_opt
         offset = (
-            np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / mag.as_np()
+            np.array([wk_offset.x, wk_offset.y, wk_offset.z]) / mag_validated.as_np()
         ).astype(np.uint32)
         block = await data_handle.read_block(tuple(offset))
         return np.frombuffer(block.buf, dtype=np.dtype(block.dtype)).reshape(

@@ -184,7 +184,7 @@ async def build_info(request: Request) -> response.HTTPResponse:
             "webknossosDatastore": {
                 "name": "webknossos-connect",
                 "version": "0.1",
-                "datastoreApiVersion": "1.0",
+                "datastoreApiVersion": "2.0",
             }
         }
     )

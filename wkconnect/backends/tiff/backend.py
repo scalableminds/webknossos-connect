@@ -39,12 +39,12 @@ class Tiff(Backend):
         self,
         abstract_dataset: DatasetInfo,
         layer_name: str,
-        zoom_step: int,
+        mag: Vec3D,
         wk_offset: Vec3D,
         shape: Vec3D,
     ) -> Optional[np.ndarray]:
         dataset = cast(Dataset, abstract_dataset)
-        return dataset.read_data(layer_name, zoom_step, wk_offset, shape)
+        return dataset.read_data(layer_name, mag, wk_offset, shape)
 
     def clear_dataset_cache(self, abstract_dataset: DatasetInfo) -> None:
         dataset = cast(Dataset, abstract_dataset)

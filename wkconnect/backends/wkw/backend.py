@@ -38,12 +38,12 @@ class Wkw(Backend):
         self,
         abstract_dataset: DatasetInfo,
         layer_name: str,
-        zoom_step: int,
+        mag: Vec3D,
         wk_offset: Vec3D,
         shape: Vec3D,
     ) -> Optional[np.ndarray]:
         dataset = cast(Dataset, abstract_dataset)
-        return await dataset.read_data(layer_name, zoom_step, wk_offset, shape)
+        return await dataset.read_data(layer_name, mag, wk_offset, shape)
 
     async def get_meshes(
         self, abstract_dataset: DatasetInfo, layer_name: str
