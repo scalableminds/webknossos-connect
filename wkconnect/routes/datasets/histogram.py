@@ -34,11 +34,11 @@ async def histogram_post(
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
 
     sample_positions = generate_sample_positions(2, layer.boundingBox, BUCKET_SIZE)
-    sample_positions, zoom_step = align_positions_with_mag(sample_positions, layer)
+    sample_positions, mag = align_positions_with_mag(sample_positions, layer)
     sample_positions_distinct = sorted(set(sample_positions))
 
     bucket_requests = [
-        WKDataRequest(position, zoomStep=zoom_step, cubeSize=BUCKET_SIZE, fourBit=False)
+        WKDataRequest(position, mag=mag, cubeSize=BUCKET_SIZE, fourBit=False)
         for position in sample_positions_distinct
     ]
 
@@ -47,7 +47,7 @@ async def histogram_post(
             backend.read_data(
                 dataset,
                 layer_name,
-                r.zoomStep,
+                Vec3D(*r.mag),
                 Vec3D(*r.position),
                 Vec3D(r.cubeSize, r.cubeSize, r.cubeSize),
             )
@@ -82,19 +82,16 @@ async def histogram_post(
 
 def align_positions_with_mag(
     sample_positions: List[Vec3D], layer: WKDataLayer
-) -> Tuple[List[Vec3D], int]:
+) -> Tuple[List[Vec3D], Vec3D]:
     # For the WKW backend, the bucket requests need to be bucket-aligned in the target mag
     available_mags = sorted([Mag(mag["resolution"]) for mag in layer.wkwResolutions])
     mag = available_mags[0]
-
-    # This is equivalent to `int(log2(mag.as_np().max()))`, but avoids intermediate floats
-    zoom_step = int(mag.as_np().max()).bit_length() - 1
 
     align = Vec3D(*(mag.as_np() * BUCKET_SIZE))
     sample_positions = [
         Vec3D(*((position // align) * align)) for position in sample_positions
     ]
-    return sample_positions, zoom_step
+    return sample_positions, Vec3D(*mag.as_np())
 
 
 def generate_sample_positions(

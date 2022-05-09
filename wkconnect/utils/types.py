@@ -52,6 +52,9 @@ class Vec3D(NamedTuple):
     def as_tuple(self) -> Tuple[int, int, int]:
         return (self.x, self.y, self.z)
 
+    def max_dim(self) -> int:
+        return max(max(self.x, self.y), self.z)
+
     @classmethod
     def zeros(cls) -> Vec3D:
         return cls(0, 0, 0)

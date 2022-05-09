@@ -123,22 +123,25 @@ class Boss(Backend):
         self,
         abstract_dataset: DatasetInfo,
         layer_name: str,
-        zoom_step: int,
+        mag: Vec3D,
         wk_offset: Vec3D,
         shape: Vec3D,
     ) -> Optional[np.ndarray]:
         dataset = cast(Dataset, abstract_dataset)
         channel = dataset.experiment.channels[layer_name]
 
-        channel_offset = wk_offset // channel.resolutions[zoom_step]
+        channel_offset = wk_offset // mag
         box = Box3D.from_size(channel_offset, shape)
+
+        # This is equivalent to `int(log2(mag.as_np().max()))`, but avoids intermediate floats
+        mag_exponent = int(mag.max_dim()).bit_length() - 1
 
         compressed_data = await self.client.get_cutout(
             dataset.domain,
             dataset.experiment.collection_name,
             dataset.experiment.experiment_name,
             layer_name,
-            zoom_step,
+            mag_exponent,
             box,
             dataset.token_key,
         )
@@ -156,13 +159,13 @@ class Boss(Backend):
         self,
         abstract_dataset: DatasetInfo,
         layer_name: str,
-        zoom_step: int,
+        mag: Vec3D,
         wk_offset: Vec3D,
         shape: Vec3D,
     ) -> Optional[np.ndarray]:
         try:
             return await self.__cached_read_data(
-                abstract_dataset, layer_name, zoom_step, wk_offset, shape
+                abstract_dataset, layer_name, mag, wk_offset, shape
             )
         except ClientResponseError:
             # will be reported in MISSING-BUCKETS, frontend will retry

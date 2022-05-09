@@ -348,16 +348,14 @@ class Neuroglancer(Backend):
         self,
         abstract_dataset: DatasetInfo,
         layer_name: str,
-        zoom_step: int,
+        mag: Vec3D,
         wk_offset: Vec3D,
         shape: Vec3D,
     ) -> Optional[np.ndarray]:
         dataset = cast(Dataset, abstract_dataset)
         layer = dataset.layers[layer_name]
-        # we can use zoom_step as the index, as the scales are sorted
-        # see assertion in the Layer initialization
         scale = [
-            scale for scale in layer.scales if 2 ** zoom_step == scale.mag.as_np().max()
+            scale for scale in layer.scales if mag.max_dim() == scale.mag.as_np().max()
         ][0]
         decoder = self.decoders[scale.encoding]
 
