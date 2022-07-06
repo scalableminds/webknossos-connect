@@ -107,7 +107,10 @@ class Neuroglancer(Backend):
                     mesh_info_url, headers=await get_header(token)
                 ) as r:
                     mesh_info = await r.json(content_type=None)
-                    layer["mesh"] = MeshInfo.parse(mesh_info)
+                    if mesh_info["@type"] != "neuroglancer_multilod_draco":
+                        del layer["mesh"]
+                    else:
+                        layer["mesh"] = MeshInfo.parse(mesh_info)
             except ClientResponseError as e:
                 if e.status == 403:
                     raise NeuroglancerAuthenticationMissingError(
