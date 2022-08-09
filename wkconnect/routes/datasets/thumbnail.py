@@ -26,7 +26,7 @@ async def get_thumbnail(
     )
     backend = request.app.ctx.backends[backend_name]
     layer = [i for i in dataset.to_webknossos().dataLayers if i.name == layer_name][0]
-    mag: Vec3D = layer.resolutions.sort(key=lambda m: m.max_dim())[
+    mag: Vec3D = sorted(layer.resolutions, key=lambda m: m.max_dim())[
         min(3, len(layer.resolutions) - 1)
     ]
     center = layer.boundingBox.box().center()
