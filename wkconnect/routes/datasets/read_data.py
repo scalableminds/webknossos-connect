@@ -21,8 +21,6 @@ def convert_data(to_four_bit: bool, data: np.ndarray) -> np.ndarray:
         odds = data[::2]
         evens = data[1::2]
         return ((odds >> 4) << 4) | (evens >> 4)
-    elif data.dtype == np.dtype("uint64"):
-        return (data & np.uint64(0xFFFFFFFF)).astype("uint32")
     else:
         return data
 
