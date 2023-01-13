@@ -106,8 +106,8 @@ poetry install
 
 * Add webknossos-connect to the webKnossos database:
   ```
-  INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isforeign","isconnector")
-  VALUES (E'connect', E'http://localhost:8000', E'http://localhost:8000', E'secret-key', FALSE, FALSE, FALSE, TRUE);
+  INSERT INTO "webknossos"."datastores"("name","url","publicurl","key","isscratch","isdeleted","isconnector")
+  VALUES (E'connect', E'http://localhost:8000', E'http://localhost:8000', E'secret-key', FALSE, FALSE, TRUE);
   ```
 * `python -m wkconnect`
 * ```
@@ -123,7 +123,7 @@ Useful commands:
 * Lint with `pylint` & `flake8`
 * Format with `black`, `isort` & `autoflake`
 * Type-check with `mypy`
-* Benchark with `timeit`
+* Benchmark with `timeit`
 * Trace with `py-spy`
 
 Use the commands:
