@@ -670,15 +670,15 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "pyjwt"
-version = "2.1.0"
+version = "2.4.0"
 description = "JSON Web Token implementation in Python"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-crypto = ["cryptography (>=3.3.1,<4.0.0)"]
-dev = ["sphinx", "sphinx-rtd-theme", "zope.interface", "cryptography (>=3.3.1,<4.0.0)", "pytest (>=6.0.0,<7.0.0)", "coverage[toml] (==5.0.4)", "mypy", "pre-commit"]
+crypto = ["cryptography (>=3.3.1)"]
+dev = ["sphinx", "sphinx-rtd-theme", "zope.interface", "cryptography (>=3.3.1)", "pytest (>=6.0.0,<7.0.0)", "coverage[toml] (==5.0.4)", "mypy", "pre-commit"]
 docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
 tests = ["pytest (>=6.0.0,<7.0.0)", "coverage[toml] (==5.0.4)"]
 
@@ -1286,6 +1286,7 @@ colorama = [
 ]
 compressed-segmentation = [
     {file = "compressed_segmentation-2.0.1-cp27-cp27m-macosx_10_15_x86_64.whl", hash = "sha256:b1aecf290c7c260a4e6d3ac2be4f1dc96c0bc9f283e6f3c4fc1acf9acf74e62b"},
+    {file = "compressed_segmentation-2.0.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:b58a5b9198092a47fb21f77467cf63985e36ac5adc37fbbb2a151eb1ab78667a"},
     {file = "compressed_segmentation-2.0.1-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:648dab5ea03c468abe4142d0fa750154058f7c79e4a1ffd35d20589effb3c576"},
     {file = "compressed_segmentation-2.0.1-cp35-cp35m-manylinux2010_x86_64.whl", hash = "sha256:898948b1dff43b8f718cfc95e817dd76708c35e4d7ba0f4960ea94e47540632f"},
     {file = "compressed_segmentation-2.0.1-cp35-cp35m-manylinux2014_x86_64.whl", hash = "sha256:5021714837cea9367989ede4cb4b1a33177fb325275e8a270172d0f839032deb"},
@@ -1750,8 +1751,8 @@ pyflakes = [
     {file = "pyflakes-2.3.1.tar.gz", hash = "sha256:f5bc8ecabc05bb9d291eb5203d6810b49040f6ff446a756326104746cc00c1db"},
 ]
 pyjwt = [
-    {file = "PyJWT-2.1.0-py3-none-any.whl", hash = "sha256:934d73fbba91b0483d3857d1aff50e96b2a892384ee2c17417ed3203f173fca1"},
-    {file = "PyJWT-2.1.0.tar.gz", hash = "sha256:fba44e7898bbca160a2b2b501f492824fc8382485d3a6f11ba5d0c1937ce6130"},
+    {file = "PyJWT-2.4.0-py3-none-any.whl", hash = "sha256:72d1d253f32dbd4f5c88eaf1fdc62f3a19f676ccbadb9dbc5d07e951b2b26daf"},
+    {file = "PyJWT-2.4.0.tar.gz", hash = "sha256:d42908208c699b3b973cbeb01a969ba6a96c821eefb1c5bfe4c390c01d67abba"},
 ]
 pylint = [
     {file = "pylint-2.8.3-py3-none-any.whl", hash = "sha256:792b38ff30903884e4a9eab814ee3523731abd3c463f3ba48d7b627e87013484"},
