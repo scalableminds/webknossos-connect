@@ -1,4 +1,7 @@
 # webknossos-connect
+
+**This repository has been archieved and is no longer actively maintained. Support for loading and streaming Neuroglancer Precomputed, N5, and Zarr-Datasets have been added to the main WEBKNOSSOS codebase.**
+
 A [webKnossos](https://github.com/scalableminds/webknossos) compatible data connector written in Python.
 
 webKnossos-connect serves as an adapter between the webKnossos data store interface and other alternative data storage servers (e.g BossDB) or static files hosted on Cloud Storage (e.g. Neuroglancer Precomputed)
